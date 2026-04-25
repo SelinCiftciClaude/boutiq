@@ -6,14 +6,14 @@ export const Colors = {
   surface3: '#F5EDE7',
   surface4: '#EDE0D8',
 
-  // ── Rose / Blush — ana accent
-  rose1: '#A82C52',
-  rose2: '#C8406A',
-  rose3: '#E05580',
-  rose4: '#F07EA0',
-  rose5: '#FFBDD1',
-  roseGlow:       'rgba(224,85,128,0.14)',
-  roseGlowStrong: 'rgba(224,85,128,0.28)',
+  // ── Orange — ana accent (canlı, unisex)
+  rose1: '#B84010',
+  rose2: '#D95515',
+  rose3: '#F0691A',
+  rose4: '#FF9052',
+  rose5: '#FFD0AB',
+  roseGlow:       'rgba(240,105,26,0.14)',
+  roseGlowStrong: 'rgba(240,105,26,0.28)',
 
   // ── Gold — ısıl, zengin
   gold1: '#9A7018',
@@ -49,7 +49,7 @@ export const Colors = {
   border2: 'rgba(30,10,20,0.11)',
   border3: 'rgba(30,10,20,0.18)',
   borderGold: 'rgba(212,168,67,0.28)',
-  borderRose: 'rgba(224,85,128,0.28)',
+  borderRose: 'rgba(240,105,26,0.28)',
 
   // ── Status
   success:     '#0A9070',
@@ -68,12 +68,12 @@ export const Colors = {
   glass2: 'rgba(255,255,255,0.75)',
   glass3: 'rgba(255,255,255,0.90)',
   glassGold: 'rgba(212,168,67,0.10)',
-  glassRose: 'rgba(224,85,128,0.08)',
+  glassRose: 'rgba(240,105,26,0.08)',
 
   // ── Gradients
   gradients: {
-    rose:           ['#C8406A', '#F07EA0'] as const,
-    roseDark:       ['#A82C52', '#E05580'] as const,
+    rose:           ['#D95515', '#FF9052'] as const,
+    roseDark:       ['#B84010', '#F0691A'] as const,
     gold:           ['#C2900A', '#E8C97A'] as const,
     goldDark:       ['#9A7018', '#D4A843'] as const,
     light:          ['#FDF8F5', '#FFFFFF'] as const,
@@ -81,10 +81,10 @@ export const Colors = {
     surface:        ['#FFFFFF', '#FFF5EF'] as const,
     hero:           ['#FDF8F5', '#FFF0EA', '#FDF5F8'] as const,
     card:           ['rgba(255,255,255,0.96)', 'rgba(253,248,245,0.99)'] as const,
-    roseToTrans:    ['#E05580', 'rgba(224,85,128,0)'] as const,
-    transToRose:    ['rgba(224,85,128,0)', '#E05580'] as const,
+    roseToTrans:    ['#F0691A', 'rgba(240,105,26,0)'] as const,
+    transToRose:    ['rgba(240,105,26,0)', '#F0691A'] as const,
     teal:           ['#1BAD92', '#4DCDB6'] as const,
-    heroFull:       ['#FFF0F5', '#FFF8F0', '#F5F0FF'] as const,
+    heroFull:       ['#FFF4EE', '#FFF8F2', '#FFFAF5'] as const,
   },
 };
 

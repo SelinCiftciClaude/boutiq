@@ -26,7 +26,7 @@ const SLIDES = [
     subtitle: 'Instagram\'da gördüğün, kalbin çarpan o markalar artık tek bir yerde.',
     image: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=800&h=1200&fit=crop',
     accent: Colors.rose3,
-    gradient: ['#FFF0F5', '#FFE8F0', '#FDF8F5'] as const,
+    gradient: ['#FFF4EE', '#FFEDE0', '#FDF8F5'] as const,
     bgGlow: Colors.roseGlow,
   },
   {

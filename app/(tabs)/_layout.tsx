@@ -86,7 +86,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
       <BlurView intensity={75} tint="light" style={styles.blur}>
         {/* Top shimmer line */}
         <LinearGradient
-          colors={['rgba(224,85,128,0.25)', 'rgba(212,168,67,0.18)', 'transparent']}
+          colors={['rgba(240,105,26,0.25)', 'rgba(212,168,67,0.18)', 'transparent']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={styles.shimmerLine}
@@ -98,7 +98,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
           pointerEvents="none"
         >
           <LinearGradient
-            colors={['rgba(224,85,128,0.16)', 'rgba(212,168,67,0.12)']}
+            colors={['rgba(240,105,26,0.16)', 'rgba(212,168,67,0.12)']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.pillGradient}
@@ -227,7 +227,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     zIndex: 0,
     borderWidth: 1,
-    borderColor: 'rgba(224,85,128,0.22)',
+    borderColor: 'rgba(240,105,26,0.22)',
   },
   pillGradient: {
     ...StyleSheet.absoluteFillObject,
@@ -238,7 +238,7 @@ const styles = StyleSheet.create({
     left: 8,
     right: 8,
     height: 1,
-    backgroundColor: 'rgba(224,85,128,0.45)',
+    backgroundColor: 'rgba(240,105,26,0.45)',
     borderRadius: 1,
   },
 
