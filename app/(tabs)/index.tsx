@@ -27,13 +27,6 @@ const { width } = Dimensions.get('window');
 const NOTIFICATION_COUNT = 2;
 
 function CampaignBanner({ campaign }: { campaign: Campaign }) {
-  const timeLeft = () => {
-    const end = new Date(campaign.endsAt);
-    const now = new Date();
-    const diff = Math.floor((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-    return diff > 0 ? `${diff}g kaldı` : 'Son gün!';
-  };
-
   return (
     <TouchableOpacity activeOpacity={0.88} style={styles.campaignCard}>
       <LinearGradient
@@ -42,7 +35,6 @@ function CampaignBanner({ campaign }: { campaign: Campaign }) {
         end={{ x: 1, y: 1 }}
         style={StyleSheet.absoluteFill}
       />
-      {/* Gold accent line */}
       <View style={styles.campaignAccent} />
 
       <View style={styles.campaignContent}>
@@ -63,12 +55,9 @@ function CampaignBanner({ campaign }: { campaign: Campaign }) {
           </View>
         </View>
         <View style={styles.campaignRight}>
-          <Badge label={timeLeft()} variant="gold" size="sm" />
-          {campaign.code && (
-            <View style={styles.codeBox}>
-              <Text style={styles.codeText}>{campaign.code}</Text>
-            </View>
-          )}
+          <View style={styles.codeBox}>
+            <Text style={styles.codeText}>BOUTIQ10</Text>
+          </View>
         </View>
       </View>
     </TouchableOpacity>
