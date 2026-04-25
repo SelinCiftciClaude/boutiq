@@ -37,7 +37,7 @@ function CampaignBanner({ campaign }: { campaign: Campaign }) {
   return (
     <TouchableOpacity activeOpacity={0.88} style={styles.campaignCard}>
       <LinearGradient
-        colors={[Colors.surface3, Colors.surface2]}
+        colors={[Colors.surface1, Colors.surface2]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={StyleSheet.absoluteFill}
@@ -184,7 +184,7 @@ export default function HomeScreen() {
               >
                 {active && (
                   <LinearGradient
-                    colors={[Colors.gold2, Colors.gold4]}
+                    colors={[Colors.rose2, Colors.rose4]}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}
                     style={StyleSheet.absoluteFill}
@@ -473,7 +473,7 @@ const styles = StyleSheet.create({
   campaignDiscountRow: {},
   campaignDiscount: {
     fontSize: 13,
-    color: Colors.gold4,
+    color: Colors.rose3,
     fontWeight: '700',
   },
   campaignRight: {
@@ -491,7 +491,7 @@ const styles = StyleSheet.create({
   codeText: {
     fontSize: 12,
     fontWeight: '800',
-    color: Colors.gold4,
+    color: Colors.rose3,
     letterSpacing: 1.5,
   },
   // Category

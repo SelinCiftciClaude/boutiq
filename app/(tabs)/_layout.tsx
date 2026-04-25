@@ -83,27 +83,26 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
       {/* Outer glow */}
       <View style={styles.outerGlow} />
 
-      <BlurView intensity={85} tint="dark" style={styles.blur}>
+      <BlurView intensity={75} tint="light" style={styles.blur}>
         {/* Top shimmer line */}
         <LinearGradient
-          colors={['rgba(255,255,255,0.18)', 'rgba(255,255,255,0.04)', 'transparent']}
+          colors={['rgba(224,85,128,0.25)', 'rgba(212,168,67,0.18)', 'transparent']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={styles.shimmerLine}
         />
 
-        {/* Sliding gold pill */}
+        {/* Sliding rose-gold pill */}
         <Animated.View
           style={[styles.pill, { transform: [{ translateX: pillX }] }]}
           pointerEvents="none"
         >
           <LinearGradient
-            colors={['rgba(212,168,67,0.22)', 'rgba(232,201,122,0.14)']}
+            colors={['rgba(224,85,128,0.16)', 'rgba(212,168,67,0.12)']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.pillGradient}
           />
-          {/* pill top edge glow */}
           <View style={styles.pillTopEdge} />
         </Animated.View>
 
@@ -141,7 +140,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
                   <Ionicons
                     name={(isFocused ? tab.iconFilled : tab.icon) as any}
                     size={22}
-                    color={isFocused ? Colors.gold4 : '#FFFFFF'}
+                    color={isFocused ? Colors.rose3 : Colors.text3}
                   />
                 </Animated.View>
 
@@ -151,7 +150,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
                     styles.label,
                     {
                       opacity: labelOpacity[index],
-                      color: isFocused ? Colors.gold4 : '#FFFFFF',
+                      color: isFocused ? Colors.rose3 : Colors.text4,
                       fontWeight: isFocused ? '700' : '500',
                     },
                   ]}
@@ -191,10 +190,9 @@ const styles = StyleSheet.create({
     right: 20,
     height: TAB_BAR_H + 20,
     borderRadius: 32,
-    backgroundColor: Colors.gold3,
-    opacity: 0.07,
-    // Soft spread
-    shadowColor: Colors.gold3,
+    backgroundColor: Colors.rose3,
+    opacity: 0.06,
+    shadowColor: Colors.rose3,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.6,
     shadowRadius: 24,
@@ -203,10 +201,10 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.13)',
-    shadowColor: '#000',
+    borderColor: 'rgba(30,10,20,0.10)',
+    shadowColor: Colors.rose3,
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.45,
+    shadowOpacity: 0.18,
     shadowRadius: 24,
     elevation: 24,
   },
@@ -229,7 +227,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     zIndex: 0,
     borderWidth: 1,
-    borderColor: 'rgba(212,168,67,0.28)',
+    borderColor: 'rgba(224,85,128,0.22)',
   },
   pillGradient: {
     ...StyleSheet.absoluteFillObject,
@@ -240,7 +238,7 @@ const styles = StyleSheet.create({
     left: 8,
     right: 8,
     height: 1,
-    backgroundColor: 'rgba(232,201,122,0.60)',
+    backgroundColor: 'rgba(224,85,128,0.45)',
     borderRadius: 1,
   },
 
@@ -267,9 +265,9 @@ const styles = StyleSheet.create({
     width: 4,
     height: 4,
     borderRadius: 2,
-    backgroundColor: Colors.gold3,
+    backgroundColor: Colors.rose3,
     marginTop: 1,
-    shadowColor: Colors.gold3,
+    shadowColor: Colors.rose3,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 1,
     shadowRadius: 4,

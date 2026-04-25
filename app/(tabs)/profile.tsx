@@ -349,7 +349,7 @@ export default function ProfileScreen() {
                 <SettingRow icon="megaphone" iconColor={Colors.gold3} iconBg={Colors.glassGold} label="Kampanyalar" toggle toggleValue={notifCampaign} onToggle={setNotifCampaign} />
                 <SettingRow icon="bicycle" iconColor={Colors.success} iconBg={Colors.successGlow} label="Kargo Güncellemeleri" toggle toggleValue={notifShipping} onToggle={setNotifShipping} />
                 <SettingRow icon="sparkles" iconColor={Colors.purple3} iconBg={Colors.purpleGlow} label="Yeni Ürünler" toggle toggleValue={notifNewArrivals} onToggle={setNotifNewArrivals} />
-                <SettingRow icon="trending-down" iconColor={Colors.rose} iconBg={Colors.roseGlow} label="Fiyat Düşüşleri" toggle toggleValue={notifPriceDrops} onToggle={setNotifPriceDrops} />
+                <SettingRow icon="trending-down" iconColor={Colors.rose3} iconBg={Colors.roseGlow} label="Fiyat Düşüşleri" toggle toggleValue={notifPriceDrops} onToggle={setNotifPriceDrops} />
               </View>
             </View>
 

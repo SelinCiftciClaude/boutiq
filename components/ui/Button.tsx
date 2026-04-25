@@ -56,7 +56,7 @@ export function Button({
         style={[styles.base, style, (disabled || loading) && styles.disabled]}
       >
         <LinearGradient
-          colors={disabled ? [Colors.surface3, Colors.surface4] : [Colors.gold2, Colors.gold4]}
+          colors={disabled ? [Colors.surface3, Colors.surface4] : [Colors.rose2, Colors.rose4]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={[styles.gradient, sizeStyle]}
@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   primaryText: {
-    color: Colors.bg,
+    color: '#FFFFFF',
     fontWeight: '700',
     letterSpacing: 0.3,
   },

@@ -49,7 +49,7 @@ export default function LoginScreen() {
     >
       {/* Background */}
       <LinearGradient
-        colors={[Colors.surface3, Colors.bg, Colors.bg]}
+        colors={[Colors.surface3, Colors.surface2, Colors.bg]}
         style={StyleSheet.absoluteFill}
         locations={[0, 0.4, 1]}
       />

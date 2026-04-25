@@ -20,7 +20,7 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={styles.root}>
       <BrandsProvider>
-        <StatusBar style="light" backgroundColor={Colors.bg} />
+        <StatusBar style="dark" backgroundColor={Colors.bg} />
         <Stack screenOptions={{ headerShown: false, animation: 'fade' }}>
           <Stack.Screen name="index" options={{ animation: 'fade' }} />
           <Stack.Screen name="(auth)" options={{ animation: 'slide_from_bottom' }} />
