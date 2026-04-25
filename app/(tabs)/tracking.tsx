@@ -13,8 +13,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Colors } from '../../constants/Colors';
-import { MOCK_SHIPMENTS } from '../../constants/MockData';
 import { ShipmentCard } from '../../components/ShipmentCard';
+import { useShipments } from '@/hooks/useShipments';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { Shipment, ShipmentStatus } from '../../types';
@@ -186,7 +186,7 @@ const cStyles = StyleSheet.create({
 
 export default function TrackingScreen() {
   const insets = useSafeAreaInsets();
-  const [shipments] = useState(MOCK_SHIPMENTS);
+  const { data: shipments = [] } = useShipments();
   const [statusFilter, setStatusFilter] = useState<ShipmentStatus | 'all'>('all');
   const [showMailModal, setShowMailModal] = useState(false);
   const [mailConnected] = useState(false);

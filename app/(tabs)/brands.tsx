@@ -15,10 +15,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Colors } from '../../constants/Colors';
-import { MOCK_BRANDS, CATEGORIES } from '../../constants/MockData';
+import { CATEGORIES } from '../../constants/MockData';
 import { BrandCard } from '../../components/BrandCard';
 import { Button } from '../../components/ui/Button';
-import { Brand, BrandCategory } from '../../types';
+import { BrandCategory } from '../../types';
+import { useBrands } from '@/hooks/useBrands';
+import { useSavedBrands } from '@/hooks/useSavedBrands';
+import { supabase } from '@/services/supabase';
+import { useQueryClient } from '@tanstack/react-query';
 
 const { width } = Dimensions.get('window');
 
@@ -242,13 +246,20 @@ const modalStyles = StyleSheet.create({
 
 export default function BrandsScreen() {
   const insets = useSafeAreaInsets();
-  const [brands, setBrands] = useState(MOCK_BRANDS);
+  const { data: brands = [] } = useBrands();
+  const savedBrands = useSavedBrands();
+  const qc = useQueryClient();
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearch, setShowSearch] = useState(false);
 
-  const filtered = brands.filter((b) => {
+  const annotated = brands.map((b) => ({
+    ...b,
+    isFavorite: savedBrands.isSaved(b.id),
+  }));
+
+  const filtered = annotated.filter((b) => {
     const matchCat = selectedCategory === 'all' || b.category === selectedCategory;
     const matchSearch =
       !searchQuery || b.name.toLowerCase().includes(searchQuery.toLowerCase());
@@ -258,28 +269,38 @@ export default function BrandsScreen() {
   const favorites = filtered.filter((b) => b.isFavorite);
   const others = filtered.filter((b) => !b.isFavorite);
 
-  const handleAdd = (url: string, category: BrandCategory) => {
-    const newBrand: Brand = {
-      id: `b_new_${Date.now()}`,
-      name: url.replace(/^https?:\/\//, '').split('/')[0],
-      handle: `@${url.replace(/^@/, '').split('/').pop() ?? 'yeni_butik'}`,
-      logo: 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=120&h=120&fit=crop',
-      coverImage: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&h=400&fit=crop',
-      category,
-      tags: [],
-      website: url,
-      affiliateUrl: url,
-      isVerified: false,
-      isFavorite: false,
-    };
-    setBrands((prev) => [newBrand, ...prev]);
+  const handleAdd = async (url: string, category: BrandCategory) => {
+    const cleanedUrl = url.startsWith('http') ? url : `https://${url.replace(/^@/, '')}`;
+    const name = cleanedUrl.replace(/^https?:\/\//, '').split('/')[0];
+    const { data, error } = await supabase
+      .from('brands')
+      .insert({
+        name,
+        handle: `@${name.split('.')[0]}`,
+        category,
+        website: cleanedUrl,
+        affiliate_url: cleanedUrl,
+        tags: [],
+      })
+      .select('id')
+      .single();
+    if (error) {
+      Alert.alert('Butik eklenemedi', error.message);
+      return;
+    }
+    if (data?.id) {
+      await savedBrands.add.mutateAsync({ brandId: data.id, isFavorite: false });
+    }
+    qc.invalidateQueries({ queryKey: ['brands'] });
   };
 
   const toggleFavorite = (id: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    setBrands((prev) =>
-      prev.map((b) => (b.id === id ? { ...b, isFavorite: !b.isFavorite } : b))
-    );
+    if (savedBrands.isSaved(id)) {
+      savedBrands.remove.mutate(id);
+    } else {
+      savedBrands.add.mutate({ brandId: id, isFavorite: true });
+    }
   };
 
   return (

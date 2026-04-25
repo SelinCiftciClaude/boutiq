@@ -16,13 +16,19 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Colors } from '../../constants/Colors';
 import { Button } from '../../components/ui/Button';
+import { useAuth } from '@/context/AuthContext';
+
+const DEMO_EMAIL = 'demo@boutiq.app';
+const DEMO_PASSWORD = 'demo1234';
 
 export default function LoginScreen() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState(DEMO_EMAIL);
+  const [password, setPassword] = useState(DEMO_PASSWORD);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [focused, setFocused] = useState<'email' | 'password' | null>(null);
+  const { signIn } = useAuth();
 
   const emailRef = useRef<TextInput>(null);
   const passwordRef = useRef<TextInput>(null);
@@ -31,14 +37,26 @@ export default function LoginScreen() {
     if (!email || !password) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setLoading(true);
-    // Simulate auth - replace with real supabase auth
-    await new Promise((r) => setTimeout(r, 1200));
+    setErrorMsg(null);
+    const { error } = await signIn(email, password);
     setLoading(false);
+    if (error) {
+      setErrorMsg(error.message);
+      return;
+    }
     router.replace('/(tabs)');
   };
 
-  const handleGuestLogin = () => {
+  const handleGuestLogin = async () => {
     Haptics.selectionAsync();
+    setLoading(true);
+    setErrorMsg(null);
+    const { error } = await signIn(DEMO_EMAIL, DEMO_PASSWORD);
+    setLoading(false);
+    if (error) {
+      setErrorMsg(error.message);
+      return;
+    }
     router.replace('/(tabs)');
   };
 
@@ -161,6 +179,8 @@ export default function LoginScreen() {
             <Text style={styles.forgotText}>Şifreni mi unuttun?</Text>
           </TouchableOpacity>
         </View>
+
+        {errorMsg && <Text style={styles.errorText}>{errorMsg}</Text>}
 
         {/* Login CTA */}
         <Button
@@ -339,6 +359,12 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: Colors.gold3,
     fontWeight: '600',
+  },
+  errorText: {
+    fontSize: 13,
+    color: '#ff6b6b',
+    marginBottom: 12,
+    textAlign: 'center',
   },
   loginBtn: {
     marginBottom: 20,

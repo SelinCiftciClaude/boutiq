@@ -1,32 +1,56 @@
 import { useEffect } from 'react';
-import { Stack } from 'expo-router';
+import { Slot, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StyleSheet } from 'react-native';
-import { Colors } from '../constants/Colors';
-import { BrandsProvider } from '../context/BrandsContext';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Colors } from '@/constants/Colors';
+import { AuthProvider, useAuth } from '@/context/AuthContext';
 
 SplashScreen.preventAutoHideAsync();
 
-export default function RootLayout() {
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      SplashScreen.hideAsync();
-    }, 500);
-    return () => clearTimeout(timer);
-  }, []);
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
+function RouteGate() {
+  const { session, loading } = useAuth();
+  const segments = useSegments();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (loading) return;
+    SplashScreen.hideAsync();
+    const first = segments[0] as string | undefined;
+    const inAuthGroup = first === '(auth)';
+    const inTabsGroup = first === '(tabs)';
+    const onLanding = first === undefined;
+
+    if (!session && inTabsGroup) {
+      router.replace('/(auth)/login');
+    } else if (session && (inAuthGroup || onLanding)) {
+      router.replace('/(tabs)');
+    }
+  }, [loading, session, segments, router]);
+
+  return <Slot />;
+}
+
+export default function RootLayout() {
   return (
     <GestureHandlerRootView style={styles.root}>
-      <BrandsProvider>
-        <StatusBar style="dark" backgroundColor={Colors.bg} />
-        <Stack screenOptions={{ headerShown: false, animation: 'fade' }}>
-          <Stack.Screen name="index" options={{ animation: 'fade' }} />
-          <Stack.Screen name="(auth)" options={{ animation: 'slide_from_bottom' }} />
-          <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
-        </Stack>
-      </BrandsProvider>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <StatusBar style="dark" backgroundColor={Colors.bg} />
+          <RouteGate />
+        </AuthProvider>
+      </QueryClientProvider>
     </GestureHandlerRootView>
   );
 }

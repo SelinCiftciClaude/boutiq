@@ -16,6 +16,7 @@ import * as Haptics from 'expo-haptics';
 import { Colors } from '../../constants/Colors';
 import { Button } from '../../components/ui/Button';
 import { CATEGORIES } from '../../constants/MockData';
+import { useAuth } from '@/context/AuthContext';
 
 const STEPS = ['Bilgiler', 'Zevkler', 'Hazır!'];
 
@@ -27,7 +28,9 @@ export default function RegisterScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [focused, setFocused] = useState<string | null>(null);
+  const { signUp } = useAuth();
 
   const emailRef = useRef<TextInput>(null);
   const passwordRef = useRef<TextInput>(null);
@@ -43,12 +46,18 @@ export default function RegisterScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     if (step < STEPS.length - 1) {
       setStep((s) => s + 1);
-    } else {
-      setLoading(true);
-      await new Promise((r) => setTimeout(r, 1200));
-      setLoading(false);
-      router.replace('/(tabs)');
+      return;
     }
+    setLoading(true);
+    setErrorMsg(null);
+    const { error } = await signUp(email, password, name);
+    setLoading(false);
+    if (error) {
+      setErrorMsg(error.message);
+      setStep(0);
+      return;
+    }
+    router.replace('/(tabs)');
   };
 
   const canProceed = () => {
@@ -242,6 +251,8 @@ export default function RegisterScreen() {
           </View>
         )}
 
+        {errorMsg && <Text style={styles.errorText}>{errorMsg}</Text>}
+
         <Button
           label={step === STEPS.length - 1 ? 'BOUTIQ\'e Gir' : 'Devam Et'}
           onPress={handleNext}
@@ -376,6 +387,12 @@ const styles = StyleSheet.create({
   },
   readyLabel: { fontSize: 15, fontWeight: '600', color: Colors.text2, flex: 1, letterSpacing: -0.2 },
   cta: { marginBottom: 20 },
+  errorText: {
+    fontSize: 13,
+    color: '#ff6b6b',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
   loginRow: { flexDirection: 'row', justifyContent: 'center', gap: 4 },
   loginText: { fontSize: 14, color: Colors.text4 },
   loginLink: { fontSize: 14, color: Colors.gold3, fontWeight: '700' },

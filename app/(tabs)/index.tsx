@@ -15,13 +15,16 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Colors } from '../../constants/Colors';
-import { MOCK_BRANDS, MOCK_CAMPAIGNS, CATEGORIES, MOCK_PRODUCTS } from '../../constants/MockData';
+import { CATEGORIES } from '../../constants/MockData';
 import { BrandCard } from '../../components/BrandCard';
 import { ProductCard } from '../../components/ProductCard';
 import { Badge } from '../../components/ui/Badge';
 import { AddBrandSheet } from '../../components/AddBrandSheet';
-import { useBrands } from '../../context/BrandsContext';
-import { Brand, BrandCategory, Campaign } from '../../types';
+import { useBrands } from '@/hooks/useBrands';
+import { useSavedBrands } from '@/hooks/useSavedBrands';
+import { useProducts } from '@/hooks/useProducts';
+import { useCampaigns } from '@/hooks/useCampaigns';
+import { Brand, Campaign } from '../../types';
 
 const { width } = Dimensions.get('window');
 const NOTIFICATION_COUNT = 2;
@@ -69,7 +72,11 @@ export default function HomeScreen() {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const scrollY = useRef(new Animated.Value(0)).current;
   const [addSheetBrand, setAddSheetBrand] = useState<Brand | null>(null);
-  const { saveBrand, removeBrand, isSaved, savedBrands } = useBrands();
+
+  const { data: brands = [] } = useBrands();
+  const { data: products = [] } = useProducts();
+  const { data: campaigns = [] } = useCampaigns();
+  const savedBrands = useSavedBrands();
 
   const handleAddBrand = (brand: Brand) => setAddSheetBrand(brand);
 
@@ -79,7 +86,8 @@ export default function HomeScreen() {
     extrapolate: 'clamp',
   });
 
-  const activeCampaigns = MOCK_CAMPAIGNS.filter((c) => !c.isRead);
+  const activeCampaigns = campaigns.filter((c) => !c.isRead);
+  const featuredBrand = brands[0];
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -151,7 +159,7 @@ export default function HomeScreen() {
             <Text style={styles.sectionLabel}>HAFTANIN</Text>
             <Text style={styles.sectionTitle}>Öne Çıkan Butik</Text>
           </View>
-          <BrandCard brand={MOCK_BRANDS[0]} variant="featured" />
+          {featuredBrand && <BrandCard brand={featuredBrand} variant="featured" />}
         </View>
 
         {/* Category Filter */}
@@ -197,13 +205,13 @@ export default function HomeScreen() {
             </TouchableOpacity>
           </View>
           <View style={styles.brandsGrid}>
-            {MOCK_BRANDS.map((brand) => (
+            {brands.map((brand) => (
               <BrandCard
                 key={brand.id}
                 brand={brand}
                 variant="grid"
                 onAdd={handleAddBrand}
-                isSaved={isSaved(brand.id)}
+                isSaved={savedBrands.isSaved(brand.id)}
               />
             ))}
           </View>
@@ -224,12 +232,12 @@ export default function HomeScreen() {
           {/* Masonry Grid */}
           <View style={styles.productsGrid}>
             <View style={styles.productCol}>
-              {MOCK_PRODUCTS.filter((_, i) => i % 2 === 0).map((p, i) => (
+              {products.filter((_, i) => i % 2 === 0).map((p, i) => (
                 <ProductCard key={p.id} product={p} tall={i % 3 === 1} />
               ))}
             </View>
             <View style={[styles.productCol, styles.productColOffset]}>
-              {MOCK_PRODUCTS.filter((_, i) => i % 2 === 1).map((p, i) => (
+              {products.filter((_, i) => i % 2 === 1).map((p, i) => (
                 <ProductCard key={p.id} product={p} tall={i % 3 === 0} />
               ))}
             </View>
@@ -250,14 +258,10 @@ export default function HomeScreen() {
       <AddBrandSheet
         brand={addSheetBrand}
         visible={!!addSheetBrand}
-        alreadySaved={addSheetBrand ? isSaved(addSheetBrand.id) : false}
-        currentCategory={
-          addSheetBrand
-            ? savedBrands.find((s) => s.brand.id === addSheetBrand.id)?.userCategory
-            : undefined
-        }
-        onSave={(brand, category) => saveBrand(brand, category)}
-        onRemove={(id) => removeBrand(id)}
+        alreadySaved={addSheetBrand ? savedBrands.isSaved(addSheetBrand.id) : false}
+        currentCategory={addSheetBrand?.category}
+        onSave={(brand) => savedBrands.add.mutate({ brandId: brand.id, isFavorite: true })}
+        onRemove={(id) => savedBrands.remove.mutate(id)}
         onClose={() => setAddSheetBrand(null)}
       />
     </View>

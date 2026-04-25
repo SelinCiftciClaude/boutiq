@@ -13,10 +13,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Colors } from '../../constants/Colors';
-import { MOCK_PRODUCTS } from '../../constants/MockData';
 import { ProductCard } from '../../components/ProductCard';
 import { Badge } from '../../components/ui/Badge';
 import { Product } from '../../types';
+import { useSavedProducts } from '@/hooks/useSavedProducts';
 
 const { width } = Dimensions.get('window');
 
@@ -160,8 +160,8 @@ export default function SavedScreen() {
   const [viewMode, setViewMode] = useState<ViewMode>('masonry');
   const [sortIndex, setSortIndex] = useState(0);
   const [showSortMenu, setShowSortMenu] = useState(false);
-  const [products, setProducts] = useState(MOCK_PRODUCTS);
   const [filterOnSale, setFilterOnSale] = useState(false);
+  const { data: products = [], remove: unsaveMutation } = useSavedProducts();
 
   const displayProducts = filterOnSale
     ? products.filter((p) => p.isOnSale)
@@ -169,7 +169,7 @@ export default function SavedScreen() {
 
   const handleUnsave = (id: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    setProducts((prev) => prev.filter((p) => p.id !== id));
+    unsaveMutation.mutate(id);
   };
 
   const toggleViewMode = () => {

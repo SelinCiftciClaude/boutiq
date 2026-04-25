@@ -19,8 +19,12 @@ import { Colors } from '../../constants/Colors';
 import { MOCK_NOTIFICATIONS } from '../../constants/MockData';
 import { Badge } from '../../components/ui/Badge';
 import { AddBrandSheet } from '../../components/AddBrandSheet';
-import { useBrands, SavedBrand } from '../../context/BrandsContext';
 import { Brand, BrandCategory } from '../../types';
+import { useAuth } from '@/context/AuthContext';
+import { useSavedBrands } from '@/hooks/useSavedBrands';
+import { useDashboard } from '@/hooks/useDashboard';
+
+type SavedBrand = { brand: Brand; userCategory: BrandCategory };
 
 const { width } = Dimensions.get('window');
 const CARD_W = (width - 48) / 2;
@@ -36,13 +40,6 @@ const CATEGORY_LABELS: Record<string, string> = {
   spor: '⚽ Spor',
   vintage: '🎞️ Vintage',
   tasarımcı: '🎨 Tasarımcı',
-};
-
-const MOCK_USER = {
-  name: 'Selin Yeşilbahçe',
-  email: 'selinyesilbahce@gmail.com',
-  avatar: null as string | null,
-  plan: 'free' as const,
 };
 
 function BrandMiniCard({
@@ -176,10 +173,41 @@ export default function ProfileScreen() {
   const [notifPriceDrops, setNotifPriceDrops] = useState(true);
   const [editSheet, setEditSheet] = useState<SavedBrand | null>(null);
 
-  const { savedBrands, categoryGroups, saveBrand, removeBrand, isSaved } = useBrands();
+  const { user: authUser, signOut } = useAuth();
+  const { data: savedBrandsList = [], add: addSaved, remove: removeSaved } = useSavedBrands();
+  const { data: dashboard } = useDashboard();
+
+  const userName: string =
+    (authUser?.user_metadata?.name as string | undefined) ??
+    authUser?.email?.split('@')[0] ??
+    'Kullanıcı';
+  const userEmail: string = authUser?.email ?? '';
+  const userAvatar: string | null =
+    (authUser?.user_metadata?.avatar_url as string | undefined) ?? null;
+  const userPlan: 'free' | 'premium' = 'free';
+  const user = { name: userName, email: userEmail, avatar: userAvatar, plan: userPlan };
+
+  const savedBrands: SavedBrand[] = savedBrandsList.map((b) => ({
+    brand: b,
+    userCategory: b.category,
+  }));
+  const categoryGroups = (() => {
+    const map = new Map<BrandCategory, SavedBrand[]>();
+    savedBrands.forEach((s) => {
+      const list = map.get(s.userCategory) ?? [];
+      list.push(s);
+      map.set(s.userCategory, list);
+    });
+    return Array.from(map.entries()).map(([category, brands]) => ({ category, brands }));
+  })();
+
   const unreadCount = MOCK_NOTIFICATIONS.filter((n) => !n.isRead).length;
-  const user = MOCK_USER;
-  const initials = user.name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
+  const initials = userName.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
+
+  const handleSignOut = async () => {
+    await signOut();
+    router.replace('/(auth)/login');
+  };
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -227,17 +255,17 @@ export default function ProfileScreen() {
           {/* Stats */}
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
-              <Text style={styles.statNum}>{savedBrands.length}</Text>
+              <Text style={styles.statNum}>{dashboard?.savedBrands ?? savedBrands.length}</Text>
               <Text style={styles.statLabel}>Butik</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
-              <Text style={styles.statNum}>{categoryGroups.length}</Text>
-              <Text style={styles.statLabel}>Kategori</Text>
+              <Text style={styles.statNum}>{dashboard?.savedProducts ?? 0}</Text>
+              <Text style={styles.statLabel}>Ürün</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
-              <Text style={styles.statNum}>2</Text>
+              <Text style={styles.statNum}>{dashboard?.activeShipments ?? 0}</Text>
               <Text style={styles.statLabel}>Sipariş</Text>
             </View>
           </View>
@@ -372,7 +400,7 @@ export default function ProfileScreen() {
 
             <View style={styles.section}>
               <View style={styles.settingsGroup}>
-                <SettingRow icon="log-out" iconColor={Colors.error} iconBg="rgba(239,68,68,0.15)" label="Çıkış Yap" danger onPress={() => router.replace('/(auth)/login')} />
+                <SettingRow icon="log-out" iconColor={Colors.error} iconBg="rgba(239,68,68,0.15)" label="Çıkış Yap" danger onPress={handleSignOut} />
               </View>
             </View>
 
@@ -392,8 +420,8 @@ export default function ProfileScreen() {
         visible={!!editSheet}
         alreadySaved
         currentCategory={editSheet?.userCategory}
-        onSave={(brand, category) => saveBrand(brand, category)}
-        onRemove={(id) => removeBrand(id)}
+        onSave={(brand) => addSaved.mutate({ brandId: brand.id, isFavorite: true })}
+        onRemove={(id) => removeSaved.mutate(id)}
         onClose={() => setEditSheet(null)}
       />
     </View>
