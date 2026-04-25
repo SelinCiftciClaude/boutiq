@@ -1,0 +1,11 @@
+node_modules/
+.expo/
+dist/
+web-build/
+.env
+*.local
+.DS_Store
+npm-debug.log*
+*.tsbuildinfo
+ios/Pods/
+android/build/
