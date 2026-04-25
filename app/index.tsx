@@ -22,8 +22,8 @@ const SLIDES = [
   {
     id: '1',
     eyebrow: 'Keşfet',
-    title: 'Binlerce\nBağımsız\nButik',
-    subtitle: 'Instagram\'da gördüğün, kalbin çarpan o markalar artık tek bir yerde.',
+    title: 'Bağımsız\nButikler\nBir Arada',
+    subtitle: 'Instagram\'da kalbini çarpan o markalar artık tek bir yerde seni bekliyor.',
     image: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=800&h=1200&fit=crop',
     accent: Colors.rose3,
     gradient: ['#FFF4EE', '#FFEDE0', '#FDF8F5'] as const,
@@ -32,8 +32,8 @@ const SLIDES = [
   {
     id: '2',
     eyebrow: 'Kaydet',
-    title: 'Beğendiğin\nHer Ürünü\nUnut Gitmesin',
-    subtitle: 'Instagram\'dan beğenip unuttuğun ürünleri BOUTIQ\'e kaydet.',
+    title: 'Gördün,\nBeğendin,\nKaydet.',
+    subtitle: 'Geçip gitmesin. Instagram\'da dikkatini çeken ürünü hemen BOUTIQ\'e ekle.',
     image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&h=1200&fit=crop',
     accent: Colors.gold3,
     gradient: ['#FFFAF0', '#FFF5E0', '#FDF8F5'] as const,
@@ -42,8 +42,8 @@ const SLIDES = [
   {
     id: '3',
     eyebrow: 'Takip Et',
-    title: 'Kargonu\nTek Ekranda\nGör',
-    subtitle: 'E-postanı bağla, kargo takibini otomatik al. Hiçbir şey kaçmasın.',
+    title: 'Siparişlerin\nHep Gözünün\nÖnünde',
+    subtitle: 'E-postanı bağla, tüm kargolarını tek yerden otomatik olarak takip et.',
     image: 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?w=800&h=1200&fit=crop',
     accent: Colors.teal2,
     gradient: ['#F0FBF9', '#E8F7F5', '#FDF8F5'] as const,
