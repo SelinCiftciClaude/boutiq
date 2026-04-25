@@ -23,6 +23,7 @@ import { Brand, BrandCategory } from '../../types';
 import { useAuth } from '@/context/AuthContext';
 import { useSavedBrands } from '@/hooks/useSavedBrands';
 import { useDashboard } from '@/hooks/useDashboard';
+import { useProfile } from '@/hooks/useProfile';
 
 type SavedBrand = { brand: Brand; userCategory: BrandCategory };
 
@@ -176,6 +177,17 @@ export default function ProfileScreen() {
   const { user: authUser, signOut } = useAuth();
   const { data: savedBrandsList = [], add: addSaved, remove: removeSaved } = useSavedBrands();
   const { data: dashboard } = useDashboard();
+  const { data: profile, updateNotifications } = useProfile();
+
+  // Profil yüklenince tercihleri uygula
+  React.useEffect(() => {
+    const n = profile?.preferences?.notifications as any;
+    if (!n) return;
+    if (typeof n.campaigns === 'boolean') setNotifCampaign(n.campaigns);
+    if (typeof n.shipping === 'boolean') setNotifShipping(n.shipping);
+    if (typeof n.new_arrivals === 'boolean') setNotifNewArrivals(n.new_arrivals);
+    if (typeof n.price_drops === 'boolean') setNotifPriceDrops(n.price_drops);
+  }, [profile?.id]);
 
   const userName: string =
     (authUser?.user_metadata?.name as string | undefined) ??
@@ -374,10 +386,10 @@ export default function ProfileScreen() {
                 {unreadCount > 0 && <Badge label={`${unreadCount} okunmamış`} variant="gold" size="sm" />}
               </View>
               <View style={styles.settingsGroup}>
-                <SettingRow icon="megaphone" iconColor={Colors.gold3} iconBg={Colors.glassGold} label="Kampanyalar" toggle toggleValue={notifCampaign} onToggle={setNotifCampaign} />
-                <SettingRow icon="bicycle" iconColor={Colors.success} iconBg={Colors.successGlow} label="Kargo Güncellemeleri" toggle toggleValue={notifShipping} onToggle={setNotifShipping} />
-                <SettingRow icon="sparkles" iconColor={Colors.purple3} iconBg={Colors.purpleGlow} label="Yeni Ürünler" toggle toggleValue={notifNewArrivals} onToggle={setNotifNewArrivals} />
-                <SettingRow icon="trending-down" iconColor={Colors.rose3} iconBg={Colors.roseGlow} label="Fiyat Düşüşleri" toggle toggleValue={notifPriceDrops} onToggle={setNotifPriceDrops} />
+                <SettingRow icon="megaphone" iconColor={Colors.gold3} iconBg={Colors.glassGold} label="Kampanyalar" toggle toggleValue={notifCampaign} onToggle={(v) => { setNotifCampaign(v); updateNotifications.mutate({ campaigns: v, shipping: notifShipping, newArrivals: notifNewArrivals, priceDrops: notifPriceDrops }); }} />
+                <SettingRow icon="bicycle" iconColor={Colors.success} iconBg={Colors.successGlow} label="Kargo Güncellemeleri" toggle toggleValue={notifShipping} onToggle={(v) => { setNotifShipping(v); updateNotifications.mutate({ campaigns: notifCampaign, shipping: v, newArrivals: notifNewArrivals, priceDrops: notifPriceDrops }); }} />
+                <SettingRow icon="sparkles" iconColor={Colors.purple3} iconBg={Colors.purpleGlow} label="Yeni Ürünler" toggle toggleValue={notifNewArrivals} onToggle={(v) => { setNotifNewArrivals(v); updateNotifications.mutate({ campaigns: notifCampaign, shipping: notifShipping, newArrivals: v, priceDrops: notifPriceDrops }); }} />
+                <SettingRow icon="trending-down" iconColor={Colors.rose3} iconBg={Colors.roseGlow} label="Fiyat Düşüşleri" toggle toggleValue={notifPriceDrops} onToggle={(v) => { setNotifPriceDrops(v); updateNotifications.mutate({ campaigns: notifCampaign, shipping: notifShipping, newArrivals: notifNewArrivals, priceDrops: v }); }} />
               </View>
             </View>
 

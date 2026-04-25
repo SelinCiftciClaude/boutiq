@@ -182,6 +182,92 @@ export async function fetchDashboard(userId: string): Promise<DashboardStats> {
   };
 }
 
+export async function searchBrandsAndProducts(
+  query: string,
+  userId?: string
+): Promise<{ brands: Brand[]; products: Product[] }> {
+  const q = query.toLowerCase().trim();
+  if (!q) return { brands: [], products: [] };
+
+  const [allBrands, allProducts] = await Promise.all([
+    fetchAllBrands(userId),
+    fetchAllProducts(userId),
+  ]);
+
+  const brands = allBrands.filter(
+    (b) =>
+      b.name.toLowerCase().includes(q) ||
+      b.category.toLowerCase().includes(q) ||
+      b.tags.some((t) => t.toLowerCase().includes(q))
+  );
+
+  const products = allProducts.filter(
+    (p) =>
+      p.name.toLowerCase().includes(q) ||
+      p.brandName.toLowerCase().includes(q) ||
+      p.category.toLowerCase().includes(q) ||
+      p.tags.some((t) => t.toLowerCase().includes(q))
+  );
+
+  return { brands, products };
+}
+
+export async function fetchNotifications(userId: string) {
+  const { data, error } = await supabase
+    .from('notifications')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(50);
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function markNotificationRead(notificationId: string) {
+  const { error } = await supabase
+    .from('notifications')
+    .update({ is_read: true })
+    .eq('id', notificationId);
+  if (error) throw error;
+}
+
+export async function markAllNotificationsRead(userId: string) {
+  const { error } = await supabase
+    .from('notifications')
+    .update({ is_read: true })
+    .eq('user_id', userId)
+    .eq('is_read', false);
+  if (error) throw error;
+}
+
+export async function updateNotificationPreferences(
+  userId: string,
+  notifications: { campaigns: boolean; shipping: boolean; newArrivals: boolean; priceDrops: boolean }
+): Promise<void> {
+  const { data, error: fetchErr } = await supabase
+    .from('profiles')
+    .select('preferences')
+    .eq('id', userId)
+    .single();
+  if (fetchErr) throw fetchErr;
+  const current = (data?.preferences as Record<string, unknown>) ?? {};
+  const { error } = await supabase
+    .from('profiles')
+    .update({
+      preferences: {
+        ...current,
+        notifications: {
+          campaigns: notifications.campaigns,
+          new_arrivals: notifications.newArrivals,
+          shipping: notifications.shipping,
+          price_drops: notifications.priceDrops,
+        },
+      },
+    })
+    .eq('id', userId);
+  if (error) throw error;
+}
+
 export async function trackAffiliateClick(
   userId: string | null,
   brandId: string | null,

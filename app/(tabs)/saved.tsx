@@ -163,9 +163,19 @@ export default function SavedScreen() {
   const [filterOnSale, setFilterOnSale] = useState(false);
   const { data: products = [], remove: unsaveMutation } = useSavedProducts();
 
-  const displayProducts = filterOnSale
-    ? products.filter((p) => p.isOnSale)
-    : products;
+  const baseProducts = filterOnSale ? products.filter((p) => p.isOnSale) : products;
+
+  const displayProducts = [...baseProducts].sort((a, b) => {
+    if (sortIndex === 1) return a.price - b.price;
+    if (sortIndex === 2) return b.price - a.price;
+    if (sortIndex === 3) {
+      if (a.isOnSale && !b.isOnSale) return -1;
+      if (!a.isOnSale && b.isOnSale) return 1;
+      return 0;
+    }
+    // sortIndex === 0: Son Kaydedilen (savedAt desc, default order)
+    return 0;
+  });
 
   const handleUnsave = (id: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);

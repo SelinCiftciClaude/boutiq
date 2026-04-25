@@ -40,11 +40,8 @@ export default function LoginScreen() {
     setErrorMsg(null);
     const { error } = await signIn(email, password);
     setLoading(false);
-    if (error) {
-      setErrorMsg(error.message);
-      return;
-    }
-    router.replace('/(tabs)');
+    if (error) setErrorMsg(error.message);
+    // RouteGate handles redirect after checking interests
   };
 
   const handleGuestLogin = async () => {
@@ -53,11 +50,8 @@ export default function LoginScreen() {
     setErrorMsg(null);
     const { error } = await signIn(DEMO_EMAIL, DEMO_PASSWORD);
     setLoading(false);
-    if (error) {
-      setErrorMsg(error.message);
-      return;
-    }
-    router.replace('/(tabs)');
+    if (error) setErrorMsg(error.message);
+    // RouteGate handles redirect after checking interests
   };
 
   return (
@@ -175,7 +169,7 @@ export default function LoginScreen() {
           </View>
 
           {/* Forgot */}
-          <TouchableOpacity style={styles.forgotBtn}>
+          <TouchableOpacity style={styles.forgotBtn} onPress={() => router.push('/(auth)/forgot-password')}>
             <Text style={styles.forgotText}>Şifreni mi unuttun?</Text>
           </TouchableOpacity>
         </View>
