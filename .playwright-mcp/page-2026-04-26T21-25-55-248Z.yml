@@ -1,0 +1,574 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e7]:
+          - generic [ref=e11]:
+            - generic [ref=e15]: YENİ KOLEKSİYON ÇOK YAKINDA !
+            - generic [ref=e19]: YENİ KOLEKSİYON ÇOK YAKINDA !
+            - generic [ref=e23]: YENİ KOLEKSİYON ÇOK YAKINDA !
+          - banner [ref=e24]:
+            - generic [ref=e25]:
+              - link "Sinem Kıvanç" [ref=e28] [cursor=pointer]:
+                - /url: /
+                - img "Sinem Kıvanç" [ref=e31]
+              - list [ref=e33]:
+                - listitem [ref=e34]:
+                  - link "Anasayfa" [ref=e35] [cursor=pointer]:
+                    - /url: /
+                - listitem [ref=e36]:
+                  - link "Yeni Gelenler" [ref=e37] [cursor=pointer]:
+                    - /url: /bugun-gelenler
+                - listitem [ref=e38]:
+                  - link "Takım" [ref=e39] [cursor=pointer]:
+                    - /url: /takim-28
+                - listitem [ref=e40]:
+                  - link "Elbise" [ref=e41] [cursor=pointer]:
+                    - /url: /elbiseler
+                - listitem [ref=e42]:
+                  - link "Üst Giyim" [ref=e43] [cursor=pointer]:
+                    - /url: /ust-giyim
+                    - text: Üst Giyim
+                    - img [ref=e44]
+                - listitem [ref=e47]:
+                  - link "Alt Giyim" [ref=e48] [cursor=pointer]:
+                    - /url: /alt-giyim
+                    - text: Alt Giyim
+                    - img [ref=e49]
+                - listitem [ref=e52]:
+                  - link "Dış Giyim" [ref=e53] [cursor=pointer]:
+                    - /url: /dis-giyim
+                    - text: Dış Giyim
+                    - img [ref=e54]
+                - listitem [ref=e57]:
+                  - link "Çok Satanlar" [ref=e58] [cursor=pointer]:
+                    - /url: /cok-satanlar
+                - listitem [ref=e59]:
+                  - link "Şal" [ref=e60] [cursor=pointer]:
+                    - /url: /sal
+                - listitem [ref=e61]:
+                  - link "Final Sale" [ref=e62] [cursor=pointer]:
+                    - /url: /final-sale
+                - listitem [ref=e63]:
+                  - link "Beach Wear" [ref=e64] [cursor=pointer]:
+                    - /url: /beach-weare
+              - list [ref=e66]:
+                - listitem [ref=e67] [cursor=pointer]:
+                  - img [ref=e68]
+                - listitem [ref=e70] [cursor=pointer]:
+                  - link "Siparişlerim" [ref=e71]:
+                    - /url: /account/orders
+                    - img [ref=e72]
+                - listitem [ref=e74] [cursor=pointer]:
+                  - img [ref=e75]
+                  - generic [ref=e77]: "0"
+                - listitem [ref=e78] [cursor=pointer]:
+                  - generic [ref=e79]:
+                    - img "Country Flag" [ref=e80]
+                    - generic [ref=e81]: TR
+        - generic [ref=e82]:
+          - paragraph [ref=e84]:
+            - text: Alışveriş deneyiminizi iyileştirmek için yasal düzenlemelere uygun çerezler (cookies) kullanıyoruz. Detaylı bilgiye
+            - link "Gizlilik ve Çerez Politikası" [ref=e85] [cursor=pointer]:
+              - /url: /pages/cerez-politikasi
+            - text: sayfamızdan erişebilirsiniz.
+          - generic [ref=e87] [cursor=pointer]: Anladım
+      - generic [ref=e90]:
+        - generic [ref=e91]:
+          - heading "Yeni Sezon" [level=1] [ref=e92]
+          - generic [ref=e93]: 5625 ürün
+        - generic [ref=e95]:
+          - generic [ref=e96]:
+            - generic [ref=e97] [cursor=pointer]: Fiyat artan
+            - generic [ref=e98] [cursor=pointer]: Fiyat azalan
+            - generic [ref=e99] [cursor=pointer]: İndirim oranı artan
+            - generic [ref=e100] [cursor=pointer]: İndirim oranı azalan
+            - generic [ref=e101] [cursor=pointer]: İlk eklenen
+            - generic [ref=e102] [cursor=pointer]: Son eklenen
+          - generic [ref=e103]:
+            - generic [ref=e104] [cursor=pointer]:
+              - img [ref=e105]
+              - img [ref=e111]
+            - generic [ref=e116] [cursor=pointer]:
+              - img [ref=e117]
+              - img [ref=e123]
+        - generic [ref=e131]:
+          - generic [ref=e133]:
+            - link "IŞILTI DOKULU İKİLİ TAKIM IŞILTI DOKULU İKİLİ TAKIM ₺ 2,749.90" [ref=e135] [cursor=pointer]:
+              - /url: /isilti-dokulu-ikili-takim
+              - generic [ref=e136]:
+                - img "IŞILTI DOKULU İKİLİ TAKIM" [ref=e140]
+                - generic [ref=e141]:
+                  - heading "IŞILTI DOKULU İKİLİ TAKIM" [level=2] [ref=e142]
+                  - generic [ref=e145]: ₺ 2,749.90
+            - link "Image KONTRAST PULLU KISA ELBİSE - BEYAZ KONTRAST PULLU KISA ELBİSE - BEYAZ ₺ 1,259.90" [ref=e147] [cursor=pointer]:
+              - /url: /kontrast-pullu-kisa-elbise?Renkler=BEYAZ&Normal-Beden=S
+              - generic [ref=e148]:
+                - img "Image" [ref=e152]
+                - img "KONTRAST PULLU KISA ELBİSE - BEYAZ" [ref=e156]
+                - generic [ref=e157]:
+                  - heading "KONTRAST PULLU KISA ELBİSE - BEYAZ" [level=2] [ref=e158]
+                  - generic [ref=e161]: ₺ 1,259.90
+            - link "Image KONTRAST PULLU KISA ELBİSE - SİYAH KONTRAST PULLU KISA ELBİSE - SİYAH ₺ 1,259.90" [ref=e163] [cursor=pointer]:
+              - /url: /kontrast-pullu-kisa-elbise?Renkler=S%C4%B0YAH&Normal-Beden=S
+              - generic [ref=e164]:
+                - img "Image" [ref=e168]
+                - img "KONTRAST PULLU KISA ELBİSE - SİYAH" [ref=e172]
+                - generic [ref=e173]:
+                  - heading "KONTRAST PULLU KISA ELBİSE - SİYAH" [level=2] [ref=e174]
+                  - generic [ref=e177]: ₺ 1,259.90
+            - link "TEK OMUZ CROP ETEK TAKIM - ZEBRA TEK OMUZ CROP ETEK TAKIM - ZEBRA ₺ 1,249.90" [ref=e179] [cursor=pointer]:
+              - /url: /tek-omuz-crop-etek-takim?Renkler=ZEBRA&Normal-Beden=XS
+              - generic [ref=e180]:
+                - img "TEK OMUZ CROP ETEK TAKIM - ZEBRA" [ref=e184]
+                - generic [ref=e185]:
+                  - heading "TEK OMUZ CROP ETEK TAKIM - ZEBRA" [level=2] [ref=e186]
+                  - generic [ref=e189]: ₺ 1,249.90
+            - link "TEK OMUZ CROP ETEK TAKIM - LEOPAR TEK OMUZ CROP ETEK TAKIM - LEOPAR ₺ 1,249.90" [ref=e191] [cursor=pointer]:
+              - /url: /tek-omuz-crop-etek-takim?Renkler=LEOPAR&Normal-Beden=XS
+              - generic [ref=e192]:
+                - img "TEK OMUZ CROP ETEK TAKIM - LEOPAR" [ref=e196]
+                - generic [ref=e197]:
+                  - heading "TEK OMUZ CROP ETEK TAKIM - LEOPAR" [level=2] [ref=e198]
+                  - generic [ref=e201]: ₺ 1,249.90
+            - link "BOYUNDAN BAĞLAMALI BALON ELBİSE - KAHVE BOYUNDAN BAĞLAMALI BALON ELBİSE - KAHVE ₺ 1,779.90" [ref=e203] [cursor=pointer]:
+              - /url: /boyundan-baglamali-balon-elbise?Renkler=KAHVE&Normal-Beden=S
+              - generic [ref=e204]:
+                - img "BOYUNDAN BAĞLAMALI BALON ELBİSE - KAHVE" [ref=e208]
+                - generic [ref=e209]:
+                  - heading "BOYUNDAN BAĞLAMALI BALON ELBİSE - KAHVE" [level=2] [ref=e210]
+                  - generic [ref=e213]: ₺ 1,779.90
+            - link "BOYUNDAN BAĞLAMALI BALON ELBİSE - SİYAH BOYUNDAN BAĞLAMALI BALON ELBİSE - SİYAH ₺ 1,779.90" [ref=e215] [cursor=pointer]:
+              - /url: /boyundan-baglamali-balon-elbise?Renkler=S%C4%B0YAH&Normal-Beden=S
+              - generic [ref=e216]:
+                - img "BOYUNDAN BAĞLAMALI BALON ELBİSE - SİYAH" [ref=e220]
+                - generic [ref=e221]:
+                  - heading "BOYUNDAN BAĞLAMALI BALON ELBİSE - SİYAH" [level=2] [ref=e222]
+                  - generic [ref=e225]: ₺ 1,779.90
+            - link "BOYUNDAN BAĞLAMALI BALON ELBİSE - BEYAZ BOYUNDAN BAĞLAMALI BALON ELBİSE - BEYAZ ₺ 1,779.90" [ref=e227] [cursor=pointer]:
+              - /url: /boyundan-baglamali-balon-elbise?Renkler=BEYAZ&Normal-Beden=S
+              - generic [ref=e228]:
+                - img "BOYUNDAN BAĞLAMALI BALON ELBİSE - BEYAZ" [ref=e232]
+                - generic [ref=e233]:
+                  - heading "BOYUNDAN BAĞLAMALI BALON ELBİSE - BEYAZ" [level=2] [ref=e234]
+                  - generic [ref=e237]: ₺ 1,779.90
+            - link "EKRU DESENLİ FLORA PAÇA JEAN EKRU DESENLİ FLORA PAÇA JEAN ₺ 1,719.90" [ref=e239] [cursor=pointer]:
+              - /url: /ekru-desenli-flora-paca-jean
+              - generic [ref=e240]:
+                - img "EKRU DESENLİ FLORA PAÇA JEAN" [ref=e244]
+                - generic [ref=e245]:
+                  - heading "EKRU DESENLİ FLORA PAÇA JEAN" [level=2] [ref=e246]
+                  - generic [ref=e249]: ₺ 1,719.90
+            - link "OVERSİZE GÖMLEK ŞORT TAKIM - LACİVERT OVERSİZE GÖMLEK ŞORT TAKIM - LACİVERT ₺ 1,899.90" [ref=e251] [cursor=pointer]:
+              - /url: /oversize-gomlek-sort-takim-1?Renkler=LAC%C4%B0VERT&Normal-Beden=M
+              - generic [ref=e252]:
+                - img "OVERSİZE GÖMLEK ŞORT TAKIM - LACİVERT" [ref=e256]
+                - generic [ref=e257]:
+                  - heading "OVERSİZE GÖMLEK ŞORT TAKIM - LACİVERT" [level=2] [ref=e258]
+                  - generic [ref=e261]: ₺ 1,899.90
+            - link "DEGAJE YAKA PUANTIYELI BLUZ DEGAJE YAKA PUANTIYELI BLUZ ₺ 799.90" [ref=e263] [cursor=pointer]:
+              - /url: /degaje-yaka-puantiyeli-bluz
+              - generic [ref=e264]:
+                - img "DEGAJE YAKA PUANTIYELI BLUZ" [ref=e268]
+                - generic [ref=e269]:
+                  - heading "DEGAJE YAKA PUANTIYELI BLUZ" [level=2] [ref=e270]
+                  - generic [ref=e273]: ₺ 799.90
+            - link "YELEK ŞALVAR PANTOLON TAKIM YELEK ŞALVAR PANTOLON TAKIM ₺ 2,499.90" [ref=e275] [cursor=pointer]:
+              - /url: /yelek-pantolon-takim-1
+              - generic [ref=e276]:
+                - img "YELEK ŞALVAR PANTOLON TAKIM" [ref=e280]
+                - generic [ref=e281]:
+                  - heading "YELEK ŞALVAR PANTOLON TAKIM" [level=2] [ref=e282]
+                  - generic [ref=e285]: ₺ 2,499.90
+            - link "PİLELİ ETEK BLUZ İKİLİ TAKIM PİLELİ ETEK BLUZ İKİLİ TAKIM ₺ 3,199.90" [ref=e287] [cursor=pointer]:
+              - /url: /pileli-etek-bluz-ikili-takim
+              - generic [ref=e288]:
+                - img "PİLELİ ETEK BLUZ İKİLİ TAKIM" [ref=e292]
+                - generic [ref=e293]:
+                  - heading "PİLELİ ETEK BLUZ İKİLİ TAKIM" [level=2] [ref=e294]
+                  - generic [ref=e297]: ₺ 3,199.90
+            - link "İNCE IP ASKILI DENIM ELBISE İNCE IP ASKILI DENIM ELBISE ₺ 2,149.90" [ref=e299] [cursor=pointer]:
+              - /url: /ince-ip-askili-denim-elbise
+              - generic [ref=e300]:
+                - img "İNCE IP ASKILI DENIM ELBISE" [ref=e304]
+                - generic [ref=e305]:
+                  - heading "İNCE IP ASKILI DENIM ELBISE" [level=2] [ref=e306]
+                  - generic [ref=e309]: ₺ 2,149.90
+            - link "BEYAZ YIRTMAÇ DETAYLI ELBİSE BEYAZ YIRTMAÇ DETAYLI ELBİSE ₺ 2,099.90" [ref=e311] [cursor=pointer]:
+              - /url: /beyaz-yirtmac-detayli-elbise
+              - generic [ref=e312]:
+                - img "BEYAZ YIRTMAÇ DETAYLI ELBİSE" [ref=e316]
+                - generic [ref=e317]:
+                  - heading "BEYAZ YIRTMAÇ DETAYLI ELBİSE" [level=2] [ref=e318]
+                  - generic [ref=e321]: ₺ 2,099.90
+            - link "STRAPLEZ PENCERE DETAYLI ELBİSE - MAVİ STRAPLEZ PENCERE DETAYLI ELBİSE - MAVİ ₺ 1,179.90" [ref=e323] [cursor=pointer]:
+              - /url: /straplez-kesik-detayli-midi-elbise-1?Renkler=MAV%C4%B0&Normal-Beden=M
+              - generic [ref=e324]:
+                - img "STRAPLEZ PENCERE DETAYLI ELBİSE - MAVİ" [ref=e328]
+                - generic [ref=e329]:
+                  - heading "STRAPLEZ PENCERE DETAYLI ELBİSE - MAVİ" [level=2] [ref=e330]
+                  - generic [ref=e333]: ₺ 1,179.90
+            - link "STRAPLEZ PENCERE DETAYLI ELBİSE - SARI STRAPLEZ PENCERE DETAYLI ELBİSE - SARI ₺ 1,179.90" [ref=e335] [cursor=pointer]:
+              - /url: /straplez-kesik-detayli-midi-elbise-1?Renkler=SARI&Normal-Beden=M
+              - generic [ref=e336]:
+                - img "STRAPLEZ PENCERE DETAYLI ELBİSE - SARI" [ref=e340]
+                - generic [ref=e341]:
+                  - heading "STRAPLEZ PENCERE DETAYLI ELBİSE - SARI" [level=2] [ref=e342]
+                  - generic [ref=e345]: ₺ 1,179.90
+            - link "STRAPLEZ PENCERE DETAYLI ELBİSE - KAHVE STRAPLEZ PENCERE DETAYLI ELBİSE - KAHVE ₺ 1,179.90" [ref=e347] [cursor=pointer]:
+              - /url: /straplez-kesik-detayli-midi-elbise-1?Renkler=KAHVE&Normal-Beden=M
+              - generic [ref=e348]:
+                - img "STRAPLEZ PENCERE DETAYLI ELBİSE - KAHVE" [ref=e352]
+                - generic [ref=e353]:
+                  - heading "STRAPLEZ PENCERE DETAYLI ELBİSE - KAHVE" [level=2] [ref=e354]
+                  - generic [ref=e357]: ₺ 1,179.90
+            - link "ÇİZGİLİ ŞORT TAKIM - YEŞİL ÇİZGİLİ ŞORT TAKIM - YEŞİL ₺ 1,129.90" [ref=e359] [cursor=pointer]:
+              - /url: /cizgili-sort-takim?Renkler=YE%C5%9E%C4%B0L&Standart-Beden=STD
+              - generic [ref=e360]:
+                - img "ÇİZGİLİ ŞORT TAKIM - YEŞİL" [ref=e364]
+                - generic [ref=e365]:
+                  - heading "ÇİZGİLİ ŞORT TAKIM - YEŞİL" [level=2] [ref=e366]
+                  - generic [ref=e369]: ₺ 1,129.90
+            - link "ÇİZGİLİ ŞORT TAKIM - SİYAH ÇİZGİLİ ŞORT TAKIM - SİYAH ₺ 1,129.90" [ref=e371] [cursor=pointer]:
+              - /url: /cizgili-sort-takim?Renkler=S%C4%B0YAH&Standart-Beden=STD
+              - generic [ref=e372]:
+                - img "ÇİZGİLİ ŞORT TAKIM - SİYAH" [ref=e376]
+                - generic [ref=e377]:
+                  - heading "ÇİZGİLİ ŞORT TAKIM - SİYAH" [level=2] [ref=e378]
+                  - generic [ref=e381]: ₺ 1,129.90
+          - generic [ref=e383]:
+            - text: Yükleniyor
+            - img [ref=e384]
+    - contentinfo [ref=e394]:
+      - generic [ref=e396]:
+        - generic [ref=e398]:
+          - generic [ref=e399]:
+            - paragraph [ref=e400]: Kategoriler
+            - list [ref=e401]:
+              - listitem [ref=e402]:
+                - link "Anasayfa" [ref=e403] [cursor=pointer]:
+                  - /url: /
+              - listitem [ref=e404]:
+                - link "Üst Giyim" [ref=e405] [cursor=pointer]:
+                  - /url: /ust-giyim
+              - listitem [ref=e406]:
+                - link "Alt Giyim" [ref=e407] [cursor=pointer]:
+                  - /url: /alt-giyim
+              - listitem [ref=e408]:
+                - link "Dış Giyim" [ref=e409] [cursor=pointer]:
+                  - /url: /dis-giyim
+              - listitem [ref=e410]:
+                - link "İndirim" [ref=e411] [cursor=pointer]:
+                  - /url: /indirim
+          - generic [ref=e412]:
+            - paragraph [ref=e413]: Hesabım
+            - list [ref=e414]:
+              - listitem [ref=e415]:
+                - link "Giriş Yap" [ref=e416] [cursor=pointer]:
+                  - /url: /account/login
+              - listitem [ref=e417]:
+                - link "Kayıt Ol" [ref=e418] [cursor=pointer]:
+                  - /url: /account/register
+              - listitem [ref=e419]:
+                - link "Favorilerim" [ref=e420] [cursor=pointer]:
+                  - /url: /account/favorite-products
+              - listitem [ref=e421]:
+                - link "Siparişlerim" [ref=e422] [cursor=pointer]:
+                  - /url: /account/orders
+              - listitem [ref=e423]:
+                - link "Sipariş Takip" [ref=e424] [cursor=pointer]:
+                  - /url: /pages/order-tracking
+          - generic [ref=e425]:
+            - paragraph [ref=e426]: Hakkımızda
+            - list [ref=e427]:
+              - listitem [ref=e428]:
+                - link "İletişim" [ref=e429] [cursor=pointer]:
+                  - /url: /pages/iletisim
+              - listitem [ref=e430]:
+                - link "KVKK" [ref=e431] [cursor=pointer]:
+                  - /url: https://sinemkivanc.com/pages/kvkk
+              - listitem [ref=e432]:
+                - link "Mesafeli Satış Sözleşmesi" [ref=e433] [cursor=pointer]:
+                  - /url: https://sinemkivanc.com/pages/mesafeli-satis-sozlesmesi
+              - listitem [ref=e434]:
+                - link "İade Politikası" [ref=e435] [cursor=pointer]:
+                  - /url: /pages/iade-politikasi
+        - generic [ref=e436]:
+          - generic [ref=e437]:
+            - blockquote [ref=e438]: Bizi sosyal medya hesaplarımızdan takip et, yeni ürünlerden ilk sen haberdar ol!
+            - link "Submit" [ref=e439] [cursor=pointer]:
+              - /url: https://dijitaldesin.com
+              - button "Submit" [ref=e440]: submit
+          - list [ref=e441]:
+            - listitem [ref=e442]:
+              - link "Facebook" [ref=e443] [cursor=pointer]:
+                - /url: https://www.facebook.com/profile.php?id=100086712930564
+                - img [ref=e444]
+            - listitem [ref=e446]:
+              - link "Instagram" [ref=e447] [cursor=pointer]:
+                - /url: https://instagram.com/sinemkivanc.co
+                - img [ref=e448]
+      - generic [ref=e453]:
+        - img "visa" [ref=e455]
+        - img "maestro" [ref=e457]
+        - img "mastercard" [ref=e459]
+      - generic [ref=e462]: .
+  - link "" [ref=e463] [cursor=pointer]:
+    - /url: https://api.whatsapp.com/send?phone=905055820059&text=Merhaba!
+    - generic [ref=e464]: 
+  - link "" [ref=e465] [cursor=pointer]:
+    - /url: https://api.whatsapp.com/send?phone=905055820059&text=Merhaba!
+    - generic [ref=e466]: 
+  - link "" [ref=e467] [cursor=pointer]:
+    - /url: https://api.whatsapp.com/send?phone=905055820059&text=Merhaba!
+    - generic [ref=e468]: 
+  - alert [ref=e469]
+  - generic:
+    - option "Afganistan"
+    - option "Åland Adaları"
+    - option "Almanya"
+    - option "Amerika Birleşik Devletleri"
+    - option "Amerikan Samoası"
+    - option "Andorra"
+    - option "Angola"
+    - option "Anguilla"
+    - option "Antigua ve Barbuda"
+    - option "Arjantin"
+    - option "Arnavutluk"
+    - option "Aruba"
+    - option "Avustralya"
+    - option "Avusturya"
+    - option "Azerbaycan"
+    - option "Aziz Barthélemy"
+    - option "Aziz Helena"
+    - option "Bahamalar"
+    - option "Bahreyn"
+    - option "Bangladeş"
+    - option "Barbados"
+    - option "Batı Sahra"
+    - option "Belçika"
+    - option "Belize"
+    - option "Benin"
+    - option "Bermuda"
+    - option "Beyaz Rusya"
+    - option "Birleşik Arap Emirlikleri"
+    - option "Bolivya"
+    - option "Bonaire, Sint Eustatius ve Saba"
+    - option "Bosna Hersek"
+    - option "Botsvana"
+    - option "Brezilya"
+    - option "Brunei Darussalam"
+    - option "Bulgaristan"
+    - option "Burkina Faso"
+    - option "Burma"
+    - option "Burundi"
+    - option "Butan"
+    - option "Cayman Adaları"
+    - option "Cebelitarık"
+    - option "Cezayir"
+    - option "Christmas Adası"
+    - option "Cibuti"
+    - option "Cocos (Keeling) Adaları"
+    - option "Cook Adaları"
+    - option "Curaçao"
+    - option "Çad"
+    - option "Çek Cumhuriyeti"
+    - option "Çin"
+    - option "Danimarka"
+    - option "Doğu Timor"
+    - option "Dominik Cumhuriyeti"
+    - option "Dominika"
+    - option "Ekvador"
+    - option "Ekvator Ginesi"
+    - option "El Salvador"
+    - option "Endonezya"
+    - option "Eritre"
+    - option "Ermenistan"
+    - option "Estonya"
+    - option "Etiyopya"
+    - option "Falkland Adaları"
+    - option "Faroe Adaları"
+    - option "Fas"
+    - option "Fiji"
+    - option "Fildişi Sahili"
+    - option "Filipinler"
+    - option "Filistin"
+    - option "Finlandiya"
+    - option "Fransa"
+    - option "Fransız Guyanası"
+    - option "Fransız Polinezyası"
+    - option "Gabon"
+    - option "Gambiya"
+    - option "Gana"
+    - option "Gine"
+    - option "Gine-Bissau"
+    - option "Grenada"
+    - option "Grönland"
+    - option "Guadeloupe"
+    - option "Guam"
+    - option "Guatemala"
+    - option "Guernsey"
+    - option "Guyana"
+    - option "Güney Afrika"
+    - option "Güney Kore"
+    - option "Güney Sudan"
+    - option "Gürcistan"
+    - option "Haiti"
+    - option "Hırvatistan"
+    - option "Hindistan'da"
+    - option "Hollanda"
+    - option "Holy See (Vatikan Şehir Devleti)"
+    - option "Honduras"
+    - option "Hong Kong"
+    - option "Irak"
+    - option "İngiliz Hint Okyanusu Bölgesi"
+    - option "İngiltere"
+    - option "İran"
+    - option "İrlanda"
+    - option "İspanya"
+    - option "İsrail"
+    - option "İsveç"
+    - option "İsviçre"
+    - option "İtalya"
+    - option "İzlanda"
+    - option "Jamaika"
+    - option "Japonya"
+    - option "Jersey"
+    - option "Kamboçya"
+    - option "Kamerun"
+    - option "Kanada"
+    - option "Karadağ"
+    - option "Katar"
+    - option "Kazakistan"
+    - option "Kenya"
+    - option "Kıbrıs"
+    - option "Kırgızistan"
+    - option "Kiribati"
+    - option "Kolombiya"
+    - option "Komorlar"
+    - option "Kongo"
+    - option "Kongo, Demokratik Cumhuriyeti"
+    - option "Kosova"
+    - option "Kosta Rika"
+    - option "Kuveyt"
+    - option "Kuzey Kore"
+    - option "Kuzey Makedonya"
+    - option "Kuzey Mariana Adaları"
+    - option "Küba"
+    - option "Laos"
+    - option "Lesotho"
+    - option "Letonya"
+    - option "Liberya"
+    - option "Libya"
+    - option "Lihtenştayn"
+    - option "Litvanya"
+    - option "Lübnan"
+    - option "Lüksemburg"
+    - option "Macaristan"
+    - option "Madagaskar"
+    - option "Makao"
+    - option "Malavi"
+    - option "Maldivler"
+    - option "Malezya"
+    - option "Mali"
+    - option "Malta"
+    - option "Man Adası"
+    - option "Marshall Adaları"
+    - option "Martinik"
+    - option "Mauritius"
+    - option "Mayotte"
+    - option "Meksika"
+    - option "Mısır"
+    - option "Mikronezya Federal Devletleri"
+    - option "Moğolistan"
+    - option "Moldova"
+    - option "Monako"
+    - option "Montserrat"
+    - option "Moritanya"
+    - option "Mozambik"
+    - option "Namibya"
+    - option "Nauru"
+    - option "Nepal"
+    - option "Nijer"
+    - option "Nijerya"
+    - option "Nikaragua"
+    - option "Niue"
+    - option "Norfolk Adası"
+    - option "Norveç"
+    - option "Orta Afrika Cumhuriyeti"
+    - option "Özbekistan"
+    - option "Pakistan"
+    - option "Palau"
+    - option "Panama"
+    - option "Papua Yeni Gine"
+    - option "Paraguay"
+    - option "Peru"
+    - option "Polonya"
+    - option "Portekiz"
+    - option "Porto Riko"
+    - option "Romanya"
+    - option "Ruanda"
+    - option "Rusya"
+    - option "Saint Kitts ve Nevis"
+    - option "Saint Lucia"
+    - option "Saint Martin (Fransız Bölgesi)"
+    - option "Saint Pierre ve Miquelon"
+    - option "Saint Vincent ve Grenadinler"
+    - option "Samoa"
+    - option "San Marino"
+    - option "Sao Tome ve Principe"
+    - option "Senegal"
+    - option "Seyşeller"
+    - option "Sırbistan"
+    - option "Sierra Leone"
+    - option "Singapur"
+    - option "Sint Maarten"
+    - option "Slovakya"
+    - option "Slovenya"
+    - option "Solomon Adaları"
+    - option "Somali"
+    - option "Sri Lanka"
+    - option "Sudan"
+    - option "Surinam"
+    - option "Suriye"
+    - option "Suudi Arabistan"
+    - option "Svalbard ve Jan Mayen"
+    - option "Svaziland"
+    - option "Şili"
+    - option "Tacikistan"
+    - option "Tanzanya"
+    - option "Tayland"
+    - option "Tayvan"
+    - option "Togo"
+    - option "Tokelau"
+    - option "Tonga"
+    - option "Trinidad ve Tobago"
+    - option "Tristan da Cunha"
+    - option "Tunus"
+    - option "Turks ve Caicos Adaları"
+    - option "Tuvalu"
+    - option "Türkiye" [selected]
+    - option "Türkmenistan"
+    - option "Uganda"
+    - option "Ukrayna"
+    - option "Umman"
+    - option "Uruguay"
+    - option "Ürdün"
+    - option "Vanuatu"
+    - option "Venezuela"
+    - option "Vietnam"
+    - option "Virgin Adaları, ABD"
+    - option "Virgin Adaları, İngiliz"
+    - option "Wallis ve Futuna"
+    - option "Yemen"
+    - option "Yeni Kaledonya"
+    - option "Yeni Zelanda"
+    - option "Yeniden Birleşme"
+    - option "Yeşil Burun Adaları"
+    - option "Yunanistan"
+    - option "Yükseliş Adası"
+    - option "Zambiya"
+    - option "Zimbabve"
+  - link "" [ref=e470] [cursor=pointer]:
+    - /url: https://api.whatsapp.com/send?phone=905055820059&text=Merhaba!
+    - generic [ref=e471]: 

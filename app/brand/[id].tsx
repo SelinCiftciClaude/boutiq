@@ -158,9 +158,22 @@ export default function BrandDetailScreen() {
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Kampanyalar</Text>
               {campaigns.map(c => (
-                <View key={c.id} style={styles.campaignCard}>
+                <TouchableOpacity
+                  key={c.id}
+                  style={styles.campaignCard}
+                  activeOpacity={0.88}
+                  onPress={() => {
+                    trackAffiliateClick(user?.id ?? null, c.brandId, null, c.affiliateUrl || c.url);
+                    Linking.openURL(c.affiliateUrl || c.url);
+                  }}
+                >
                   <LinearGradient colors={[Colors.surface1, Colors.surface2]} style={StyleSheet.absoluteFill} />
                   <View style={styles.campaignTop} />
+                  {c.isSponsored && (
+                    <View style={styles.sponsoredBadge}>
+                      <Text style={styles.sponsoredText}>Sponsorlu</Text>
+                    </View>
+                  )}
                   <View style={styles.campaignBody}>
                     <Text style={styles.campaignTitle}>{c.title}</Text>
                     {c.discount && (
@@ -175,7 +188,7 @@ export default function BrandDetailScreen() {
                       </TouchableOpacity>
                     )}
                   </View>
-                </View>
+                </TouchableOpacity>
               ))}
             </View>
           )}
@@ -273,6 +286,13 @@ const styles = StyleSheet.create({
     borderColor: Colors.borderGold, marginBottom: 10,
   },
   campaignTop: { height: 3, backgroundColor: Colors.gold3 },
+  sponsoredBadge: {
+    position: 'absolute', top: 10, right: 10,
+    backgroundColor: Colors.glassGold, borderRadius: 6,
+    paddingHorizontal: 7, paddingVertical: 2,
+    borderWidth: 1, borderColor: Colors.borderGold,
+  },
+  sponsoredText: { fontSize: 9, fontWeight: '700', color: Colors.gold3, letterSpacing: 0.5 },
   campaignBody: { padding: 14, gap: 6 },
   campaignTitle: { fontSize: 15, fontWeight: '700', color: Colors.text1 },
   campaignDiscount: { fontSize: 13, color: Colors.rose3, fontWeight: '700' },
