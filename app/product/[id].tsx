@@ -13,6 +13,8 @@ import Svg, { Polyline, Line, Circle } from 'react-native-svg';
 import { Colors } from '@/constants/Colors';
 import { useProductDetail } from '@/hooks/useProductDetail';
 import { useSavedProducts } from '@/hooks/useSavedProducts';
+import { useAuth } from '@/context/AuthContext';
+import { trackAffiliateClick } from '@/services/queries';
 import { ProductCard } from '@/components/ProductCard';
 
 const { width } = Dimensions.get('window');
@@ -71,6 +73,7 @@ const chartStyles = StyleSheet.create({
 export default function ProductDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
+  const { user } = useAuth();
   const { product: productQ, related: relatedQ, priceHistory } = useProductDetail(id);
   const { add: saveProduct, remove: unsaveProduct, isSaved } = useSavedProducts();
   const [imgIdx, setImgIdx] = useState(0);
@@ -236,7 +239,10 @@ export default function ProductDetailScreen() {
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.visitBottomBtn}
-          onPress={() => Linking.openURL(product.affiliateUrl || product.url)}
+          onPress={() => {
+            trackAffiliateClick(user?.id ?? null, product.brandId, product.id, product.affiliateUrl || product.url);
+            Linking.openURL(product.affiliateUrl || product.url);
+          }}
         >
           <LinearGradient colors={[Colors.rose2, Colors.rose4]} style={StyleSheet.absoluteFill} />
           <Ionicons name="open-outline" size={18} color="#fff" />

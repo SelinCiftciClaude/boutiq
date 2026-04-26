@@ -108,6 +108,7 @@ export interface Campaign {
   url: string;
   affiliateUrl: string;
   isRead: boolean;
+  isSponsored: boolean;
   createdAt: string;
 }
 

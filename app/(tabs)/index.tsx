@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import * as Clipboard from 'expo-clipboard';
+import * as Linking from 'expo-linking';
 import { router } from 'expo-router';
 import { Colors } from '../../constants/Colors';
 import { CATEGORIES } from '../../constants/MockData';
@@ -27,12 +28,18 @@ import { useProducts } from '@/hooks/useProducts';
 import { useCampaigns } from '@/hooks/useCampaigns';
 import { useInterests, INTEREST_TO_CATEGORY } from '@/context/InterestsContext';
 import { useNotifications } from '@/hooks/useNotifications';
+import { useAuth } from '@/context/AuthContext';
+import { trackAffiliateClick } from '@/services/queries';
 import { Brand, Campaign } from '../../types';
 
-function CampaignBanner({ campaign, onCopyCode }: { campaign: Campaign; onCopyCode: (code: string) => void }) {
+function CampaignBanner({ campaign, onCopyCode, userId }: { campaign: Campaign; onCopyCode: (code: string) => void; userId?: string }) {
   const code = campaign.code ?? 'BOUTIQ10';
+  const handlePress = () => {
+    trackAffiliateClick(userId ?? null, campaign.brandId, null, campaign.affiliateUrl || campaign.url);
+    Linking.openURL(campaign.affiliateUrl || campaign.url);
+  };
   return (
-    <TouchableOpacity activeOpacity={0.88} style={styles.campaignCard}>
+    <TouchableOpacity activeOpacity={0.88} style={styles.campaignCard} onPress={handlePress}>
       <LinearGradient
         colors={[Colors.surface1, Colors.surface2]}
         start={{ x: 0, y: 0 }}
@@ -40,6 +47,11 @@ function CampaignBanner({ campaign, onCopyCode }: { campaign: Campaign; onCopyCo
         style={StyleSheet.absoluteFill}
       />
       <View style={styles.campaignAccent} />
+      {campaign.isSponsored && (
+        <View style={styles.sponsoredBadge}>
+          <Text style={styles.sponsoredText}>Sponsorlu</Text>
+        </View>
+      )}
       <View style={styles.campaignContent}>
         <View style={styles.campaignLeft}>
           <Image source={{ uri: campaign.brandLogo }} style={styles.campaignLogo} />
@@ -57,7 +69,7 @@ function CampaignBanner({ campaign, onCopyCode }: { campaign: Campaign; onCopyCo
         </View>
         <TouchableOpacity
           style={styles.codeBox}
-          onPress={() => onCopyCode(code)}
+          onPress={(e) => { e.stopPropagation?.(); onCopyCode(code); }}
           activeOpacity={0.7}
         >
           <Text style={styles.codeText}>{code}</Text>
@@ -76,6 +88,7 @@ export default function HomeScreen() {
   const scrollY = useRef(new Animated.Value(0)).current;
   const [addSheetBrand, setAddSheetBrand] = useState<Brand | null>(null);
 
+  const { user } = useAuth();
   const { data: brands = [] } = useBrands();
   const { data: products = [] } = useProducts();
   const { data: campaigns = [] } = useCampaigns();
@@ -268,7 +281,7 @@ export default function HomeScreen() {
               data={activeCampaigns}
               keyExtractor={(c) => c.id}
               renderItem={({ item }) => (
-                <CampaignBanner campaign={item} onCopyCode={handleCopyCode} />
+                <CampaignBanner campaign={item} onCopyCode={handleCopyCode} userId={user?.id} />
               )}
               ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
               scrollEnabled={false}
@@ -484,6 +497,13 @@ const styles = StyleSheet.create({
     position: 'absolute', top: 0, left: 0, right: 0, height: 2,
     backgroundColor: Colors.gold3, opacity: 0.8,
   },
+  sponsoredBadge: {
+    position: 'absolute', top: 8, right: 8,
+    backgroundColor: Colors.glassGold, borderRadius: 6,
+    paddingHorizontal: 7, paddingVertical: 2,
+    borderWidth: 1, borderColor: Colors.borderGold,
+  },
+  sponsoredText: { fontSize: 9, fontWeight: '700', color: Colors.gold3, letterSpacing: 0.5 },
   campaignContent: {
     flexDirection: 'row', alignItems: 'center',
     justifyContent: 'space-between', padding: 16, gap: 12,

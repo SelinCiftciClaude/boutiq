@@ -380,6 +380,7 @@ export const MOCK_CAMPAIGNS: Campaign[] = [
     url: 'https://noirestudio.com/yaz',
     affiliateUrl: 'https://noirestudio.com/yaz?ref=boutiq',
     isRead: false,
+    isSponsored: false,
     createdAt: '2026-04-24T09:00:00',
   },
   {
@@ -393,6 +394,7 @@ export const MOCK_CAMPAIGNS: Campaign[] = [
     url: 'https://solkollektiv.com/cosmos',
     affiliateUrl: 'https://solkollektiv.com/cosmos?ref=boutiq',
     isRead: false,
+    isSponsored: false,
     createdAt: '2026-04-23T14:00:00',
     endsAt: '2026-05-15T23:59:00',
   },
@@ -410,6 +412,7 @@ export const MOCK_CAMPAIGNS: Campaign[] = [
     url: 'https://arceleather.com/vintage',
     affiliateUrl: 'https://arceleather.com/vintage?ref=boutiq',
     isRead: true,
+    isSponsored: false,
     createdAt: '2026-04-22T10:00:00',
   },
 ];

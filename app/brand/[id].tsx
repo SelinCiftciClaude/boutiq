@@ -12,6 +12,8 @@ import * as Linking from 'expo-linking';
 import { Colors } from '@/constants/Colors';
 import { useBrandDetail } from '@/hooks/useBrandDetail';
 import { useSavedBrands } from '@/hooks/useSavedBrands';
+import { useAuth } from '@/context/AuthContext';
+import { trackAffiliateClick } from '@/services/queries';
 import { ProductCard } from '@/components/ProductCard';
 import { useSavedProducts } from '@/hooks/useSavedProducts';
 import * as Clipboard from 'expo-clipboard';
@@ -19,6 +21,7 @@ import * as Clipboard from 'expo-clipboard';
 export default function BrandDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
+  const { user } = useAuth();
   const { brand: brandQ, products: productsQ, campaigns: campaignsQ } = useBrandDetail(id);
   const savedBrands = useSavedBrands();
   const { remove: unsaveProduct } = useSavedProducts();
@@ -140,7 +143,10 @@ export default function BrandDetailScreen() {
 
             <TouchableOpacity
               style={styles.visitBtn}
-              onPress={() => Linking.openURL(brand.affiliateUrl || brand.website)}
+              onPress={() => {
+                trackAffiliateClick(user?.id ?? null, brand.id, null, brand.affiliateUrl || brand.website);
+                Linking.openURL(brand.affiliateUrl || brand.website);
+              }}
             >
               <Ionicons name="open-outline" size={16} color={Colors.text2} />
               <Text style={styles.visitBtnText}>Siteye Git</Text>

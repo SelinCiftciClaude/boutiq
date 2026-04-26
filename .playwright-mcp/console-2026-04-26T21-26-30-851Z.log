@@ -1,0 +1,9 @@
+[     225ms] [ERROR] Access to fetch at 'https://dev.pushouse.com/integrations/ikas/module-scripts/sinemkivanc.com' from origin 'https://sinemkivanc.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ https://sinemkivanc.com/yeni-sezon:0
+[     228ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://dev.pushouse.com/integrations/ikas/module-scripts/sinemkivanc.com:0
+[     228ms] [LOG] Error: TypeError: Failed to fetch
+    at Object.init (https://dev.pushouse.com/static/ikas_root.js:21:7)
+    at HTMLDocument.<anonymous> (https://dev.pushouse.com/static/ikas_root.js:48:15) @ https://dev.pushouse.com/static/ikas_root.js:40
+[     456ms] [WARNING] [Meta Pixel] - You are sending a non-standard event 'ViewCategory'. The preferred way to send these events is using trackCustom. See 'https://developers.facebook.com/docs/ads-for-websites/pixel-events/#events' for more information. @ https://connect.facebook.net/en_US/fbevents.js:181
+[     466ms] [LOG] Current actions before storage update: {l: 4, p: 0, c: 0} @ https://cdn.enhencer.com/scripts/collector_v2.js?token=676bea9fd8aa3c554788b8a2:0
+[     466ms] [LOG] Data being stored: {lc: Array(1), pc: Array(0), uv: Array(1), actions: Object} @ https://cdn.enhencer.com/scripts/collector_v2.js?token=676bea9fd8aa3c554788b8a2:0
+[    1151ms] [ERROR] Attestation check for Attribution Reporting on https://www.facebook.com failed. @ https://sinemkivanc.com/yeni-sezon:0

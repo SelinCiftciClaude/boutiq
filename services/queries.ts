@@ -155,6 +155,7 @@ export async function fetchCampaignsForUser(userId: string): Promise<Campaign[]>
     .select('*, brands(name, logo_url)')
     .in('brand_id', brandIds)
     .eq('is_active', true)
+    .order('is_sponsored', { ascending: false })
     .order('created_at', { ascending: false });
   if (error) throw error;
   return (data ?? []).map((row: any) => fromDbCampaign(row, row.brands, readSet.has(row.id)));
@@ -236,6 +237,7 @@ export async function fetchCampaignsByBrand(brandId: string): Promise<Campaign[]
     .select('*, brands(name, logo_url)')
     .eq('brand_id', brandId)
     .eq('is_active', true)
+    .order('is_sponsored', { ascending: false })
     .order('created_at', { ascending: false });
   if (error) throw error;
   return (data ?? []).map((row: any) => fromDbCampaign(row, row.brands));

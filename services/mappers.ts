@@ -107,6 +107,7 @@ export function fromDbCampaign(
     url: row.url,
     affiliateUrl: row.affiliate_url ?? row.url,
     isRead,
+    isSponsored: !!row.is_sponsored,
     createdAt: row.created_at,
   };
 }
