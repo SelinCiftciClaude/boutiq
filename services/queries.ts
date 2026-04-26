@@ -111,6 +111,23 @@ export async function removeSavedProduct(userId: string, productId: string): Pro
   if (error) throw error;
 }
 
+export async function addManualShipment(
+  userId: string,
+  params: { brandName: string; orderNumber: string; trackingNumber?: string; carrier: string }
+): Promise<void> {
+  const { error } = await supabase.from('shipments').insert({
+    user_id: userId,
+    brand_name: params.brandName,
+    order_number: params.orderNumber,
+    tracking_number: params.trackingNumber || null,
+    carrier: params.carrier,
+    status: 'processing',
+    status_label: 'İşleniyor',
+    source: 'manual',
+  });
+  if (error) throw error;
+}
+
 export async function fetchShipments(userId: string): Promise<Shipment[]> {
   const { data, error } = await supabase
     .from('shipments')
@@ -151,6 +168,77 @@ export async function markCampaignRead(userId: string, campaignId: string): Prom
       { onConflict: 'user_id,campaign_id' }
     );
   if (error) throw error;
+}
+
+export async function fetchBrandById(brandId: string, userId?: string): Promise<Brand | null> {
+  const [brandRes, savedRes] = await Promise.all([
+    supabase.from('brands').select('*').eq('id', brandId).single(),
+    userId
+      ? supabase.from('user_brands').select('is_favorite').eq('user_id', userId).eq('brand_id', brandId).maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
+  ]);
+  if (brandRes.error) throw brandRes.error;
+  return fromDbBrand(brandRes.data, !!savedRes.data);
+}
+
+export async function fetchProductsByBrand(brandId: string, userId?: string): Promise<Product[]> {
+  const [productsRes, savedRes] = await Promise.all([
+    supabase.from('products').select('*, brands(name, logo_url)').eq('brand_id', brandId).order('created_at', { ascending: false }),
+    userId
+      ? supabase.from('saved_products').select('product_id, saved_at').eq('user_id', userId)
+      : Promise.resolve({ data: [], error: null }),
+  ]);
+  if (productsRes.error) throw productsRes.error;
+  if (savedRes.error) throw savedRes.error;
+  const savedMap = new Map<string, string>((savedRes.data ?? []).map((r: any) => [r.product_id, r.saved_at]));
+  return (productsRes.data ?? []).map((p: any) => fromDbProduct(p, p.brands, savedMap.has(p.id), savedMap.get(p.id)));
+}
+
+export async function fetchProductById(productId: string, userId?: string): Promise<Product | null> {
+  const [productRes, savedRes] = await Promise.all([
+    supabase.from('products').select('*, brands(name, logo_url)').eq('id', productId).single(),
+    userId
+      ? supabase.from('saved_products').select('saved_at').eq('user_id', userId).eq('product_id', productId).maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
+  ]);
+  if (productRes.error) throw productRes.error;
+  const p = productRes.data;
+  return fromDbProduct(p, p.brands, !!savedRes.data, savedRes.data?.saved_at);
+}
+
+export async function fetchRelatedProducts(category: string, excludeId: string, userId?: string): Promise<Product[]> {
+  const [productsRes, savedRes] = await Promise.all([
+    supabase.from('products').select('*, brands(name, logo_url)').eq('category', category).neq('id', excludeId).limit(6),
+    userId
+      ? supabase.from('saved_products').select('product_id, saved_at').eq('user_id', userId)
+      : Promise.resolve({ data: [], error: null }),
+  ]);
+  if (productsRes.error) throw productsRes.error;
+  if (savedRes.error) throw savedRes.error;
+  const savedMap = new Map<string, string>((savedRes.data ?? []).map((r: any) => [r.product_id, r.saved_at]));
+  return (productsRes.data ?? []).map((p: any) => fromDbProduct(p, p.brands, savedMap.has(p.id), savedMap.get(p.id)));
+}
+
+export async function fetchPriceHistory(productId: string): Promise<{ price: number; recordedAt: string }[]> {
+  const { data, error } = await supabase
+    .from('product_price_history')
+    .select('price, recorded_at')
+    .eq('product_id', productId)
+    .order('recorded_at', { ascending: true })
+    .limit(30);
+  if (error) throw error;
+  return (data ?? []).map((r: any) => ({ price: Number(r.price), recordedAt: r.recorded_at }));
+}
+
+export async function fetchCampaignsByBrand(brandId: string): Promise<Campaign[]> {
+  const { data, error } = await supabase
+    .from('campaigns')
+    .select('*, brands(name, logo_url)')
+    .eq('brand_id', brandId)
+    .eq('is_active', true)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data ?? []).map((row: any) => fromDbCampaign(row, row.brands));
 }
 
 export async function fetchProfile(userId: string): Promise<UserProfile | null> {

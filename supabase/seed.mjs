@@ -468,6 +468,43 @@ async function seedDemoUserAssociations(userId) {
   );
 }
 
+async function seedPriceHistory() {
+  const now = new Date('2026-04-25T00:00:00Z');
+  const basePrices = {
+    [P.dress]:    { base: 3200, current: 2450 },
+    [P.saddle]:   { base: 4800, current: 4800 },
+    [P.rings]:    { base: 1200, current: 980  },
+    [P.blazer]:   { base: 3100, current: 3100 },
+    [P.serum]:    { base: 650,  current: 650  },
+    [P.trousers]: { base: 1890, current: 1890 },
+  };
+
+  const rows = [];
+  for (const [productId, { base, current }] of Object.entries(basePrices)) {
+    for (let day = 29; day >= 0; day--) {
+      const date = new Date(now);
+      date.setDate(date.getDate() - day);
+      // Son 7 günde indirim uygulandıysa düşük fiyat göster
+      const discounted = current < base && day < 7;
+      const price = discounted ? current : base;
+      // Küçük günlük dalgalanma
+      const jitter = (Math.random() - 0.5) * price * 0.02;
+      rows.push({
+        product_id: productId,
+        price: Math.round((price + jitter) * 100) / 100,
+        original_price: base,
+        is_on_sale: discounted,
+        recorded_at: date.toISOString(),
+      });
+    }
+  }
+
+  await supabase.from('product_price_history').delete().in('product_id', Object.keys(basePrices));
+  const { error } = await supabase.from('product_price_history').insert(rows);
+  if (error) throw error;
+  console.log(`✓  Seeded ${rows.length} price history records`);
+}
+
 async function main() {
   console.log(`\n🌱  Seeding local Supabase at ${SUPABASE_URL}\n`);
   const userId = await ensureDemoUser();
@@ -476,6 +513,7 @@ async function main() {
   await seedCampaigns();
   await seedShipments(userId);
   await seedDemoUserAssociations(userId);
+  await seedPriceHistory();
   console.log(`\n✅  Done. Login: ${DEMO_EMAIL} / ${DEMO_PASSWORD}\n`);
 }
 

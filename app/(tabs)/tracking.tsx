@@ -6,15 +6,19 @@ import {
   ScrollView,
   TouchableOpacity,
   Modal,
-  Linking,
+  TextInput,
+  ActivityIndicator,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { Colors } from '../../constants/Colors';
 import { ShipmentCard } from '../../components/ShipmentCard';
 import { useShipments } from '@/hooks/useShipments';
+import { useProfile } from '@/hooks/useProfile';
+import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { Shipment, ShipmentStatus } from '../../types';
@@ -26,6 +30,126 @@ const STATUS_FILTERS: { label: string; value: ShipmentStatus | 'all' }[] = [
   { label: 'Teslim', value: 'delivered' },
   { label: 'İşlemde', value: 'processing' },
 ];
+
+const CARRIERS = ['Yurtiçi Kargo','MNG Kargo','PTT Kargo','Aras Kargo','Sürat Kargo','UPS','DHL','Diğer'];
+
+function AddShipmentModal({ visible, onClose, onAdd }: {
+  visible: boolean;
+  onClose: () => void;
+  onAdd: (params: { brandName: string; orderNumber: string; trackingNumber?: string; carrier: string }) => Promise<void>;
+}) {
+  const [brandName, setBrandName] = useState('');
+  const [orderNumber, setOrderNumber] = useState('');
+  const [trackingNumber, setTrackingNumber] = useState('');
+  const [carrier, setCarrier] = useState('Yurtiçi Kargo');
+  const [loading, setLoading] = useState(false);
+
+  const reset = () => { setBrandName(''); setOrderNumber(''); setTrackingNumber(''); setCarrier('Yurtiçi Kargo'); };
+
+  const handleAdd = async () => {
+    if (!brandName.trim() || !orderNumber.trim()) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setLoading(true);
+    try {
+      await onAdd({ brandName: brandName.trim(), orderNumber: orderNumber.trim(), trackingNumber: trackingNumber.trim() || undefined, carrier });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      reset();
+      onClose();
+    } catch {
+      // hata sessizce yutulur, modal açık kalır
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <View style={aStyles.overlay}>
+        <TouchableOpacity style={StyleSheet.absoluteFill} onPress={onClose} />
+        <View style={aStyles.sheet}>
+          <LinearGradient colors={[Colors.surface2, Colors.surface1]} style={StyleSheet.absoluteFill} />
+          <View style={aStyles.handle} />
+          <Text style={aStyles.title}>Kargo Ekle</Text>
+          <Text style={aStyles.subtitle}>Sipariş bilgilerini gir, biz takip edelim.</Text>
+
+          <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+            {/* Marka adı */}
+            <Text style={aStyles.label}>Mağaza / Marka *</Text>
+            <View style={aStyles.inputRow}>
+              <TextInput style={aStyles.input} placeholder="ör. Zara, Trendyol, Noire Studio" placeholderTextColor={Colors.text5} value={brandName} onChangeText={setBrandName} selectionColor={Colors.gold3} />
+            </View>
+
+            {/* Sipariş no */}
+            <Text style={aStyles.label}>Sipariş Numarası *</Text>
+            <View style={aStyles.inputRow}>
+              <TextInput style={aStyles.input} placeholder="ör. ORD-2026-1234" placeholderTextColor={Colors.text5} value={orderNumber} onChangeText={setOrderNumber} selectionColor={Colors.gold3} autoCapitalize="characters" />
+            </View>
+
+            {/* Kargo takip no */}
+            <Text style={aStyles.label}>Takip Numarası (opsiyonel)</Text>
+            <View style={aStyles.inputRow}>
+              <TextInput style={aStyles.input} placeholder="ör. YK123456789TR" placeholderTextColor={Colors.text5} value={trackingNumber} onChangeText={setTrackingNumber} selectionColor={Colors.gold3} autoCapitalize="characters" />
+            </View>
+
+            {/* Kargo firması */}
+            <Text style={aStyles.label}>Kargo Firması</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={aStyles.carrierScroll}>
+              {CARRIERS.map(c => {
+                const active = carrier === c;
+                return (
+                  <TouchableOpacity
+                    key={c}
+                    onPress={() => { Haptics.selectionAsync(); setCarrier(c); }}
+                    style={[aStyles.carrierChip, active && aStyles.carrierChipActive]}
+                  >
+                    {active && <LinearGradient colors={[Colors.gold2, Colors.gold4]} style={StyleSheet.absoluteFill} />}
+                    <Text style={[aStyles.carrierText, active && aStyles.carrierTextActive]}>{c}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+
+            <TouchableOpacity
+              style={[aStyles.addBtn, (!brandName.trim() || !orderNumber.trim()) && aStyles.addBtnDisabled]}
+              onPress={handleAdd}
+              disabled={!brandName.trim() || !orderNumber.trim() || loading}
+            >
+              <LinearGradient colors={[Colors.rose2, Colors.rose4]} style={StyleSheet.absoluteFill} />
+              {loading ? <ActivityIndicator color="#fff" /> : <Text style={aStyles.addBtnText}>Kargoyu Ekle</Text>}
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={onClose} style={aStyles.cancelBtn}>
+              <Text style={aStyles.cancelText}>İptal</Text>
+            </TouchableOpacity>
+
+            <View style={{ height: 20 }} />
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+const aStyles = StyleSheet.create({
+  overlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.65)' },
+  sheet: { borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, paddingBottom: 0, maxHeight: '90%', overflow: 'hidden', borderWidth: 1, borderBottomWidth: 0, borderColor: Colors.border2 },
+  handle: { width: 40, height: 4, backgroundColor: Colors.border3, borderRadius: 2, alignSelf: 'center', marginBottom: 24 },
+  title: { fontSize: 24, fontWeight: '800', color: Colors.text1, letterSpacing: -0.8, marginBottom: 6 },
+  subtitle: { fontSize: 14, color: Colors.text3, lineHeight: 20, marginBottom: 24 },
+  label: { fontSize: 12, fontWeight: '700', color: Colors.text4, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 8, marginTop: 4 },
+  inputRow: { backgroundColor: Colors.surface3, borderRadius: 14, borderWidth: 1, borderColor: Colors.border2, paddingHorizontal: 14, height: 50, justifyContent: 'center', marginBottom: 16 },
+  input: { fontSize: 15, color: Colors.text1 },
+  carrierScroll: { gap: 8, marginBottom: 24 },
+  carrierChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 50, backgroundColor: Colors.surface3, borderWidth: 1, borderColor: Colors.border2, overflow: 'hidden' },
+  carrierChipActive: { borderColor: Colors.gold3 },
+  carrierText: { fontSize: 13, fontWeight: '600', color: Colors.text3 },
+  carrierTextActive: { color: Colors.bg, fontWeight: '700' },
+  addBtn: { height: 54, borderRadius: 16, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', marginBottom: 12 },
+  addBtnDisabled: { opacity: 0.4 },
+  addBtnText: { fontSize: 16, fontWeight: '700', color: '#fff' },
+  cancelBtn: { alignItems: 'center', paddingVertical: 12 },
+  cancelText: { fontSize: 15, color: Colors.text4, fontWeight: '500' },
+});
 
 function ConnectMailModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
   const [step, setStep] = useState(0);
@@ -186,10 +310,13 @@ const cStyles = StyleSheet.create({
 
 export default function TrackingScreen() {
   const insets = useSafeAreaInsets();
-  const { data: shipments = [] } = useShipments();
+  const { data: shipments = [], add: addShipment } = useShipments();
+  const { data: profile } = useProfile();
   const [statusFilter, setStatusFilter] = useState<ShipmentStatus | 'all'>('all');
   const [showMailModal, setShowMailModal] = useState(false);
-  const [mailConnected] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+
+  const mailConnected = !!(profile?.connectedAccounts as any)?.gmail?.connected;
 
   const filtered = statusFilter === 'all'
     ? shipments
@@ -209,13 +336,20 @@ export default function TrackingScreen() {
           <Text style={styles.headerTitle}>Kargo Takip</Text>
         </View>
         <TouchableOpacity
-          onPress={() => setShowMailModal(true)}
+          onPress={() => mailConnected ? null : router.push('/connect-mail' as any)}
           style={[styles.mailBtn, mailConnected && styles.mailBtnConnected]}
         >
           <Ionicons name="mail" size={16} color={mailConnected ? Colors.success : Colors.gold3} />
           <Text style={[styles.mailBtnText, mailConnected && { color: Colors.success }]}>
             {mailConnected ? 'Bağlı' : 'Mail Bağla'}
           </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.addBtn}
+          onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); setShowAddModal(true); }}
+        >
+          <LinearGradient colors={[Colors.rose2, Colors.rose4]} style={StyleSheet.absoluteFill} />
+          <Ionicons name="add" size={20} color="#fff" />
         </TouchableOpacity>
       </View>
 
@@ -329,7 +463,7 @@ export default function TrackingScreen() {
         {!mailConnected && (
           <TouchableOpacity
             style={styles.mailCta}
-            onPress={() => setShowMailModal(true)}
+            onPress={() => router.push('/connect-mail' as any)}
           >
             <LinearGradient
               colors={[Colors.surface3, Colors.surface2]}
@@ -354,6 +488,11 @@ export default function TrackingScreen() {
       <ConnectMailModal
         visible={showMailModal}
         onClose={() => setShowMailModal(false)}
+      />
+      <AddShipmentModal
+        visible={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onAdd={params => addShipment.mutateAsync(params)}
       />
     </View>
   );
@@ -399,6 +538,10 @@ const styles = StyleSheet.create({
   },
   mailBtnText: {
     fontSize: 13, fontWeight: '700', color: Colors.gold3,
+  },
+  addBtn: {
+    width: 38, height: 38, borderRadius: 12, overflow: 'hidden',
+    alignItems: 'center', justifyContent: 'center', marginTop: 4,
   },
   summaryScroll: {
     paddingHorizontal: 20,

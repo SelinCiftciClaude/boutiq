@@ -93,7 +93,9 @@ export default function AllBrandsScreen() {
             {filtered.map(b => (
               <BrandCard
                 key={b.id} brand={b} variant="grid"
-                onAdd={setAddSheet} isSaved={savedBrands.isSaved(b.id)}
+                onAdd={setAddSheet}
+                onPress={brand => router.push(`/brand/${brand.id}` as any)}
+                isSaved={savedBrands.isSaved(b.id)}
               />
             ))}
           </View>

@@ -6,11 +6,11 @@ import {
   TouchableOpacity,
   StyleSheet,
   Dimensions,
-  Linking,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { Colors } from '../constants/Colors';
 import { Product } from '../types';
 import { Badge } from './ui/Badge';
@@ -38,7 +38,7 @@ export function ProductCard({ product, onUnsave, tall = false }: ProductCardProp
 
   const handleOpen = () => {
     Haptics.selectionAsync();
-    Linking.openURL(product.affiliateUrl);
+    router.push(`/product/${product.id}` as any);
   };
 
   const discount = product.originalPrice

@@ -19,6 +19,7 @@ import { CATEGORIES } from '../../constants/MockData';
 import { BrandCard } from '../../components/BrandCard';
 import { Button } from '../../components/ui/Button';
 import { BrandCategory } from '../../types';
+import { router } from 'expo-router';
 import { useBrands } from '@/hooks/useBrands';
 import { useSavedBrands } from '@/hooks/useSavedBrands';
 import { supabase } from '@/services/supabase';
@@ -430,7 +431,8 @@ export default function BrandsScreen() {
               <Text style={styles.sectionTitle}>Favoriler</Text>
             </View>
             {favorites.map((brand) => (
-              <BrandCard key={brand.id} brand={brand} variant="horizontal" />
+              <BrandCard key={brand.id} brand={brand} variant="horizontal"
+                onPress={b => router.push(`/brand/${b.id}` as any)} />
             ))}
           </View>
         )}
@@ -445,7 +447,8 @@ export default function BrandsScreen() {
               </View>
             )}
             {others.map((brand) => (
-              <BrandCard key={brand.id} brand={brand} variant="horizontal" />
+              <BrandCard key={brand.id} brand={brand} variant="horizontal"
+                onPress={b => router.push(`/brand/${b.id}` as any)} />
             ))}
           </View>
         )}

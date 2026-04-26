@@ -179,14 +179,16 @@ export default function ProfileScreen() {
   const { data: dashboard } = useDashboard();
   const { data: profile, updateNotifications } = useProfile();
 
-  // Profil yüklenince tercihleri uygula
+  // Profil yüklenince tercihleri uygula (DB snake_case veya TS camelCase olabilir)
   React.useEffect(() => {
     const n = profile?.preferences?.notifications as any;
     if (!n) return;
     if (typeof n.campaigns === 'boolean') setNotifCampaign(n.campaigns);
     if (typeof n.shipping === 'boolean') setNotifShipping(n.shipping);
-    if (typeof n.new_arrivals === 'boolean') setNotifNewArrivals(n.new_arrivals);
-    if (typeof n.price_drops === 'boolean') setNotifPriceDrops(n.price_drops);
+    const newArrivals = n.newArrivals ?? n.new_arrivals;
+    const priceDrops = n.priceDrops ?? n.price_drops;
+    if (typeof newArrivals === 'boolean') setNotifNewArrivals(newArrivals);
+    if (typeof priceDrops === 'boolean') setNotifPriceDrops(priceDrops);
   }, [profile?.id]);
 
   const userName: string =
@@ -397,7 +399,7 @@ export default function ProfileScreen() {
               <Text style={styles.sectionTitle}>Bağlı Hesaplar</Text>
               <View style={styles.settingsGroup}>
                 <SettingRow icon="logo-instagram" iconColor="#E1306C" iconBg="rgba(225,48,108,0.15)" label="Instagram" value="Bağlı değil" onPress={() => {}} />
-                <SettingRow icon="mail" iconColor={Colors.info} iconBg="rgba(59,130,246,0.15)" label="E-posta" value="Bağlı değil" badge="Yeni" onPress={() => {}} />
+                <SettingRow icon="mail" iconColor={Colors.info} iconBg="rgba(59,130,246,0.15)" label="E-posta" value={(profile?.connectedAccounts as any)?.gmail?.connected ? 'Bağlı ✓' : 'Bağlı değil'} badge={(profile?.connectedAccounts as any)?.gmail?.connected ? undefined : 'Yeni'} onPress={() => router.push('/connect-mail' as any)} />
               </View>
             </View>
 

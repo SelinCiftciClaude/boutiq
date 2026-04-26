@@ -29,8 +29,6 @@ import { useInterests, INTEREST_TO_CATEGORY } from '@/context/InterestsContext';
 import { useNotifications } from '@/hooks/useNotifications';
 import { Brand, Campaign } from '../../types';
 
-const NOTIFICATION_COUNT = 2;
-
 function CampaignBanner({ campaign, onCopyCode }: { campaign: Campaign; onCopyCode: (code: string) => void }) {
   const code = campaign.code ?? 'BOUTIQ10';
   return (
@@ -72,6 +70,7 @@ function CampaignBanner({ campaign, onCopyCode }: { campaign: Campaign; onCopyCo
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
+  const [feedTab, setFeedTab] = useState<'discover' | 'foryou'>('discover');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -107,6 +106,19 @@ export default function HomeScreen() {
   const filteredProducts = selectedCategory === 'all'
     ? products
     : products.filter(p => filteredBrandIds.has(p.brandId));
+
+  // "Senin İçin" feed: interest + saved brand kategorilerinden ürünler
+  const savedBrandCategories = savedBrands.data?.map(b => b.category) ?? [];
+  const interestCats = interests.map(id => INTEREST_TO_CATEGORY[id]).filter(Boolean);
+  const forYouCategories = [...new Set([...interestCats, ...savedBrandCategories])];
+
+  const forYouBrands = forYouCategories.length > 0
+    ? sortedBrands.filter(b => forYouCategories.includes(b.category))
+    : sortedBrands.slice(0, 4);
+
+  const forYouProducts = forYouCategories.length > 0
+    ? products.filter(p => forYouBrands.some(b => b.id === p.brandId))
+    : products.slice(0, 6);
 
   const handleAddBrand = (brand: Brand) => setAddSheetBrand(brand);
 
@@ -175,6 +187,73 @@ export default function HomeScreen() {
           </View>
         </View>
 
+        {/* Feed sekme geçişi */}
+        <View style={styles.feedTabs}>
+          {(['discover', 'foryou'] as const).map(tab => {
+            const active = feedTab === tab;
+            return (
+              <TouchableOpacity
+                key={tab}
+                onPress={() => { Haptics.selectionAsync(); setFeedTab(tab); }}
+                style={[styles.feedTab, active && styles.feedTabActive]}
+              >
+                {active && <LinearGradient colors={[Colors.gold2, Colors.gold4]} style={StyleSheet.absoluteFill} />}
+                <Text style={[styles.feedTabText, active && styles.feedTabTextActive]}>
+                  {tab === 'discover' ? 'Keşfet' : 'Senin İçin'}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        {/* Senin İçin feed */}
+        {feedTab === 'foryou' && (
+          <>
+            {forYouCategories.length === 0 ? (
+              <View style={styles.forYouEmpty}>
+                <Text style={styles.forYouEmptyIcon}>✨</Text>
+                <Text style={styles.forYouEmptyTitle}>Feed'in henüz boş</Text>
+                <Text style={styles.forYouEmptySubtitle}>
+                  İlgi alanı ekle veya butik kaydet, sana özel içerikler gösterelim.
+                </Text>
+              </View>
+            ) : (
+              <>
+                <View style={styles.section}>
+                  <Text style={styles.sectionTitle}>Senin için butikler</Text>
+                  <View style={styles.brandsGrid}>
+                    {forYouBrands.map(brand => (
+                      <BrandCard
+                        key={brand.id} brand={brand} variant="grid"
+                        onAdd={handleAddBrand}
+                        onPress={b => router.push(`/brand/${b.id}` as any)}
+                        isSaved={savedBrands.isSaved(brand.id)}
+                      />
+                    ))}
+                  </View>
+                </View>
+                <View style={styles.section}>
+                  <Text style={styles.sectionTitle}>Senin için ürünler</Text>
+                  <View style={styles.productsGrid}>
+                    <View style={styles.productCol}>
+                      {forYouProducts.filter((_, i) => i % 2 === 0).map((p, i) => (
+                        <ProductCard key={p.id} product={p} tall={i % 3 === 1} />
+                      ))}
+                    </View>
+                    <View style={[styles.productCol, styles.productColOffset]}>
+                      {forYouProducts.filter((_, i) => i % 2 === 1).map((p, i) => (
+                        <ProductCard key={p.id} product={p} tall={i % 3 === 0} />
+                      ))}
+                    </View>
+                  </View>
+                </View>
+              </>
+            )}
+            <View style={{ height: 100 }} />
+          </>
+        )}
+
+        {feedTab === 'discover' && <>
         {/* Aktif Kampanyalar */}
         {activeCampaigns.length > 0 && (
           <View style={styles.section}>
@@ -203,7 +282,13 @@ export default function HomeScreen() {
             <Text style={styles.sectionLabel}>HAFTANIN</Text>
             <Text style={styles.sectionTitle}>Öne Çıkan Butik</Text>
           </View>
-          {featuredBrand && <BrandCard brand={featuredBrand} variant="featured" />}
+          {featuredBrand && (
+            <BrandCard
+              brand={featuredBrand}
+              variant="featured"
+              onPress={b => router.push(`/brand/${b.id}` as any)}
+            />
+          )}
         </View>
 
         {/* Kategori Filtresi */}
@@ -260,6 +345,7 @@ export default function HomeScreen() {
                   brand={brand}
                   variant="grid"
                   onAdd={handleAddBrand}
+                  onPress={b => router.push(`/brand/${b.id}` as any)}
                   isSaved={savedBrands.isSaved(brand.id)}
                 />
               ))}
@@ -296,13 +382,15 @@ export default function HomeScreen() {
           )}
         </View>
 
+        </> /* end feedTab === 'discover' */}
+
         {/* Affiliate notu */}
-        <View style={styles.affiliateNote}>
+        {feedTab === 'discover' && <View style={styles.affiliateNote}>
           <Ionicons name="information-circle-outline" size={14} color={Colors.text5} />
           <Text style={styles.affiliateText}>
             BOUTIQ, marka linklerinden komisyon kazanabilir. Bu sana ekstra ücret yansımaz.
           </Text>
-        </View>
+        </View>}
         <View style={{ height: 100 }} />
       </Animated.ScrollView>
 
@@ -435,6 +523,18 @@ const styles = StyleSheet.create({
   productsGrid: { flexDirection: 'row', gap: 12 },
   productCol: { flex: 1, gap: 0 },
   productColOffset: { marginTop: 40 },
+  feedTabs: { flexDirection: 'row', gap: 8, marginBottom: 20 },
+  feedTab: {
+    flex: 1, paddingVertical: 10, borderRadius: 12, alignItems: 'center',
+    backgroundColor: Colors.surface2, borderWidth: 1, borderColor: Colors.border2, overflow: 'hidden',
+  },
+  feedTabActive: { borderColor: Colors.gold3 },
+  feedTabText: { fontSize: 14, fontWeight: '600', color: Colors.text3 },
+  feedTabTextActive: { color: Colors.bg, fontWeight: '700' },
+  forYouEmpty: { alignItems: 'center', paddingVertical: 48, paddingHorizontal: 32, gap: 10 },
+  forYouEmptyIcon: { fontSize: 48 },
+  forYouEmptyTitle: { fontSize: 18, fontWeight: '700', color: Colors.text2 },
+  forYouEmptySubtitle: { fontSize: 14, color: Colors.text4, textAlign: 'center', lineHeight: 20 },
   affiliateNote: {
     flexDirection: 'row', gap: 6, alignItems: 'flex-start',
     paddingHorizontal: 4, marginBottom: 8,

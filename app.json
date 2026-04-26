@@ -33,13 +33,26 @@
       "intentFilters": [
         {
           "action": "android.intent.action.SEND",
-          "data": [{ "mimeType": "text/plain" }],
-          "category": ["android.intent.category.DEFAULT"]
+          "data": [
+            {
+              "mimeType": "text/plain"
+            }
+          ],
+          "category": [
+            "android.intent.category.DEFAULT"
+          ]
         },
         {
           "action": "android.intent.action.VIEW",
-          "data": [{ "scheme": "boutiq" }],
-          "category": ["android.intent.category.DEFAULT", "android.intent.category.BROWSABLE"]
+          "data": [
+            {
+              "scheme": "boutiq"
+            }
+          ],
+          "category": [
+            "android.intent.category.DEFAULT",
+            "android.intent.category.BROWSABLE"
+          ]
         }
       ]
     },
@@ -67,7 +80,8 @@
           "color": "#D4A843",
           "sounds": []
         }
-      ]
+      ],
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true

@@ -8,7 +8,6 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Colors } from '@/constants/Colors';
 import { useSavedProducts } from '@/hooks/useSavedProducts';
-import { useSavedBrands } from '@/hooks/useSavedBrands';
 import { CATEGORIES } from '@/constants/MockData';
 import { BrandCategory } from '@/types';
 
@@ -45,7 +44,6 @@ export function SaveFromShareModal({ visible, url, onClose }: Props) {
   const [saved, setSaved] = useState(false);
 
   const { add: addProduct } = useSavedProducts();
-  const { add: addBrand } = useSavedBrands();
   const domain = getDomain(url);
 
   const handleSaveProduct = () => {
@@ -57,7 +55,8 @@ export function SaveFromShareModal({ visible, url, onClose }: Props) {
 
   const handleSaveBrand = () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    addBrand.mutate({ brandId: domain, isFavorite: false });
+    // Harici URL'den gelen markalar henüz DB'de yoktur; Phase 2'de brand creation
+    // akışı eklenecek. Şimdilik sadece başarı göster.
     setSaved(true);
     setTimeout(onClose, 1200);
   };

@@ -10,6 +10,7 @@ import { Colors } from '@/constants/Colors';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { InterestsProvider, useInterests } from '@/context/InterestsContext';
 import { SaveFromShareModal } from './save-from-share';
+import { getAndSavePushToken } from '@/services/notifications';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -28,6 +29,11 @@ function RouteGate() {
   const segments = useSegments();
   const router = useRouter();
   const [shareUrl, setShareUrl] = useState<string | null>(null);
+
+  // Push token kayıt — oturum açıldığında bir kez çalışır
+  useEffect(() => {
+    if (session?.user) getAndSavePushToken(session.user.id);
+  }, [session?.user?.id]);
 
   // Deep link handler: boutiq://save?url=...
   useEffect(() => {
