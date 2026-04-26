@@ -406,32 +406,42 @@ export async function fetchPublicCollection(userId: string): Promise<Product[]> 
     .eq('user_id', userId)
     .order('saved_at', { ascending: false });
   if (error) throw error;
-  return (data ?? []).map((r: any) => {
-    const p = r.products;
-    return fromDbProduct(p, p?.brands, true, r.saved_at);
-  });
+  return (data ?? [])
+    .filter((r: any) => r.products)
+    .map((r: any) => fromDbProduct(r.products, r.products?.brands, true, r.saved_at));
 }
 
 export async function fetchTrendingBrands(): Promise<Brand[]> {
-  const { data, error } = await supabase
+  const { data: viewData, error: viewErr } = await supabase
     .from('popular_brands_week')
-    .select('brand_id, brands(*)');
+    .select('brand_id');
+  if (viewErr) throw viewErr;
+  const ids = (viewData ?? []).map((r: any) => r.brand_id).filter(Boolean);
+  if (ids.length === 0) return [];
+  const { data, error } = await supabase.from('brands').select('*').in('id', ids);
   if (error) throw error;
+  const order = new Map(ids.map((id: string, i: number) => [id, i]));
   return (data ?? [])
-    .map((r: any) => r.brands)
-    .filter(Boolean)
-    .map((b: any) => fromDbBrand(b));
+    .map((b: any) => fromDbBrand(b))
+    .sort((a, b) => (order.get(a.id) ?? 99) - (order.get(b.id) ?? 99));
 }
 
 export async function fetchTrendingProducts(): Promise<Product[]> {
-  const { data, error } = await supabase
+  const { data: viewData, error: viewErr } = await supabase
     .from('popular_products_week')
-    .select('product_id, products(*, brands(name, logo_url))');
+    .select('product_id');
+  if (viewErr) throw viewErr;
+  const ids = (viewData ?? []).map((r: any) => r.product_id).filter(Boolean);
+  if (ids.length === 0) return [];
+  const { data, error } = await supabase
+    .from('products')
+    .select('*, brands(name, logo_url)')
+    .in('id', ids);
   if (error) throw error;
+  const order = new Map(ids.map((id: string, i: number) => [id, i]));
   return (data ?? [])
-    .map((r: any) => r.products)
-    .filter(Boolean)
-    .map((p: any) => fromDbProduct(p, p.brands));
+    .map((p: any) => fromDbProduct(p, p.brands))
+    .sort((a, b) => (order.get(a.id) ?? 99) - (order.get(b.id) ?? 99));
 }
 
 export type { BrandCategory };
