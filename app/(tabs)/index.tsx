@@ -29,6 +29,7 @@ import { useCampaigns } from '@/hooks/useCampaigns';
 import { useInterests, INTEREST_TO_CATEGORY } from '@/context/InterestsContext';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useAuth } from '@/context/AuthContext';
+import { useTrending } from '@/hooks/useTrending';
 import { trackAffiliateClick } from '@/services/queries';
 import { Brand, Campaign } from '../../types';
 
@@ -95,6 +96,8 @@ export default function HomeScreen() {
   const savedBrands = useSavedBrands();
   const { interests } = useInterests();
   const { unreadCount } = useNotifications();
+  const { brands: trendingBrandsQ } = useTrending();
+  const trendingBrands = trendingBrandsQ.data ?? [];
 
   // İlgi alanlarına göre sıralama: seçilen kategoriler önce
   const interestCategories = interests
@@ -285,6 +288,32 @@ export default function HomeScreen() {
               )}
               ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
               scrollEnabled={false}
+            />
+          </View>
+        )}
+
+        {/* Bu Hafta Trend */}
+        {trendingBrands.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Bu Hafta Trend 🔥</Text>
+            </View>
+            <FlatList
+              data={trendingBrands}
+              keyExtractor={b => b.id}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.trendingList}
+              renderItem={({ item }) => (
+                <BrandCard
+                  brand={item}
+                  variant="grid"
+                  onAdd={handleAddBrand}
+                  onPress={b => router.push(`/brand/${b.id}` as any)}
+                  isSaved={savedBrands.isSaved(item.id)}
+                />
+              )}
+              ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
             />
           </View>
         )}
@@ -560,4 +589,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4, marginBottom: 8,
   },
   affiliateText: { fontSize: 11, color: Colors.text5, lineHeight: 16, flex: 1 },
+  trendingList: { paddingRight: 4 },
 });

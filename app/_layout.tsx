@@ -35,13 +35,16 @@ function RouteGate() {
     if (session?.user) getAndSavePushToken(session.user.id);
   }, [session?.user?.id]);
 
-  // Deep link handler: boutiq://save?url=...
+  // Deep link handler: boutiq://save?url=... and boutiq://collection/:userId
   useEffect(() => {
     const handleUrl = (event: { url: string }) => {
       try {
         const parsed = Linking.parse(event.url);
         if (parsed.path === 'save' && parsed.queryParams?.url) {
           setShareUrl(decodeURIComponent(parsed.queryParams.url as string));
+        } else if (parsed.path?.startsWith('collection/')) {
+          const userId = parsed.path.replace('collection/', '');
+          if (userId) router.push(('/collection/' + userId) as any);
         }
       } catch {}
     };

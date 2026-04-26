@@ -140,6 +140,15 @@ export interface UserProfile {
   plan: 'free' | 'premium';
 }
 
+export interface Review {
+  id: string;
+  userId: string;
+  brandId: string;
+  rating: number;
+  comment?: string;
+  createdAt: string;
+}
+
 export interface Notification {
   id: string;
   type: 'campaign' | 'shipment' | 'newArrival' | 'priceDrop' | 'system';

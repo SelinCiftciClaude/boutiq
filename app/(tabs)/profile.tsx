@@ -9,6 +9,7 @@ import {
   Image,
   Dimensions,
   FlatList,
+  Share,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -223,6 +224,17 @@ export default function ProfileScreen() {
     router.replace('/(auth)/login');
   };
 
+  const handleShareCollection = async () => {
+    if (!authUser?.id) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    await Share.share({ message: 'boutiq://collection/' + authUser.id });
+  };
+
+  const handleViewProfile = () => {
+    if (!authUser?.id) return;
+    router.push(('/collection/' + authUser.id) as any);
+  };
+
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.bgGlow} />
@@ -282,6 +294,11 @@ export default function ProfileScreen() {
               <Text style={styles.statNum}>{dashboard?.activeShipments ?? 0}</Text>
               <Text style={styles.statLabel}>Sipariş</Text>
             </View>
+            <View style={styles.statDivider} />
+            <TouchableOpacity style={styles.statItem} onPress={handleViewProfile}>
+              <Ionicons name="eye-outline" size={20} color={Colors.gold3} />
+              <Text style={styles.statLabel}>Profilim</Text>
+            </TouchableOpacity>
           </View>
 
           {user.plan === 'free' && (
@@ -400,6 +417,14 @@ export default function ProfileScreen() {
               <View style={styles.settingsGroup}>
                 <SettingRow icon="logo-instagram" iconColor="#E1306C" iconBg="rgba(225,48,108,0.15)" label="Instagram" value="Bağlı değil" onPress={() => {}} />
                 <SettingRow icon="mail" iconColor={Colors.info} iconBg="rgba(59,130,246,0.15)" label="E-posta" value={(profile?.connectedAccounts as any)?.gmail?.connected ? 'Bağlı ✓' : 'Bağlı değil'} badge={(profile?.connectedAccounts as any)?.gmail?.connected ? undefined : 'Yeni'} onPress={() => router.push('/connect-mail' as any)} />
+              </View>
+            </View>
+
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Sosyal</Text>
+              <View style={styles.settingsGroup}>
+                <SettingRow icon="eye-outline" iconColor={Colors.gold3} iconBg={Colors.glassGold} label="Koleksiyonumu Görüntüle" onPress={handleViewProfile} />
+                <SettingRow icon="share-social-outline" iconColor={Colors.teal2} iconBg={Colors.tealGlow} label="Koleksiyonumu Paylaş" onPress={handleShareCollection} />
               </View>
             </View>
 

@@ -6,7 +6,7 @@ import {
   fromDbProfile,
   fromDbShipment,
 } from '@/services/mappers';
-import type { Brand, BrandCategory, Campaign, Product, Shipment, UserProfile } from '@/types';
+import type { Brand, BrandCategory, Campaign, Product, Review, Shipment, UserProfile } from '@/types';
 
 export async function fetchAllBrands(userId?: string): Promise<Brand[]> {
   const [brandsRes, savedRes] = await Promise.all([
@@ -372,6 +372,66 @@ export async function trackAffiliateClick(
     affiliate_url: affiliateUrl,
     clicked_at: new Date().toISOString(),
   });
+}
+
+export async function fetchReviews(brandId: string): Promise<Review[]> {
+  const { data, error } = await supabase
+    .from('reviews')
+    .select('*')
+    .eq('brand_id', brandId)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data ?? []).map((r: any) => ({
+    id: r.id,
+    userId: r.user_id,
+    brandId: r.brand_id,
+    rating: r.rating,
+    comment: r.comment ?? undefined,
+    createdAt: r.created_at,
+  }));
+}
+
+export async function upsertReview(userId: string, brandId: string, rating: number, comment: string): Promise<void> {
+  const { error } = await supabase.from('reviews').upsert(
+    { user_id: userId, brand_id: brandId, rating, comment: comment.trim() || null },
+    { onConflict: 'user_id,brand_id' }
+  );
+  if (error) throw error;
+}
+
+export async function fetchPublicCollection(userId: string): Promise<Product[]> {
+  const { data, error } = await supabase
+    .from('saved_products')
+    .select('product_id, saved_at, products(*, brands(name, logo_url))')
+    .eq('user_id', userId)
+    .order('saved_at', { ascending: false });
+  if (error) throw error;
+  return (data ?? []).map((r: any) => {
+    const p = r.products;
+    return fromDbProduct(p, p?.brands, true, r.saved_at);
+  });
+}
+
+export async function fetchTrendingBrands(): Promise<Brand[]> {
+  const { data, error } = await supabase
+    .from('popular_brands_week')
+    .select('brand_id, brands(*)');
+  if (error) throw error;
+  return (data ?? [])
+    .map((r: any) => r.brands)
+    .filter(Boolean)
+    .map((b: any) => fromDbBrand(b));
+}
+
+export async function fetchTrendingProducts(): Promise<Product[]> {
+  const { data, error } = await supabase
+    .from('popular_products_week')
+    .select('product_id, products(*, brands(name, logo_url))');
+  if (error) throw error;
+  return (data ?? [])
+    .map((r: any) => r.products)
+    .filter(Boolean)
+    .map((p: any) => fromDbProduct(p, p.brands));
 }
 
 export type { BrandCategory };
