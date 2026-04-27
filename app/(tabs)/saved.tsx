@@ -179,7 +179,11 @@ export default function SavedScreen() {
 
   const handleUnsave = (id: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    unsaveMutation.mutate(id);
+    unsaveMutation.mutate(id, {
+      onError: () => {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      },
+    });
   };
 
   const toggleViewMode = () => {

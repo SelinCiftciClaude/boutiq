@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -28,12 +28,16 @@ export function ProductCard({ product, onUnsave, tall = false }: ProductCardProp
   const [saved, setSaved] = useState(product.isSaved);
   const [imgError, setImgError] = useState(false);
 
+  useEffect(() => {
+    setSaved(product.isSaved);
+  }, [product.isSaved]);
+
   const handleSaveToggle = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    setSaved((prev) => {
-      if (prev && onUnsave) onUnsave(product.id);
-      return !prev;
-    });
+    if (saved && onUnsave) {
+      setSaved(false);
+      onUnsave(product.id);
+    }
   };
 
   const handleOpen = () => {

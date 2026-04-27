@@ -16,6 +16,8 @@ export function useSavedProducts() {
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ['savedProducts'] });
     qc.invalidateQueries({ queryKey: ['products'] });
+    qc.invalidateQueries({ queryKey: ['brand-products'] });
+    qc.invalidateQueries({ queryKey: ['product'] });
   };
 
   const add = useMutation({
@@ -24,6 +26,7 @@ export function useSavedProducts() {
       return addSavedProduct(user.id, productId);
     },
     onSuccess: invalidate,
+    onError: invalidate,
   });
 
   const remove = useMutation({
@@ -32,6 +35,7 @@ export function useSavedProducts() {
       return removeSavedProduct(user.id, productId);
     },
     onSuccess: invalidate,
+    onError: invalidate,
   });
 
   const isSaved = (productId: string) => (query.data ?? []).some((p) => p.id === productId);
