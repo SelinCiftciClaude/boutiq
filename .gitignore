@@ -16,3 +16,4 @@ android/build/
 expo-env.d.ts
 # @end expo-cli.playwright-mcp/
 *.png
+.playwright-mcp/
