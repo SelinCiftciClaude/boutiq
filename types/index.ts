@@ -137,7 +137,6 @@ export interface UserProfile {
     savedProducts: number;
     activeOrders: number;
   };
-  plan: 'free' | 'premium';
 }
 
 export interface Review {

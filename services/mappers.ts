@@ -126,6 +126,5 @@ export function fromDbProfile(row: Row): UserProfile {
     },
     connectedAccounts: row.connected_accounts ?? {},
     stats: { savedBrands: 0, savedProducts: 0, activeOrders: 0 },
-    plan: row.plan ?? 'free',
   };
 }

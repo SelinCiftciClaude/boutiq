@@ -225,8 +225,7 @@ export default function ProfileScreen() {
   const userEmail: string = authUser?.email ?? '';
   const userAvatar: string | null =
     (authUser?.user_metadata?.avatar_url as string | undefined) ?? null;
-  const userPlan: 'free' | 'premium' = 'free';
-  const user = { name: userName, email: userEmail, avatar: userAvatar, plan: userPlan };
+  const user = { name: userName, email: userEmail, avatar: userAvatar };
 
   const savedBrands: SavedBrand[] = savedBrandsList.map((b) => ({
     brand: b,
@@ -298,9 +297,6 @@ export default function ProfileScreen() {
             <View style={styles.profileInfo}>
               <Text style={styles.profileName}>{user.name}</Text>
               <Text style={styles.profileEmail}>{user.email}</Text>
-              {user.plan === 'free'
-                ? <Badge label="Ücretsiz Plan" variant="neutral" size="sm" />
-                : <Badge label="Premium" variant="gold" size="sm" />}
             </View>
           </View>
 
@@ -327,21 +323,6 @@ export default function ProfileScreen() {
             </TouchableOpacity>
           </View>
 
-          {user.plan === 'free' && (
-            <TouchableOpacity style={styles.premiumBanner}>
-              <LinearGradient
-                colors={[Colors.gold1, Colors.gold3]}
-                start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                style={StyleSheet.absoluteFill}
-              />
-              <Ionicons name="sparkles" size={18} color={Colors.bg} />
-              <View style={styles.premiumText}>
-                <Text style={styles.premiumTitle}>Premium'a Geç</Text>
-                <Text style={styles.premiumSubtitle}>Sınırsız butik · Erken kampanya bildirimi</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={16} color={Colors.bg} />
-            </TouchableOpacity>
-          )}
         </View>
 
         {/* Tab switcher */}
@@ -544,14 +525,6 @@ const styles = StyleSheet.create({
   statNum: { fontSize: 20, fontWeight: '800', color: Colors.text1, letterSpacing: -0.5 },
   statLabel: { fontSize: 10, fontWeight: '600', color: Colors.text4, textTransform: 'uppercase', letterSpacing: 0.5 },
   statDivider: { width: 1, height: 30, backgroundColor: Colors.border2 },
-  premiumBanner: {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    borderRadius: 14, padding: 14, overflow: 'hidden', position: 'relative',
-  },
-  premiumText: { flex: 1 },
-  premiumTitle: { fontSize: 14, fontWeight: '800', color: Colors.bg, letterSpacing: -0.2 },
-  premiumSubtitle: { fontSize: 11, color: 'rgba(7,7,15,0.7)', marginTop: 1 },
-
   // Tabs
   tabRow: {
     flexDirection: 'row', gap: 8, marginBottom: 20,
