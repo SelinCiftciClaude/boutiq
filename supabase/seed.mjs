@@ -103,6 +103,9 @@ async function seedBrands() {
       product_count: 148,
       description: 'Minimalist kadın giyimde sanatsal bir anlayış.',
       rating: 4.8,
+      latitude: 41.0155,
+      longitude: 28.9795,
+      address: 'Nişantaşı, İstanbul',
     },
     {
       id: B.arce,
@@ -118,6 +121,9 @@ async function seedBrands() {
       product_count: 64,
       description: 'El yapımı deri çantalar. Her parça benzersiz.',
       rating: 4.9,
+      latitude: 41.0370,
+      longitude: 28.9850,
+      address: 'Bebek, İstanbul',
     },
     {
       id: B.sol,
@@ -148,6 +154,9 @@ async function seedBrands() {
       product_count: 230,
       description: 'Vintage esintili modern kadın giyimi.',
       rating: 4.6,
+      latitude: 41.0082,
+      longitude: 28.9784,
+      address: 'Beyoğlu, İstanbul',
     },
     {
       id: B.kura,

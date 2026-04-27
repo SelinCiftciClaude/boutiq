@@ -1,0 +1,21 @@
+- generic [ref=e9]:
+  - generic [ref=e10]:
+    - generic [ref=e11]: BOUTIQ
+    - generic [ref=e12]: bağımsız butikler, bir arada
+  - generic [ref=e13]:
+    - generic:
+      - generic [ref=e15]:
+        - generic: Keşfet
+        - generic: Binlerce Bağımsız Butik
+        - generic: Instagram'da gördüğün, kalbin çarpan o markalar artık tek bir yerde.
+      - generic [ref=e17]:
+        - generic: Kaydet
+        - generic: Beğendiğin Her Ürünü Unut Gitmesin
+        - generic: Instagram'dan beğenip unuttuğun ürünleri BOUTIQ'e kaydet. Hepsi seni bekliyor.
+      - generic [ref=e19]:
+        - generic: Takip Et
+        - generic: Kargonu Tek Ekranda Gör
+        - generic: Tüm siparişlerin, e-postanı bağla ve kargo takibini otomatik al. Hiçbir şey kaçmasın.
+  - generic [ref=e25]:
+    - generic [ref=e28] [cursor=pointer]: Devam
+    - generic [ref=e30] [cursor=pointer]: Zaten hesabım var
