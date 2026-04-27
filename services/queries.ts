@@ -444,17 +444,6 @@ export async function fetchTrendingProducts(): Promise<Product[]> {
     .sort((a, b) => (order.get(a.id) ?? 99) - (order.get(b.id) ?? 99));
 }
 
-// ── 6B — Harita: konum bilgisi olan markaları çek ──────────────────────────
-export async function fetchBrandsWithLocation(): Promise<Brand[]> {
-  const { data, error } = await supabase
-    .from('brands')
-    .select('*')
-    .not('latitude', 'is', null)
-    .not('longitude', 'is', null);
-  if (error) throw error;
-  return (data ?? []).map((b: any) => fromDbBrand(b));
-}
-
 // ── 6C — Stok uyarıları ───────────────────────────────────────────────────
 export async function addStockAlert(userId: string, productId: string): Promise<void> {
   const { error } = await supabase.from('stock_alerts')
