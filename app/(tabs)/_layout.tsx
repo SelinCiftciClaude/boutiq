@@ -21,6 +21,7 @@ const TABS = [
   { name: 'index',    label: 'Keşfet',    icon: 'compass-outline',    iconFilled: 'compass' },
   { name: 'saved',    label: 'Favoriler', icon: 'heart-outline',       iconFilled: 'heart' },
   { name: 'brands',   label: 'Butikler',  icon: 'storefront-outline',  iconFilled: 'storefront' },
+  { name: 'map',      label: 'Harita',    icon: 'map-outline',         iconFilled: 'map' },
   { name: 'tracking', label: 'Kargo',     icon: 'bicycle-outline',     iconFilled: 'bicycle' },
   { name: 'profile',  label: 'Profil',    icon: 'person-outline',      iconFilled: 'person' },
 ];
@@ -283,6 +284,7 @@ export default function TabLayout() {
       <Tabs.Screen name="index" />
       <Tabs.Screen name="saved" />
       <Tabs.Screen name="brands" />
+      <Tabs.Screen name="map" />
       <Tabs.Screen name="tracking" />
       <Tabs.Screen name="profile" />
     </Tabs>

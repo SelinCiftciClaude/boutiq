@@ -444,4 +444,56 @@ export async function fetchTrendingProducts(): Promise<Product[]> {
     .sort((a, b) => (order.get(a.id) ?? 99) - (order.get(b.id) ?? 99));
 }
 
+// ── 6B — Harita: konum bilgisi olan markaları çek ──────────────────────────
+export async function fetchBrandsWithLocation(): Promise<Brand[]> {
+  const { data, error } = await supabase
+    .from('brands')
+    .select('*')
+    .not('latitude', 'is', null)
+    .not('longitude', 'is', null);
+  if (error) throw error;
+  return (data ?? []).map((b: any) => fromDbBrand(b));
+}
+
+// ── 6C — Stok uyarıları ───────────────────────────────────────────────────
+export async function addStockAlert(userId: string, productId: string): Promise<void> {
+  const { error } = await supabase.from('stock_alerts')
+    .upsert({ user_id: userId, product_id: productId }, { onConflict: 'user_id,product_id' });
+  if (error) throw error;
+}
+
+export async function removeStockAlert(userId: string, productId: string): Promise<void> {
+  const { error } = await supabase.from('stock_alerts')
+    .delete().eq('user_id', userId).eq('product_id', productId);
+  if (error) throw error;
+}
+
+export async function hasStockAlert(userId: string, productId: string): Promise<boolean> {
+  const { data } = await supabase.from('stock_alerts')
+    .select('id').eq('user_id', userId).eq('product_id', productId).maybeSingle();
+  return !!data;
+}
+
+// ── 6D — Referral ─────────────────────────────────────────────────────────
+export async function getOrCreateReferralCode(userId: string): Promise<string> {
+  const { data: existing } = await supabase
+    .from('referral_codes')
+    .select('code')
+    .eq('owner_user_id', userId)
+    .maybeSingle();
+  if (existing?.code) return existing.code;
+
+  const code = 'BTQ' + Math.random().toString(36).slice(2, 7).toUpperCase();
+  const { error } = await supabase.from('referral_codes').insert({ code, owner_user_id: userId });
+  if (error) throw error;
+  return code;
+}
+
+export async function claimReferralCode(code: string, newUserId: string): Promise<void> {
+  const { data: codeRow } = await supabase.from('referral_codes').select('*').eq('code', code.toUpperCase()).maybeSingle();
+  if (!codeRow || codeRow.owner_user_id === newUserId) return;
+  await supabase.from('referral_uses').upsert({ code: codeRow.code, referred_user_id: newUserId }, { onConflict: 'referred_user_id' });
+  await supabase.from('referral_codes').update({ uses: codeRow.uses + 1 }).eq('code', codeRow.code);
+}
+
 export type { BrandCategory };

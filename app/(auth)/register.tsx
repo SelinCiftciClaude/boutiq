@@ -17,6 +17,8 @@ import { Colors } from '../../constants/Colors';
 import { Button } from '../../components/ui/Button';
 import { CATEGORIES } from '../../constants/MockData';
 import { useAuth } from '@/context/AuthContext';
+import { claimReferralCode } from '@/services/queries';
+import { supabase } from '@/services/supabase';
 
 const STEPS = ['Bilgiler', 'Zevkler', 'Hazır!'];
 
@@ -30,6 +32,7 @@ export default function RegisterScreen() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [focused, setFocused] = useState<string | null>(null);
+  const [referralCode, setReferralCode] = useState('');
   const { signUp } = useAuth();
 
   const emailRef = useRef<TextInput>(null);
@@ -56,6 +59,18 @@ export default function RegisterScreen() {
       setErrorMsg(error.message);
       setStep(0);
       return;
+    }
+    // Referral kodu varsa işle
+    if (referralCode.trim()) {
+      try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const newUserId = sessionData?.session?.user?.id ?? null;
+        if (newUserId) {
+          await claimReferralCode(referralCode.trim(), newUserId);
+        }
+      } catch (_) {
+        // sessizce geç
+      }
     }
     router.replace('/(tabs)');
   };
@@ -248,6 +263,24 @@ export default function RegisterScreen() {
                 <Text style={styles.readyLabel}>{item.label}</Text>
               </View>
             ))}
+
+            {/* Davet kodu (isteğe bağlı) */}
+            <View style={[styles.inputWrapper, focused === 'referral' && styles.focused]}>
+              <Ionicons name="gift-outline" size={18} color={focused === 'referral' ? Colors.gold3 : Colors.text4} style={styles.icon} />
+              <TextInput
+                style={styles.input}
+                placeholder="Davet Kodu (isteğe bağlı)"
+                placeholderTextColor={Colors.text5}
+                value={referralCode}
+                onChangeText={setReferralCode}
+                autoCapitalize="characters"
+                autoCorrect={false}
+                returnKeyType="done"
+                onFocus={() => setFocused('referral')}
+                onBlur={() => setFocused(null)}
+                selectionColor={Colors.gold3}
+              />
+            </View>
           </View>
         )}
 

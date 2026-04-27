@@ -9,6 +9,8 @@ import {
   Animated,
   Dimensions,
   ScrollView,
+  TextInput,
+  ActivityIndicator,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,6 +18,7 @@ import * as Haptics from 'expo-haptics';
 import { Colors } from '../constants/Colors';
 import { Brand, BrandCategory } from '../types';
 import { CATEGORIES } from '../constants/MockData';
+import { supabase } from '../services/supabase';
 
 const { height } = Dimensions.get('window');
 
@@ -54,6 +57,51 @@ export function AddBrandSheet({
   const [selected, setSelected] = useState<BrandCategory | null>(currentCategory ?? null);
   const slideAnim = useRef(new Animated.Value(height)).current;
   const backdropAnim = useRef(new Animated.Value(0)).current;
+
+  // Instagram handle lookup state
+  const [handleInput, setHandleInput] = useState('');
+  const [lookupLoading, setLookupLoading] = useState(false);
+  const [lookupResult, setLookupResult] = useState<{
+    name: string;
+    description: string | null;
+    image: string | null;
+    handle: string;
+    website: string;
+  } | null>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Reset lookup when sheet closes
+  useEffect(() => {
+    if (!visible) {
+      setHandleInput('');
+      setLookupResult(null);
+      setLookupLoading(false);
+    }
+  }, [visible]);
+
+  // Debounced Instagram handle lookup
+  const handleHandleChange = (text: string) => {
+    setHandleInput(text);
+    setLookupResult(null);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    const slug = text.replace('@', '').trim();
+    if (slug.length < 2) return;
+    debounceRef.current = setTimeout(async () => {
+      setLookupLoading(true);
+      try {
+        const { data, error } = await supabase.functions.invoke('instagram-lookup', {
+          body: { handle: slug },
+        });
+        if (!error && data && !data.error) {
+          setLookupResult(data);
+        }
+      } catch (_) {
+        // silently ignore network errors
+      } finally {
+        setLookupLoading(false);
+      }
+    }, 500);
+  };
 
   useEffect(() => {
     if (visible) {
@@ -142,6 +190,46 @@ export function AddBrandSheet({
             </View>
           )}
         </View>
+
+        {/* Instagram handle ara (sadece yeni eklemede göster) */}
+        {!alreadySaved && (
+          <View style={styles.handleSection}>
+            <View style={styles.handleInputRow}>
+              <Ionicons name="logo-instagram" size={18} color="#E1306C" style={styles.handleIcon} />
+              <TextInput
+                style={styles.handleInput}
+                placeholder="@instagram_handle ile ara"
+                placeholderTextColor={Colors.text5}
+                value={handleInput}
+                onChangeText={handleHandleChange}
+                autoCapitalize="none"
+                autoCorrect={false}
+                selectionColor={Colors.gold3}
+              />
+              {lookupLoading && <ActivityIndicator size="small" color={Colors.gold3} />}
+            </View>
+            {lookupResult && (
+              <View style={styles.lookupResult}>
+                {lookupResult.image ? (
+                  <Image source={{ uri: lookupResult.image }} style={styles.lookupLogo} />
+                ) : (
+                  <View style={[styles.lookupLogo, styles.lookupLogoPlaceholder]}>
+                    <Ionicons name="storefront" size={16} color={Colors.text4} />
+                  </View>
+                )}
+                <View style={styles.lookupInfo}>
+                  <Text style={styles.lookupName}>{lookupResult.name}</Text>
+                  {lookupResult.description ? (
+                    <Text style={styles.lookupDesc} numberOfLines={2}>{lookupResult.description}</Text>
+                  ) : null}
+                </View>
+                <View style={styles.lookupCheck}>
+                  <Ionicons name="checkmark-circle" size={18} color={Colors.success} />
+                </View>
+              </View>
+            )}
+          </View>
+        )}
 
         {/* Title */}
         <Text style={styles.title}>
@@ -371,4 +459,55 @@ const styles = StyleSheet.create({
     color: Colors.bg, letterSpacing: -0.2,
   },
   saveBtnTextDisabled: { color: Colors.text5 },
+
+  // Instagram handle lookup
+  handleSection: {
+    paddingHorizontal: 20,
+    marginBottom: 16,
+    gap: 10,
+  },
+  handleInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.surface3,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: Colors.border2,
+    paddingHorizontal: 14,
+    height: 48,
+    gap: 10,
+  },
+  handleIcon: { marginRight: 2 },
+  handleInput: {
+    flex: 1,
+    fontSize: 14,
+    color: Colors.text1,
+    height: '100%',
+  },
+  lookupResult: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: Colors.successGlow,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: `${Colors.success}30`,
+    padding: 12,
+  },
+  lookupLogo: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: Colors.surface3,
+    borderWidth: 1.5,
+    borderColor: Colors.border2,
+  },
+  lookupLogoPlaceholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  lookupInfo: { flex: 1 },
+  lookupName: { fontSize: 14, fontWeight: '700', color: Colors.text1, letterSpacing: -0.2 },
+  lookupDesc: { fontSize: 12, color: Colors.text4, marginTop: 2, lineHeight: 16 },
+  lookupCheck: { marginLeft: 4 },
 });

@@ -16,6 +16,7 @@ import { useSavedProducts } from '@/hooks/useSavedProducts';
 import { useAuth } from '@/context/AuthContext';
 import { trackAffiliateClick } from '@/services/queries';
 import { ProductCard } from '@/components/ProductCard';
+import { useStockAlert } from '@/hooks/useStockAlert';
 
 const { width } = Dimensions.get('window');
 const CHART_W = width - 64;
@@ -76,6 +77,7 @@ export default function ProductDetailScreen() {
   const { user } = useAuth();
   const { product: productQ, related: relatedQ, priceHistory } = useProductDetail(id);
   const { add: saveProduct, remove: unsaveProduct, isSaved } = useSavedProducts();
+  const { isAlerted, toggle: toggleAlert } = useStockAlert(id ?? '');
   const [imgIdx, setImgIdx] = useState(0);
 
   const product = productQ.data;
@@ -237,17 +239,40 @@ export default function ProductDetailScreen() {
         >
           <Ionicons name={saved ? 'heart' : 'heart-outline'} size={22} color={saved ? Colors.rose3 : Colors.text3} />
         </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.visitBottomBtn}
-          onPress={() => {
-            trackAffiliateClick(user?.id ?? null, product.brandId, product.id, product.affiliateUrl || product.url);
-            Linking.openURL(product.affiliateUrl || product.url);
-          }}
-        >
-          <LinearGradient colors={[Colors.rose2, Colors.rose4]} style={StyleSheet.absoluteFill} />
-          <Ionicons name="open-outline" size={18} color="#fff" />
-          <Text style={styles.visitBottomText}>Mağazaya Git</Text>
-        </TouchableOpacity>
+        {product.inStock ? (
+          <TouchableOpacity
+            style={styles.visitBottomBtn}
+            onPress={() => {
+              trackAffiliateClick(user?.id ?? null, product.brandId, product.id, product.affiliateUrl || product.url);
+              Linking.openURL(product.affiliateUrl || product.url);
+            }}
+          >
+            <LinearGradient colors={[Colors.rose2, Colors.rose4]} style={StyleSheet.absoluteFill} />
+            <Ionicons name="open-outline" size={18} color="#fff" />
+            <Text style={styles.visitBottomText}>Mağazaya Git</Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            style={[styles.alertBottomBtn, isAlerted && styles.alertBottomBtnActive]}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              toggleAlert.mutate();
+            }}
+            activeOpacity={0.85}
+          >
+            {isAlerted && (
+              <LinearGradient colors={[Colors.gold2, Colors.gold4]} style={StyleSheet.absoluteFill} />
+            )}
+            <Ionicons
+              name={isAlerted ? 'checkmark-circle' : 'notifications-outline'}
+              size={18}
+              color={isAlerted ? Colors.bg : Colors.gold3}
+            />
+            <Text style={[styles.alertBottomText, isAlerted && styles.alertBottomTextActive]}>
+              {isAlerted ? 'Uyarı Aktif ✓' : 'Stoka Gelince Haber Ver'}
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
     </View>
   );
@@ -310,4 +335,18 @@ const styles = StyleSheet.create({
     gap: 8, height: 52, borderRadius: 14, overflow: 'hidden',
   },
   visitBottomText: { fontSize: 16, fontWeight: '700', color: '#fff' },
+  alertBottomBtn: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 8, height: 52, borderRadius: 14, overflow: 'hidden',
+    borderWidth: 1.5, borderColor: Colors.gold3, backgroundColor: Colors.glassGold,
+  },
+  alertBottomBtnActive: {
+    borderColor: 'transparent',
+  },
+  alertBottomText: {
+    fontSize: 15, fontWeight: '700', color: Colors.gold3,
+  },
+  alertBottomTextActive: {
+    color: Colors.bg,
+  },
 });

@@ -25,6 +25,8 @@ import { useAuth } from '@/context/AuthContext';
 import { useSavedBrands } from '@/hooks/useSavedBrands';
 import { useDashboard } from '@/hooks/useDashboard';
 import { useProfile } from '@/hooks/useProfile';
+import { useReferral } from '@/hooks/useReferral';
+import { supabase } from '@/services/supabase';
 
 type SavedBrand = { brand: Brand; userCategory: BrandCategory };
 
@@ -173,12 +175,14 @@ export default function ProfileScreen() {
   const [notifShipping, setNotifShipping] = useState(true);
   const [notifNewArrivals, setNotifNewArrivals] = useState(false);
   const [notifPriceDrops, setNotifPriceDrops] = useState(true);
+  const [newsletter, setNewsletter] = useState(false);
   const [editSheet, setEditSheet] = useState<SavedBrand | null>(null);
 
   const { user: authUser, signOut } = useAuth();
   const { data: savedBrandsList = [], add: addSaved, remove: removeSaved } = useSavedBrands();
   const { data: dashboard } = useDashboard();
   const { data: profile, updateNotifications } = useProfile();
+  const referral = useReferral();
 
   // Profil yüklenince tercihleri uygula (DB snake_case veya TS camelCase olabilir)
   React.useEffect(() => {
@@ -191,6 +195,28 @@ export default function ProfileScreen() {
     if (typeof newArrivals === 'boolean') setNotifNewArrivals(newArrivals);
     if (typeof priceDrops === 'boolean') setNotifPriceDrops(priceDrops);
   }, [profile?.id]);
+
+  // Newsletter tercihini DB'den oku
+  React.useEffect(() => {
+    if ((profile as any)?.newsletter_subscribed !== undefined) {
+      setNewsletter(!!(profile as any).newsletter_subscribed);
+    }
+  }, [profile?.id]);
+
+  const handleNewsletterToggle = async (val: boolean) => {
+    Haptics.selectionAsync();
+    setNewsletter(val);
+    if (!authUser?.id) return;
+    await supabase.from('profiles').update({ newsletter_subscribed: val }).eq('id', authUser.id);
+  };
+
+  const handleShareReferral = async () => {
+    if (!referral.data) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    await Share.share({
+      message: 'BOUTIQ uygulamasını dene! Davet kodum: ' + referral.data + ' — boutiq://referral/' + referral.data,
+    });
+  };
 
   const userName: string =
     (authUser?.user_metadata?.name as string | undefined) ??
@@ -409,6 +435,7 @@ export default function ProfileScreen() {
                 <SettingRow icon="bicycle" iconColor={Colors.success} iconBg={Colors.successGlow} label="Kargo Güncellemeleri" toggle toggleValue={notifShipping} onToggle={(v) => { setNotifShipping(v); updateNotifications.mutate({ campaigns: notifCampaign, shipping: v, newArrivals: notifNewArrivals, priceDrops: notifPriceDrops }); }} />
                 <SettingRow icon="sparkles" iconColor={Colors.purple3} iconBg={Colors.purpleGlow} label="Yeni Ürünler" toggle toggleValue={notifNewArrivals} onToggle={(v) => { setNotifNewArrivals(v); updateNotifications.mutate({ campaigns: notifCampaign, shipping: notifShipping, newArrivals: v, priceDrops: notifPriceDrops }); }} />
                 <SettingRow icon="trending-down" iconColor={Colors.rose3} iconBg={Colors.roseGlow} label="Fiyat Düşüşleri" toggle toggleValue={notifPriceDrops} onToggle={(v) => { setNotifPriceDrops(v); updateNotifications.mutate({ campaigns: notifCampaign, shipping: notifShipping, newArrivals: notifNewArrivals, priceDrops: v }); }} />
+                <SettingRow icon="mail" iconColor={Colors.info} iconBg="rgba(59,130,246,0.15)" label="Haftalık Bülten" toggle toggleValue={newsletter} onToggle={handleNewsletterToggle} />
               </View>
             </View>
 
@@ -425,6 +452,7 @@ export default function ProfileScreen() {
               <View style={styles.settingsGroup}>
                 <SettingRow icon="eye-outline" iconColor={Colors.gold3} iconBg={Colors.glassGold} label="Koleksiyonumu Görüntüle" onPress={handleViewProfile} />
                 <SettingRow icon="share-social-outline" iconColor={Colors.teal2} iconBg={Colors.tealGlow} label="Koleksiyonumu Paylaş" onPress={handleShareCollection} />
+                <SettingRow icon="gift-outline" iconColor={Colors.gold3} iconBg={Colors.glassGold} label="Arkadaşını Davet Et" onPress={handleShareReferral} />
               </View>
             </View>
 

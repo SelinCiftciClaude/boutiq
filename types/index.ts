@@ -15,6 +15,9 @@ export interface Brand {
   lastActive?: string;
   description?: string;
   rating?: number;
+  latitude?: number;
+  longitude?: number;
+  address?: string;
 }
 
 export type BrandCategory =

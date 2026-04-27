@@ -18,6 +18,9 @@ export function fromDbBrand(row: Row, isFavorite = false): Brand {
     isFavorite,
     description: row.description ?? undefined,
     rating: row.rating != null ? Number(row.rating) : undefined,
+    latitude: row.latitude != null ? Number(row.latitude) : undefined,
+    longitude: row.longitude != null ? Number(row.longitude) : undefined,
+    address: row.address ?? undefined,
   };
 }
 
