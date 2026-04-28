@@ -273,13 +273,33 @@ export default function BrandsScreen() {
 
   const handleAddNew = useCallback(async (item: SuggestionItem, category: BrandCategory) => {
     const website = `https://${item.domain}`;
+
+    // Microlink ile gerçek logo, kapak ve açıklamayı çek
+    let logoUrl  = item.logo;
+    let coverUrl = '';
+    let description = '';
+    let brandName = item.name;
+    try {
+      const meta = await fetch(
+        `https://api.microlink.io/?url=${encodeURIComponent(website)}&screenshot=false`
+      ).then(r => r.json());
+      if (meta.status === 'success') {
+        brandName   = meta.data.title?.split('|')[0]?.trim() || item.name;
+        description = meta.data.description ?? '';
+        logoUrl     = meta.data.logo?.url   || item.logo;
+        coverUrl    = meta.data.image?.url  || '';
+      }
+    } catch { /* metadata alınamazsa Google favicon'la devam */ }
+
     const { data, error } = await supabase.from('brands').insert({
-      name: item.name,
+      name: brandName,
       handle: `@${item.domain.split('.')[0]}`,
       category,
       website,
       affiliate_url: website,
-      logo_url: item.logo,
+      logo_url: logoUrl,
+      cover_url: coverUrl,
+      description,
       tags: [],
       is_verified: false,
     }).select('id').single();
