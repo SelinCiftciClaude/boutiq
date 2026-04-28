@@ -264,7 +264,7 @@ export default function BrandsScreen() {
         setSuggestions([...dbMatches, ...guessed.filter(g => !dbDomains.has(g.domain))].slice(0, 7));
       })
       .finally(() => setSearchLoading(false));
-  }, [debouncedQuery]);
+  }, [debouncedQuery, brands]);
 
   const handleAddExisting = useCallback(async (brand: Brand, category: BrandCategory) => {
     await savedBrands.add.mutateAsync({ brandId: brand.id, isFavorite: false });
