@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, TextInput,
-  ActivityIndicator, KeyboardAvoidingView, Platform,
+  View, Text, StyleSheet, TouchableOpacity,
+  ActivityIndicator, Linking,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import * as WebBrowser from 'expo-web-browser';
@@ -16,177 +16,182 @@ import { useQueryClient } from '@tanstack/react-query';
 
 WebBrowser.maybeCompleteAuthSession();
 
+const GOOGLE_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID ?? '';
+const SUPABASE_URL     = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
+// Edge Function'ın tam URL'si (OAuth callback olarak Google'a kayıtlı olmalı)
+const CALLBACK_URL     = `${SUPABASE_URL}/functions/v1/gmail-oauth`;
+
 const PERMISSIONS = [
-  { icon: 'checkmark-circle', color: Colors.success, text: 'Kargo e-postalarını okur' },
-  { icon: 'checkmark-circle', color: Colors.success, text: 'Kargo takibini otomatikleştirir' },
-  { icon: 'close-circle',     color: Colors.error,   text: 'Kişisel e-postalarınızı okumaz' },
+  { icon: 'checkmark-circle', color: Colors.success, text: 'Kargo e-postalarını otomatik okur' },
+  { icon: 'checkmark-circle', color: Colors.success, text: 'Son 30 günü tarar, kargoları ekler' },
+  { icon: 'close-circle',     color: Colors.error,   text: 'Kişisel e-postalarınıza erişmez' },
   { icon: 'close-circle',     color: Colors.error,   text: 'E-posta gönderemez' },
 ];
 
 export default function ConnectMailScreen() {
-  const insets = useSafeAreaInsets();
-  const { user } = useAuth();
-  const qc = useQueryClient();
-  const [email, setEmail] = useState('');
-  const [loading, setLoading] = useState(false);
+  const insets    = useSafeAreaInsets();
+  const { user }  = useAuth();
+  const qc        = useQueryClient();
+  const params    = useLocalSearchParams<{ success?: string; found?: string; error?: string }>();
+
+  const [loading,   setLoading]   = useState(false);
   const [connected, setConnected] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [focused, setFocused] = useState(false);
+  const [found,     setFound]     = useState(0);
+  const [error,     setError]     = useState<string | null>(null);
 
-  const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
-
-  const handleConnect = async () => {
-    if (!isValidEmail || !user) return;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    setLoading(true);
-    setError(null);
-    try {
-      const { error: updateErr } = await supabase
-        .from('profiles')
-        .update({
-          connected_accounts: {
-            gmail: {
-              connected: true,
-              email: email.trim().toLowerCase(),
-              connected_at: new Date().toISOString(),
-            },
-          },
-        })
-        .eq('id', user.id);
-
-      if (updateErr) throw updateErr;
-
-      qc.invalidateQueries({ queryKey: ['profile', user.id] });
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+  // Derin bağlantı ile geri dönünce (boutiq://connect-mail?success=true)
+  useEffect(() => {
+    if (params.success === 'true') {
+      setFound(Number(params.found ?? 0));
       setConnected(true);
-    } catch (err: any) {
-      setError('Bağlantı kurulamadı. Tekrar dene.');
-    } finally {
+      setLoading(false);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      qc.invalidateQueries({ queryKey: ['shipments'] });
+      qc.invalidateQueries({ queryKey: ['profile'] });
+    } else if (params.error) {
+      setError('Google bağlantısı başarısız. Tekrar dene.');
       setLoading(false);
     }
+  }, [params.success, params.error]);
+
+  const buildAuthUrl = () => {
+    if (!user) return null;
+    const scope    = 'https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/userinfo.email';
+    const authUrl  = new URL('https://accounts.google.com/o/oauth2/v2/auth');
+    authUrl.searchParams.set('client_id',     GOOGLE_CLIENT_ID);
+    authUrl.searchParams.set('redirect_uri',  CALLBACK_URL);
+    authUrl.searchParams.set('response_type', 'code');
+    authUrl.searchParams.set('scope',         scope);
+    authUrl.searchParams.set('access_type',   'offline');
+    authUrl.searchParams.set('prompt',        'consent');
+    authUrl.searchParams.set('state',         user.id); // Edge Function userId olarak kullanır
+    return authUrl.toString();
+  };
+
+  const handleConnect = async () => {
+    if (!user) return;
+
+    if (!GOOGLE_CLIENT_ID) {
+      setError('.env dosyasına EXPO_PUBLIC_GOOGLE_CLIENT_ID eklenmeli.');
+      return;
+    }
+
+    const authUrl = buildAuthUrl();
+    if (!authUrl) return;
+
+    setLoading(true);
+    setError(null);
+
+    // Tarayıcıda Google giriş ekranını aç
+    // boutiq://connect-mail?success=true ile geri döner
+    const result = await WebBrowser.openAuthSessionAsync(authUrl, 'boutiq://connect-mail');
+
+    if (result.type === 'cancel') {
+      setLoading(false);
+    }
+    // success durumu useEffect'te params üzerinden gelir
   };
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <View style={[styles.container, { paddingTop: insets.top }]}>
-        <LinearGradient
-          colors={[Colors.surface3, Colors.bg]}
-          style={StyleSheet.absoluteFill}
-          locations={[0, 0.35]}
-        />
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      <LinearGradient
+        colors={[Colors.surface3, Colors.bg]}
+        style={StyleSheet.absoluteFill}
+        locations={[0, 0.35]}
+      />
 
-        {/* Geri */}
-        <TouchableOpacity onPress={() => router.back()} style={[styles.backBtn, { top: insets.top + 12 }]}>
-          <Ionicons name="chevron-back" size={22} color={Colors.text3} />
-        </TouchableOpacity>
+      {/* Geri */}
+      <TouchableOpacity onPress={() => router.back()} style={[styles.backBtn, { top: insets.top + 12 }]}>
+        <Ionicons name="chevron-back" size={22} color={Colors.text3} />
+      </TouchableOpacity>
 
-        <View style={styles.scroll}>
-          {connected ? (
-            /* ── Başarı ── */
-            <View style={styles.successContainer}>
-              <View style={styles.successIcon}>
-                <LinearGradient colors={[Colors.success, '#06d6a0']} style={StyleSheet.absoluteFill} />
-                <Ionicons name="checkmark" size={48} color="#fff" />
-              </View>
-              <Text style={styles.successTitle}>E-posta Bağlandı!</Text>
-              <Text style={styles.successBody}>
-                Kargo e-postaların artık otomatik olarak{'\n'}Kargo Takip ekranına eklenecek.
-              </Text>
-              <TouchableOpacity style={styles.doneBtn} onPress={() => router.back()}>
-                <LinearGradient colors={[Colors.rose2, Colors.rose4]} style={StyleSheet.absoluteFill} />
-                <Text style={styles.doneBtnText}>Harika!</Text>
-              </TouchableOpacity>
+      <View style={styles.content}>
+        {connected ? (
+          /* ── Başarı ── */
+          <View style={styles.successContainer}>
+            <View style={styles.successIcon}>
+              <LinearGradient colors={[Colors.success, '#06d6a0']} style={StyleSheet.absoluteFill} />
+              <Ionicons name="checkmark" size={52} color="#fff" />
             </View>
-          ) : (
-            <>
-              {/* İkon */}
-              <View style={styles.iconContainer}>
-                <LinearGradient colors={[Colors.gold2, Colors.gold4]} style={styles.iconBg}>
-                  <Ionicons name="mail" size={48} color="#fff" />
-                </LinearGradient>
-              </View>
-
-              <Text style={styles.title}>Kargo Takibini{'\n'}Otomatikleştir</Text>
-              <Text style={styles.subtitle}>
-                Gmail adresini gir, kargo e-postalarını otomatik olarak okuyalım.
+            <Text style={styles.successTitle}>Gmail Bağlandı!</Text>
+            {found > 0 ? (
+              <Text style={styles.successBody}>
+                Son 30 günde <Text style={{ color: Colors.gold3, fontWeight: '800' }}>{found} kargo</Text> bulundu
+                ve otomatik olarak eklendi.
               </Text>
+            ) : (
+              <Text style={styles.successBody}>
+                E-posta bağlandı. Yeni kargo bildirimleri geldiğinde otomatik eklenecek.
+              </Text>
+            )}
+            <TouchableOpacity style={styles.doneBtn} onPress={() => router.back()}>
+              <LinearGradient colors={[Colors.rose2, Colors.rose4]} style={StyleSheet.absoluteFill} />
+              <Text style={styles.doneBtnText}>Harika!</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <>
+            {/* İkon */}
+            <View style={styles.iconContainer}>
+              <LinearGradient colors={[Colors.gold2, Colors.gold4]} style={styles.iconBg}>
+                <Ionicons name="mail" size={48} color="#fff" />
+              </LinearGradient>
+            </View>
 
-              {/* Gmail input */}
-              <View style={[styles.inputWrap, focused && styles.inputFocused]}>
-                <Ionicons name="mail-outline" size={20} color={focused ? Colors.gold3 : Colors.text4} />
-                <TextInput
-                  style={styles.input}
-                  placeholder="gmail adresin"
-                  placeholderTextColor={Colors.text5}
-                  value={email}
-                  onChangeText={setEmail}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  keyboardType="email-address"
-                  selectionColor={Colors.gold3}
-                  onFocus={() => setFocused(true)}
-                  onBlur={() => setFocused(false)}
-                />
-              </View>
+            <Text style={styles.title}>Kargo Takibini{'\n'}Otomatikleştir</Text>
+            <Text style={styles.subtitle}>
+              Gmail hesabını bağla — son 30 günün kargo e-postalarını okuyalım,
+              siparişlerini otomatik ekleyelim.
+            </Text>
 
-              {/* İzinler */}
-              <View style={styles.permissionsCard}>
-                <LinearGradient colors={[Colors.surface2, Colors.surface3]} style={StyleSheet.absoluteFill} />
-                <Text style={styles.permissionsTitle}>Bu bağlantı şunları yapar:</Text>
-                {PERMISSIONS.map((p, i) => (
-                  <View key={i} style={styles.permRow}>
-                    <Ionicons name={p.icon as any} size={18} color={p.color} />
-                    <Text style={styles.permText}>{p.text}</Text>
-                  </View>
-                ))}
-              </View>
-
-              {/* Kargo firmaları */}
-              <View style={styles.carriersCard}>
-                <Text style={styles.carriersTitle}>Desteklenen kargo firmaları</Text>
-                <Text style={styles.carriers}>Yurtiçi · MNG · PTT · Aras · Sürat · UPS · DHL</Text>
-              </View>
-
-              {error && (
-                <View style={styles.errorBox}>
-                  <Ionicons name="warning" size={16} color={Colors.error} />
-                  <Text style={styles.errorText}>{error}</Text>
+            {/* İzinler */}
+            <View style={styles.permCard}>
+              <LinearGradient colors={[Colors.surface2, Colors.surface3]} style={StyleSheet.absoluteFill} />
+              <Text style={styles.permTitle}>Bu bağlantı şunları yapar:</Text>
+              {PERMISSIONS.map((p, i) => (
+                <View key={i} style={styles.permRow}>
+                  <Ionicons name={p.icon as any} size={18} color={p.color} />
+                  <Text style={styles.permText}>{p.text}</Text>
                 </View>
-              )}
+              ))}
+            </View>
 
-              {/* Bağlan */}
-              <TouchableOpacity
-                style={[styles.connectBtn, (!isValidEmail || loading) && styles.connectBtnDisabled]}
-                onPress={handleConnect}
-                disabled={!isValidEmail || loading}
-                activeOpacity={0.85}
-              >
-                <LinearGradient
-                  colors={isValidEmail ? ['#4285F4', '#2563EB'] : [Colors.surface3, Colors.surface3]}
-                  style={StyleSheet.absoluteFill}
-                />
-                {loading
-                  ? <ActivityIndicator color="#fff" />
-                  : <>
-                      <Ionicons name="mail" size={20} color={isValidEmail ? '#fff' : Colors.text4} />
-                      <Text style={[styles.connectBtnText, !isValidEmail && { color: Colors.text4 }]}>
-                        Gmail ile Bağlan
-                      </Text>
-                    </>}
-              </TouchableOpacity>
+            {/* Desteklenen firmalar */}
+            <View style={styles.carriersCard}>
+              <Text style={styles.carriersTitle}>Desteklenen kargo firmaları</Text>
+              <Text style={styles.carriers}>Yurtiçi · MNG · PTT · Aras · Sürat · UPS · DHL</Text>
+            </View>
 
-              <Text style={styles.privacyNote}>
-                Güvenliğin için yalnızca kargo bildirimleri içeren e-postalara erişilir.
-                Bağlantıyı istediğin zaman profilinden kaldırabilirsin.
-              </Text>
-            </>
-          )}
-        </View>
+            {error && (
+              <View style={styles.errorBox}>
+                <Ionicons name="warning" size={16} color={Colors.error} />
+                <Text style={styles.errorText}>{error}</Text>
+              </View>
+            )}
+
+            {/* Bağlan butonu */}
+            <TouchableOpacity
+              style={styles.connectBtn}
+              onPress={handleConnect}
+              disabled={loading}
+              activeOpacity={0.85}
+            >
+              <LinearGradient colors={['#4285F4', '#2563EB']} style={StyleSheet.absoluteFill} />
+              {loading
+                ? <ActivityIndicator color="#fff" />
+                : <>
+                    <Ionicons name="logo-google" size={20} color="#fff" />
+                    <Text style={styles.connectBtnText}>Gmail ile Bağlan</Text>
+                  </>}
+            </TouchableOpacity>
+
+            <Text style={styles.privacyNote}>
+              Yalnızca kargo bildirimleri okunur. Bağlantıyı profilinden istediğin zaman kaldırabilirsin.
+            </Text>
+          </>
+        )}
       </View>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
@@ -198,7 +203,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface2, alignItems: 'center', justifyContent: 'center',
     borderWidth: 1, borderColor: Colors.border2,
   },
-  scroll: { flex: 1, paddingHorizontal: 24, paddingTop: 80, paddingBottom: 48 },
+  content: { flex: 1, paddingHorizontal: 24, paddingTop: 80, paddingBottom: 48 },
   iconContainer: { alignItems: 'center', marginBottom: 24 },
   iconBg: { width: 88, height: 88, borderRadius: 26, alignItems: 'center', justifyContent: 'center' },
   title: {
@@ -206,19 +211,11 @@ const styles = StyleSheet.create({
     letterSpacing: -1.2, lineHeight: 36, marginBottom: 12, textAlign: 'center',
   },
   subtitle: { fontSize: 15, color: Colors.text3, lineHeight: 22, textAlign: 'center', marginBottom: 24 },
-  inputWrap: {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    backgroundColor: Colors.surface2, borderRadius: 16,
-    borderWidth: 1.5, borderColor: Colors.border2,
-    paddingHorizontal: 16, height: 56, marginBottom: 16,
-  },
-  inputFocused: { borderColor: Colors.gold3 },
-  input: { flex: 1, fontSize: 16, color: Colors.text1 },
-  permissionsCard: {
+  permCard: {
     borderRadius: 20, padding: 18, marginBottom: 12,
     borderWidth: 1, borderColor: Colors.border1, overflow: 'hidden', gap: 10,
   },
-  permissionsTitle: {
+  permTitle: {
     fontSize: 11, fontWeight: '700', color: Colors.text4,
     letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 4,
   },
@@ -240,7 +237,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     gap: 10, height: 56, borderRadius: 18, overflow: 'hidden', marginBottom: 16,
   },
-  connectBtnDisabled: { opacity: 0.6 },
   connectBtnText: { fontSize: 16, fontWeight: '700', color: '#fff' },
   privacyNote: { fontSize: 12, color: Colors.text5, textAlign: 'center', lineHeight: 18 },
   successContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 20 },
@@ -249,7 +245,7 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
   },
   successTitle: { fontSize: 28, fontWeight: '800', color: Colors.text1, letterSpacing: -0.5 },
-  successBody: { fontSize: 15, color: Colors.text3, textAlign: 'center', lineHeight: 23 },
+  successBody: { fontSize: 15, color: Colors.text3, textAlign: 'center', lineHeight: 23, paddingHorizontal: 16 },
   doneBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     height: 56, width: 200, borderRadius: 18, overflow: 'hidden', marginTop: 8,
