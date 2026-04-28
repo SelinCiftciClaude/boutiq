@@ -74,6 +74,7 @@ export interface Shipment {
   }[];
   totalAmount: number;
   currency: string;
+  createdAt: string;
 }
 
 export type ShipmentStatus =

@@ -255,6 +255,7 @@ export const MOCK_SHIPMENTS: Shipment[] = [
     ],
     totalAmount: 4800,
     currency: 'TL',
+    createdAt: '2026-04-22T14:00:00Z',
     events: [
       {
         id: 'e1',
@@ -313,6 +314,7 @@ export const MOCK_SHIPMENTS: Shipment[] = [
     ],
     totalAmount: 4340,
     currency: 'TL',
+    createdAt: '2026-04-22T11:00:00Z',
     events: [
       {
         id: 'e5',
@@ -352,6 +354,7 @@ export const MOCK_SHIPMENTS: Shipment[] = [
     ],
     totalAmount: 1300,
     currency: 'TL',
+    createdAt: '2026-04-18T10:00:00Z',
     events: [
       {
         id: 'e7',

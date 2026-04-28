@@ -84,6 +84,7 @@ export function fromDbShipment(row: Row, brand?: { logo_url?: string | null }): 
     products: row.products ?? [],
     totalAmount: row.total_amount != null ? Number(row.total_amount) : 0,
     currency: row.currency ?? 'TL',
+    createdAt: row.created_at ?? row.updated_at ?? new Date().toISOString(),
   };
 }
 
