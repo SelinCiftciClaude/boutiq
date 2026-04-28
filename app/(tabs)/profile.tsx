@@ -268,9 +268,6 @@ export default function ProfileScreen() {
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Profil</Text>
-          <TouchableOpacity style={styles.settingsBtn}>
-            <Ionicons name="settings-outline" size={20} color={Colors.text2} />
-          </TouchableOpacity>
         </View>
 
         {/* Profile card */}
