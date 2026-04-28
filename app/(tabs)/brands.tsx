@@ -196,7 +196,7 @@ export default function BrandsScreen() {
   const favorites = filtered.filter(b => b.isFavorite);
   const others = filtered.filter(b => !b.isFavorite);
 
-  // Clearbit arama
+  // Akıllı arama: Clearbit + domain tahmini + Google favicon
   useEffect(() => {
     if (!debouncedQuery.trim() || debouncedQuery.length < 2) {
       setSuggestions([]); return;
@@ -204,30 +204,65 @@ export default function BrandsScreen() {
     const q = debouncedQuery.toLowerCase().trim();
     setSearchLoading(true);
 
+    // Google favicon ile logo URL üret (domain yoksa globe ikonu döner — yine de gösteririz)
+    const favicon = (domain: string) =>
+      `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
+
+    // Yerel koleksiyondan eşleşmeler
     const dbMatches: SuggestionItem[] = brands
       .filter(b => b.name.toLowerCase().includes(q) || b.handle?.toLowerCase().includes(q))
-      .slice(0, 3)
+      .slice(0, 2)
       .map(b => ({
         id: b.id, name: b.name,
         domain: b.website?.replace(/^https?:\/\//, '').split('/')[0] ?? '',
-        logo: b.logo, isInDb: true, dbBrand: b,
+        logo: b.logo || favicon(b.website?.replace(/^https?:\/\//, '').split('/')[0] ?? ''),
+        isInDb: true, dbBrand: b,
       }));
 
+    // Kullanıcı direkt domain yazdıysa (nokta var)
+    if (q.includes('.')) {
+      const domain = q.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0];
+      const name = domain.split('.')[0].replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+      const direct: SuggestionItem = { id: domain, name, domain, logo: favicon(domain), isInDb: false };
+      const dbDomains = new Set(dbMatches.map(d => d.domain));
+      if (!dbDomains.has(domain)) setSuggestions([direct, ...dbMatches]);
+      else setSuggestions(dbMatches);
+      setSearchLoading(false);
+      return;
+    }
+
+    // Marka adından olası domain'ler üret
+    const slug = q.replace(/\s+/g, '');
+    const domainCandidates = [
+      `${slug}.com`,
+      `${slug}.com.tr`,
+      `${slug}.net`,
+      `${slug}.net.tr`,
+      `${slug}.store`,
+    ];
+
+    const namePretty = q.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    const guessed: SuggestionItem[] = domainCandidates.map(domain => ({
+      id: domain, name: namePretty, domain, logo: favicon(domain), isInDb: false,
+    }));
+
+    // Clearbit paralelde dene (büyük markalar için)
     fetch(`https://autocomplete.clearbit.com/v1/companies/suggest?query=${encodeURIComponent(debouncedQuery)}`)
       .then(r => r.json())
       .then((data: any[]) => {
-        const dbDomains = new Set(dbMatches.map(d => d.domain));
-        const external: SuggestionItem[] = (data ?? [])
-          .filter(s => !dbDomains.has(s.domain))
-          .slice(0, 6)
-          .map(s => ({
-            id: s.domain, name: s.name, domain: s.domain,
-            logo: s.logo ?? `https://logo.clearbit.com/${s.domain}`,
-            isInDb: false,
-          }));
-        setSuggestions([...dbMatches, ...external]);
+        const clearbit: SuggestionItem[] = (data ?? []).slice(0, 3).map(s => ({
+          id: s.domain, name: s.name, domain: s.domain,
+          logo: s.logo ?? favicon(s.domain),
+          isInDb: false,
+        }));
+        const allDomains = new Set([...dbMatches.map(d => d.domain), ...clearbit.map(d => d.domain)]);
+        const extra = guessed.filter(g => !allDomains.has(g.domain));
+        setSuggestions([...dbMatches, ...clearbit, ...extra].slice(0, 8));
       })
-      .catch(() => setSuggestions(dbMatches))
+      .catch(() => {
+        const dbDomains = new Set(dbMatches.map(d => d.domain));
+        setSuggestions([...dbMatches, ...guessed.filter(g => !dbDomains.has(g.domain))].slice(0, 7));
+      })
       .finally(() => setSearchLoading(false));
   }, [debouncedQuery]);
 
