@@ -8,7 +8,7 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import * as WebBrowser from 'expo-web-browser';
-import * as AuthSession from 'expo-auth-session';
+import * as Google from 'expo-auth-session/providers/google';
 import { Colors } from '@/constants/Colors';
 import { supabase } from '@/services/supabase';
 import { useAuth } from '@/context/AuthContext';
@@ -16,7 +16,8 @@ import { useQueryClient } from '@tanstack/react-query';
 
 WebBrowser.maybeCompleteAuthSession();
 
-const GOOGLE_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID ?? '';
+// iOS Client ID → Google Cloud Console → iOS uygulaması olarak oluştur
+const GOOGLE_IOS_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID ?? '';
 
 const PERMISSIONS = [
   { icon: 'checkmark-circle', color: Colors.success, text: 'Kargo e-postalarını okur' },
@@ -33,36 +34,30 @@ export default function ConnectMailScreen() {
   const [connected, setConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const redirectUri = AuthSession.makeRedirectUri({ scheme: 'boutiq', path: 'connect-mail' });
-
-  const [request, response, promptAsync] = AuthSession.useAuthRequest(
-    {
-      clientId: GOOGLE_CLIENT_ID,
-      scopes: ['https://www.googleapis.com/auth/gmail.readonly'],
-      redirectUri,
-      responseType: AuthSession.ResponseType.Code,
-      usePKCE: true,
-    },
-    { authorizationEndpoint: 'https://accounts.google.com/o/oauth2/v2/auth' }
-  );
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    iosClientId: GOOGLE_IOS_CLIENT_ID,
+    scopes: ['https://www.googleapis.com/auth/gmail.readonly'],
+  });
 
   React.useEffect(() => {
-    if (response?.type === 'success' && response.params.code) {
-      handleGoogleSuccess(response.params.code);
+    if (response?.type === 'success') {
+      const token = response.authentication?.accessToken;
+      if (token) handleGoogleSuccess(token);
     } else if (response?.type === 'error') {
-      setError('Google bağlantısı başarısız oldu. Tekrar deneyin.');
+      setError('Google bağlantısı başarısız oldu: ' + (response.error?.message ?? 'Bilinmeyen hata'));
       setLoading(false);
     }
   }, [response]);
 
-  const handleGoogleSuccess = async (code: string) => {
+  const handleGoogleSuccess = async (accessToken: string) => {
     if (!user) return;
     try {
-      // Token exchange ve DB kayıt
       const { error: updateErr } = await supabase
         .from('profiles')
         .update({
-          connected_accounts: { gmail: { connected: true, code, connected_at: new Date().toISOString() } },
+          connected_accounts: {
+            gmail: { connected: true, access_token: accessToken, connected_at: new Date().toISOString() },
+          },
         })
         .eq('id', user.id);
 
@@ -79,7 +74,7 @@ export default function ConnectMailScreen() {
   };
 
   const handleConnect = async () => {
-    if (!GOOGLE_CLIENT_ID) {
+    if (!GOOGLE_IOS_CLIENT_ID) {
       setError('Google Client ID eksik. .env dosyasına EXPO_PUBLIC_GOOGLE_CLIENT_ID ekle.');
       return;
     }
