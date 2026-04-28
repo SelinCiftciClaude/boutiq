@@ -132,6 +132,17 @@ export default function HomeScreen() {
     ? sortedBrands.filter(b => forYouCategories.includes(b.category))
     : sortedBrands.slice(0, 4);
 
+  // "Beğenebileceğin Ürünler": kullanıcının koleksiyonunda OLMAYAN markalardan,
+  // ilgi alanlarıyla eşleşen kategorilerdeki ürünler
+  const savedBrandIds = new Set(savedBrands.data?.map(b => b.id) ?? []);
+  const discoverCategories = forYouCategories.length > 0 ? forYouCategories : null;
+
+  const discoverProducts = products
+    .filter(p => !savedBrandIds.has(p.brandId)) // koleksiyonda olmayan markalar
+    .filter(p => !discoverCategories || discoverCategories.includes(p.category as any))
+    .filter(p => selectedCategory === 'all' || p.category === selectedCategory)
+    .slice(0, 20);
+
   const forYouProducts = forYouCategories.length > 0
     ? products.filter(p => forYouBrands.some(b => b.id === p.brandId))
     : products.slice(0, 6);
@@ -395,28 +406,32 @@ export default function HomeScreen() {
           )}
         </View>
 
-        {/* Ürünler */}
+        {/* Beğenebileceğin Ürünler */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <View>
-              <Text style={styles.sectionLabel}>YENİ DÜŞENLER</Text>
-              <Text style={styles.sectionTitle}>Ürünler</Text>
+              <Text style={styles.sectionLabel}>KİŞİSEL ÖNERİ</Text>
+              <Text style={styles.sectionTitle}>Beğenebileceğin Ürünler</Text>
             </View>
             <TouchableOpacity onPress={() => router.push('/all-products' as any)}>
               <Text style={styles.seeAll}>Tümünü gör</Text>
             </TouchableOpacity>
           </View>
-          {filteredProducts.length === 0 ? (
-            <Text style={styles.emptyFilter}>Bu kategoride ürün bulunamadı.</Text>
+          {discoverProducts.length === 0 ? (
+            <Text style={styles.emptyFilter}>
+              {savedBrandIds.size === 0
+                ? 'Butik ekledikçe kişisel öneriler burada görünür.'
+                : 'Tüm mevcut butikleri koleksiyonuna ekledin! Yeni butikler eklenince burada görünür.'}
+            </Text>
           ) : (
             <View style={styles.productsGrid}>
               <View style={styles.productCol}>
-                {filteredProducts.filter((_, i) => i % 2 === 0).map((p, i) => (
+                {discoverProducts.filter((_, i) => i % 2 === 0).map((p, i) => (
                   <ProductCard key={p.id} product={p} tall={i % 3 === 1} />
                 ))}
               </View>
               <View style={[styles.productCol, styles.productColOffset]}>
-                {filteredProducts.filter((_, i) => i % 2 === 1).map((p, i) => (
+                {discoverProducts.filter((_, i) => i % 2 === 1).map((p, i) => (
                   <ProductCard key={p.id} product={p} tall={i % 3 === 0} />
                 ))}
               </View>
