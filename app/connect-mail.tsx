@@ -40,6 +40,8 @@ export default function ConnectMailScreen() {
       clientId: GOOGLE_CLIENT_ID,
       scopes: ['https://www.googleapis.com/auth/gmail.readonly'],
       redirectUri,
+      responseType: AuthSession.ResponseType.Code,
+      usePKCE: true,
     },
     { authorizationEndpoint: 'https://accounts.google.com/o/oauth2/v2/auth' }
   );
@@ -78,7 +80,7 @@ export default function ConnectMailScreen() {
 
   const handleConnect = async () => {
     if (!GOOGLE_CLIENT_ID) {
-      setError('Google OAuth henüz yapılandırılmamış. EXPO_PUBLIC_GOOGLE_CLIENT_ID .env dosyasına eklenmelidir.');
+      setError('Google Client ID eksik. .env dosyasına EXPO_PUBLIC_GOOGLE_CLIENT_ID ekle.');
       return;
     }
     setLoading(true);
