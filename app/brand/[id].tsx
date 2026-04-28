@@ -15,7 +15,6 @@ import { useSavedBrands } from '@/hooks/useSavedBrands';
 import { useAuth } from '@/context/AuthContext';
 import { trackAffiliateClick } from '@/services/queries';
 import { ProductCard } from '@/components/ProductCard';
-import { useSavedProducts } from '@/hooks/useSavedProducts';
 import { useReviews } from '@/hooks/useReviews';
 import * as Clipboard from 'expo-clipboard';
 
@@ -25,7 +24,6 @@ export default function BrandDetailScreen() {
   const { user } = useAuth();
   const { brand: brandQ, products: productsQ, campaigns: campaignsQ } = useBrandDetail(id);
   const savedBrands = useSavedBrands();
-  const { remove: unsaveProduct } = useSavedProducts();
   const { query: reviewsQ, myReview, avgRating, submit: submitReview } = useReviews(id ?? '');
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [reviewModalVisible, setReviewModalVisible] = useState(false);
@@ -224,13 +222,13 @@ export default function BrandDetailScreen() {
                 <View style={styles.col}>
                   {left.map((p, i) => (
                     <ProductCard key={p.id} product={p} tall={i % 3 === 1}
-                      onUnsave={() => unsaveProduct.mutate(p.id)} />
+                       />
                   ))}
                 </View>
                 <View style={[styles.col, styles.colOffset]}>
                   {right.map((p, i) => (
                     <ProductCard key={p.id} product={p} tall={i % 3 === 0}
-                      onUnsave={() => unsaveProduct.mutate(p.id)} />
+                       />
                   ))}
                 </View>
               </View>

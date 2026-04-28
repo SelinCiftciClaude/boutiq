@@ -214,12 +214,12 @@ export default function ProductDetailScreen() {
               <View style={styles.grid}>
                 <View style={styles.col}>
                   {leftRelated.map((p, i) => (
-                    <ProductCard key={p.id} product={p} tall={i % 3 === 1} onUnsave={() => unsaveProduct.mutate(p.id)} />
+                    <ProductCard key={p.id} product={p} tall={i % 3 === 1}  />
                   ))}
                 </View>
                 <View style={[styles.col, styles.colOffset]}>
                   {rightRelated.map((p, i) => (
-                    <ProductCard key={p.id} product={p} tall={i % 3 === 0} onUnsave={() => unsaveProduct.mutate(p.id)} />
+                    <ProductCard key={p.id} product={p} tall={i % 3 === 0}  />
                   ))}
                 </View>
               </View>

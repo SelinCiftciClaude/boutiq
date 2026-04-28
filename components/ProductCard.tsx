@@ -14,29 +14,31 @@ import { router } from 'expo-router';
 import { Colors } from '../constants/Colors';
 import { Product } from '../types';
 import { Badge } from './ui/Badge';
+import { useSavedProducts } from '@/hooks/useSavedProducts';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 48) / 2;
 
 interface ProductCardProps {
   product: Product;
-  onUnsave?: (id: string) => void;
+  onUnsave?: (id: string) => void; // opsiyonel: üst ekran listeyi güncellemek isterse
   tall?: boolean;
 }
 
 export function ProductCard({ product, onUnsave, tall = false }: ProductCardProps) {
-  const [saved, setSaved] = useState(product.isSaved);
+  const { add, remove, isSaved } = useSavedProducts();
   const [imgError, setImgError] = useState(false);
 
-  useEffect(() => {
-    setSaved(product.isSaved);
-  }, [product.isSaved]);
+  // Kayıtlı durumu hook'tan al (her zaman sunucuyla senkron)
+  const saved = isSaved(product.id);
 
   const handleSaveToggle = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    if (saved && onUnsave) {
-      setSaved(false);
-      onUnsave(product.id);
+    if (saved) {
+      remove.mutate(product.id);
+      onUnsave?.(product.id);
+    } else {
+      add.mutate(product.id);
     }
   };
 
@@ -125,9 +127,7 @@ const styles = StyleSheet.create({
     borderColor: Colors.border1,
     marginBottom: 12,
   },
-  cardTall: {
-    // Staggered grid: alternate heights
-  },
+  cardTall: {},
   imageContainer: {
     position: 'relative',
   },

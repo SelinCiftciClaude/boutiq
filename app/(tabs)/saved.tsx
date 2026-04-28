@@ -310,22 +310,12 @@ export default function SavedScreen() {
             <View style={styles.masonryGrid}>
               <View style={styles.productCol}>
                 {displayProducts.filter((_, i) => i % 2 === 0).map((p, i) => (
-                  <ProductCard
-                    key={p.id}
-                    product={p}
-                    onUnsave={handleUnsave}
-                    tall={i % 3 === 1}
-                  />
+                  <ProductCard key={p.id} product={p} tall={i % 3 === 1} />
                 ))}
               </View>
               <View style={[styles.productCol, styles.productColOffset]}>
                 {displayProducts.filter((_, i) => i % 2 === 1).map((p, i) => (
-                  <ProductCard
-                    key={p.id}
-                    product={p}
-                    onUnsave={handleUnsave}
-                    tall={i % 3 === 0}
-                  />
+                  <ProductCard key={p.id} product={p} tall={i % 3 === 0} />
                 ))}
               </View>
             </View>
