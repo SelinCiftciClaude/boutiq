@@ -17,6 +17,7 @@ import { useAuth } from '@/context/AuthContext';
 import { trackAffiliateClick } from '@/services/queries';
 import { ProductCard } from '@/components/ProductCard';
 import { useStockAlert } from '@/hooks/useStockAlert';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width } = Dimensions.get('window');
 const CHART_W = width - 64;
@@ -83,6 +84,16 @@ export default function ProductDetailScreen() {
   const product = productQ.data;
   const related = relatedQ.data ?? [];
   const history = priceHistory.data ?? [];
+
+  // Görüntüleme geçmişine kaydet
+  React.useEffect(() => {
+    if (!product?.id) return;
+    AsyncStorage.getItem('viewHistory').then(raw => {
+      const prev: string[] = raw ? JSON.parse(raw) : [];
+      const updated = [product.id, ...prev.filter(i => i !== product.id)].slice(0, 50);
+      AsyncStorage.setItem('viewHistory', JSON.stringify(updated));
+    });
+  }, [product?.id]);
 
   const allImages = product ? [product.image, ...(product.images ?? [])].filter(Boolean) : [];
 

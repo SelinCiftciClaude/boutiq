@@ -1,490 +1,408 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Dimensions,
-  Image,
+  View, Text, StyleSheet, ScrollView, TouchableOpacity,
+  Image, TextInput, ActivityIndicator, FlatList,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { router } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Colors } from '../../constants/Colors';
 import { ProductCard } from '../../components/ProductCard';
-import { Badge } from '../../components/ui/Badge';
+import { BrandCard } from '../../components/BrandCard';
 import { Product } from '../../types';
 import { useSavedProducts } from '@/hooks/useSavedProducts';
+import { useSavedBrands } from '@/hooks/useSavedBrands';
+import { useShipments } from '@/hooks/useShipments';
+import { supabase } from '@/services/supabase';
+import { fromDbProduct } from '@/services/mappers';
+import { useAuth } from '@/context/AuthContext';
 
-const { width } = Dimensions.get('window');
+// ─── Sekmeler ─────────────────────────────────────────────────────────────
+type Tab = 'favorites' | 'history' | 'reorder' | 'collections';
 
-const SORT_OPTIONS = ['Son Kaydedilen', 'Fiyat (Az→Çok)', 'Fiyat (Çok→Az)', 'İndirimli'];
+const TABS: { id: Tab; label: string; emoji: string; color: string; bg: string }[] = [
+  { id: 'favorites',    label: 'Favorilerim',         emoji: '❤️', color: Colors.rose3,   bg: Colors.roseGlow },
+  { id: 'history',     label: 'Önceden Gezdiklerim', emoji: '🕐', color: Colors.gold3,   bg: Colors.glassGold },
+  { id: 'reorder',     label: 'Tekrar Satın Al',      emoji: '🔄', color: Colors.purple3, bg: Colors.purpleGlow },
+  { id: 'collections', label: 'Koleksiyonlar',        emoji: '⭐', color: Colors.info,    bg: 'rgba(59,130,246,0.12)' },
+];
 
-type ViewMode = 'masonry' | 'list';
-
-function SavedProductListItem({ product, onUnsave }: { product: Product; onUnsave: (id: string) => void }) {
-  const discount = product.originalPrice
-    ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
-    : 0;
-
+// ─── Boş durum ────────────────────────────────────────────────────────────
+function EmptyState({ icon, title, subtitle }: { icon: string; title: string; subtitle: string }) {
   return (
-    <View style={listStyles.card}>
-      <Image source={{ uri: product.image }} style={listStyles.image} resizeMode="cover" />
-      <View style={listStyles.info}>
-        <View style={listStyles.brandRow}>
-          <Image source={{ uri: product.brandLogo }} style={listStyles.brandLogo} />
-          <Text style={listStyles.brandName}>{product.brandName}</Text>
-          {!product.inStock && <Badge label="Tükendi" variant="neutral" />}
-        </View>
-        <Text style={listStyles.name} numberOfLines={2}>{product.name}</Text>
-        <View style={listStyles.priceRow}>
-          <Text style={listStyles.price}>₺{product.price.toLocaleString('tr-TR')}</Text>
-          {product.originalPrice && (
-            <>
-              <Text style={listStyles.originalPrice}>
-                ₺{product.originalPrice.toLocaleString('tr-TR')}
-              </Text>
-              <Badge label={`-%${discount}`} variant="sale" />
-            </>
-          )}
-        </View>
-        <Text style={listStyles.savedDate}>
-          {product.savedAt ? `${product.savedAt} kaydedildi` : ''}
-        </Text>
+    <View style={styles.emptyState}>
+      <Text style={styles.emptyIcon}>{icon}</Text>
+      <Text style={styles.emptyTitle}>{title}</Text>
+      <Text style={styles.emptySubtitle}>{subtitle}</Text>
+    </View>
+  );
+}
+
+// ─── Masonry grid ──────────────────────────────────────────────────────────
+function MasonryGrid({ products }: { products: Product[] }) {
+  if (products.length === 0) return null;
+  const left  = products.filter((_, i) => i % 2 === 0);
+  const right = products.filter((_, i) => i % 2 === 1);
+  return (
+    <View style={styles.masonryGrid}>
+      <View style={styles.productCol}>
+        {left.map((p, i) => <ProductCard key={p.id} product={p} tall={i % 3 === 1} />)}
       </View>
-      <View style={listStyles.actions}>
-        <TouchableOpacity
-          style={listStyles.actionBtn}
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            onUnsave(product.id);
-          }}
-        >
-          <Ionicons name="heart" size={18} color="#F43F5E" />
-        </TouchableOpacity>
-        <TouchableOpacity style={listStyles.actionBtn}>
-          <Ionicons name="open-outline" size={16} color={Colors.text3} />
-        </TouchableOpacity>
+      <View style={[styles.productCol, styles.productColOffset]}>
+        {right.map((p, i) => <ProductCard key={p.id} product={p} tall={i % 3 === 0} />)}
       </View>
     </View>
   );
 }
 
-const listStyles = StyleSheet.create({
-  card: {
-    flexDirection: 'row',
-    backgroundColor: Colors.surface2,
-    borderRadius: 18,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: Colors.border1,
-    marginBottom: 12,
-  },
-  image: {
-    width: 100,
-    height: 120,
-    backgroundColor: Colors.surface3,
-  },
-  info: {
-    flex: 1,
-    padding: 12,
-    gap: 4,
-    justifyContent: 'space-between',
-  },
-  brandRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  brandLogo: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: Colors.surface3,
-  },
-  brandName: {
-    fontSize: 11,
-    color: Colors.text4,
-    fontWeight: '600',
-    flex: 1,
-  },
-  name: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: Colors.text1,
-    lineHeight: 19,
-    letterSpacing: -0.2,
-  },
-  priceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  price: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: Colors.gold4,
-    letterSpacing: -0.3,
-  },
-  originalPrice: {
-    fontSize: 12,
-    color: Colors.text5,
-    textDecorationLine: 'line-through',
-  },
-  savedDate: {
-    fontSize: 10,
-    color: Colors.text5,
-  },
-  actions: {
-    paddingVertical: 12,
-    paddingRight: 12,
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-  },
-  actionBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: Colors.surface3,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: Colors.border1,
-  },
-});
-
+// ─── Ana ekran ─────────────────────────────────────────────────────────────
 export default function SavedScreen() {
   const insets = useSafeAreaInsets();
-  const [viewMode, setViewMode] = useState<ViewMode>('masonry');
+  const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState<Tab>('favorites');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showSearch, setShowSearch] = useState(false);
+  const [filterSale, setFilterSale] = useState(false);
+  const [filterFlash, setFilterFlash] = useState(false);
   const [sortIndex, setSortIndex] = useState(0);
-  const [showSortMenu, setShowSortMenu] = useState(false);
-  const [filterOnSale, setFilterOnSale] = useState(false);
-  const { data: products = [], remove: unsaveMutation } = useSavedProducts();
+  const [showSort, setShowSort] = useState(false);
+  const [viewMode, setViewMode] = useState<'masonry' | 'list'>('masonry');
 
-  const baseProducts = filterOnSale ? products.filter((p) => p.isOnSale) : products;
+  // Veri kaynakları
+  const { data: savedProducts = [] } = useSavedProducts();
+  const { data: savedBrands = [] } = useSavedBrands();
+  const { data: shipments = [] } = useShipments();
+
+  // Görüntüleme geçmişi
+  const [historyProducts, setHistoryProducts] = useState<Product[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+
+  useEffect(() => {
+    if (activeTab !== 'history' || !user) return;
+    setHistoryLoading(true);
+    AsyncStorage.getItem('viewHistory').then(async raw => {
+      const ids: string[] = raw ? JSON.parse(raw) : [];
+      if (ids.length === 0) { setHistoryProducts([]); setHistoryLoading(false); return; }
+      const { data } = await supabase
+        .from('products')
+        .select('*, brands(name, logo_url)')
+        .in('id', ids.slice(0, 30));
+      const ordered = ids
+        .map(id => (data ?? []).find((p: any) => p.id === id))
+        .filter(Boolean)
+        .map((p: any) => fromDbProduct(p, p.brands));
+      setHistoryProducts(ordered);
+    }).finally(() => setHistoryLoading(false));
+  }, [activeTab, user]);
+
+  // Tekrar satın al: kargo ürünleri
+  const reorderItems = shipments.flatMap(s =>
+    (s.products ?? []).map((p, i) => ({ ...p, id: `${s.id}-${i}`, brandName: s.brandName, brandLogo: s.brandLogo }))
+  );
+
+  // Favorilerim için filtre + sıralama
+  const baseProducts = savedProducts
+    .filter(p => !filterSale || p.isOnSale)
+    .filter(p => !filterFlash || (p.originalPrice && p.price < p.originalPrice * 0.7))
+    .filter(p => !searchQuery || p.name.toLowerCase().includes(searchQuery.toLowerCase()) || p.brandName.toLowerCase().includes(searchQuery.toLowerCase()));
 
   const displayProducts = [...baseProducts].sort((a, b) => {
     if (sortIndex === 1) return a.price - b.price;
     if (sortIndex === 2) return b.price - a.price;
-    if (sortIndex === 3) {
-      if (a.isOnSale && !b.isOnSale) return -1;
-      if (!a.isOnSale && b.isOnSale) return 1;
-      return 0;
-    }
-    // sortIndex === 0: Son Kaydedilen (savedAt desc, default order)
     return 0;
   });
 
-  const handleUnsave = (id: string) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    unsaveMutation.mutate(id, {
-      onError: () => {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      },
-    });
-  };
-
-  const toggleViewMode = () => {
-    Haptics.selectionAsync();
-    setViewMode((v) => (v === 'masonry' ? 'list' : 'masonry'));
-  };
-
-  const savedBrands = [...new Set(displayProducts.map((p) => p.brandName))];
-  const onSaleCount = displayProducts.filter((p) => p.isOnSale).length;
+  const onSaleCount = savedProducts.filter(p => p.isOnSale).length;
+  const flashCount  = savedProducts.filter(p => p.originalPrice && p.price < p.originalPrice * 0.7).length;
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Background */}
       <View style={styles.bgGlow} />
 
       {/* Header */}
       <View style={styles.header}>
-        <View>
-          <Text style={styles.headerLabel}>KAYDEDİLENLER</Text>
-          <Text style={styles.headerTitle}>Favori Ürünler</Text>
-        </View>
-        <View style={styles.headerActions}>
+        <Text style={styles.headerTitle}>Favoriler</Text>
+        <View style={styles.headerRight}>
           <TouchableOpacity
-            onPress={toggleViewMode}
+            onPress={() => { setViewMode(v => v === 'masonry' ? 'list' : 'masonry'); Haptics.selectionAsync(); }}
             style={styles.iconBtn}
           >
-            <Ionicons
-              name={viewMode === 'masonry' ? 'list-outline' : 'grid-outline'}
-              size={20}
-              color={Colors.text2}
-            />
+            <Ionicons name={viewMode === 'masonry' ? 'list-outline' : 'grid-outline'} size={18} color={Colors.text2} />
           </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => setShowSortMenu((s) => !s)}
-            style={styles.iconBtn}
-          >
-            <Ionicons name="funnel-outline" size={18} color={Colors.text2} />
+          <TouchableOpacity onPress={() => { setShowSort(s => !s); Haptics.selectionAsync(); }} style={styles.iconBtn}>
+            <Ionicons name="funnel-outline" size={17} color={Colors.text2} />
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* Stats bar */}
-      <View style={styles.statsBar}>
-        <View style={styles.statItem}>
-          <Text style={styles.statValue}>{displayProducts.length}</Text>
-          <Text style={styles.statLabel}>ürün</Text>
-        </View>
-        <View style={styles.statDivider} />
-        <View style={styles.statItem}>
-          <Text style={styles.statValue}>{savedBrands.length}</Text>
-          <Text style={styles.statLabel}>butik</Text>
-        </View>
-        <View style={styles.statDivider} />
-        <TouchableOpacity
-          style={[styles.statItem, filterOnSale && styles.statItemActive]}
-          onPress={() => {
-            Haptics.selectionAsync();
-            setFilterOnSale((f) => !f);
-          }}
-        >
-          <Text style={[styles.statValue, filterOnSale && { color: Colors.gold3 }]}>
-            {onSaleCount}
-          </Text>
-          <Text style={[styles.statLabel, filterOnSale && { color: Colors.gold4 }]}>
-            indirimli
-          </Text>
-        </TouchableOpacity>
-      </View>
+      {/* ── Sekme kartları ── */}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabsScroll}>
+        {TABS.map(tab => {
+          const active = activeTab === tab.id;
+          return (
+            <TouchableOpacity
+              key={tab.id}
+              onPress={() => { Haptics.selectionAsync(); setActiveTab(tab.id); setShowSearch(false); setSearchQuery(''); }}
+              style={[styles.tabCard, active && { backgroundColor: tab.color }]}
+              activeOpacity={0.8}
+            >
+              {active && <LinearGradient colors={[tab.color, tab.color + 'CC']} style={StyleSheet.absoluteFill} />}
+              <View style={[styles.tabIconWrap, { backgroundColor: active ? 'rgba(255,255,255,0.25)' : tab.bg }]}>
+                <Text style={styles.tabEmoji}>{tab.emoji}</Text>
+              </View>
+              <Text style={[styles.tabLabel, active && styles.tabLabelActive]}>{tab.label}</Text>
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
 
-      {/* Sort menu dropdown */}
-      {showSortMenu && (
-        <View style={styles.sortMenu}>
-          <LinearGradient
-            colors={[Colors.surface2, Colors.surface3]}
-            style={StyleSheet.absoluteFill}
+      {/* ── Filtre çipleri (sadece Favorilerim sekmesinde) ── */}
+      {activeTab === 'favorites' && (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
+          {/* Ara */}
+          <TouchableOpacity
+            onPress={() => { setShowSearch(s => !s); Haptics.selectionAsync(); }}
+            style={[styles.filterChip, showSearch && styles.filterChipActive]}
+          >
+            {showSearch && <LinearGradient colors={[Colors.rose2, Colors.rose4]} style={StyleSheet.absoluteFill} />}
+            <Ionicons name="search" size={14} color={showSearch ? '#fff' : Colors.text3} />
+            <Text style={[styles.filterLabel, showSearch && styles.filterLabelActive]}>Ara</Text>
+          </TouchableOpacity>
+
+          {/* Fiyatı Düşenler */}
+          <TouchableOpacity
+            onPress={() => { setFilterSale(s => !s); setFilterFlash(false); Haptics.selectionAsync(); }}
+            style={[styles.filterChip, filterSale && styles.filterChipActive]}
+          >
+            {filterSale && <LinearGradient colors={[Colors.rose2, Colors.rose4]} style={StyleSheet.absoluteFill} />}
+            <Text style={styles.filterEmoji}>📉</Text>
+            <Text style={[styles.filterLabel, filterSale && styles.filterLabelActive]}>
+              Fiyatı Düşenler {onSaleCount > 0 ? `(${onSaleCount})` : ''}
+            </Text>
+          </TouchableOpacity>
+
+          {/* Flaş Ürünler */}
+          <TouchableOpacity
+            onPress={() => { setFilterFlash(s => !s); setFilterSale(false); Haptics.selectionAsync(); }}
+            style={[styles.filterChip, filterFlash && styles.filterChipActive]}
+          >
+            {filterFlash && <LinearGradient colors={[Colors.rose2, Colors.rose4]} style={StyleSheet.absoluteFill} />}
+            <Text style={styles.filterEmoji}>⚡</Text>
+            <Text style={[styles.filterLabel, filterFlash && styles.filterLabelActive]}>
+              Flaş Ürünler {flashCount > 0 ? `(${flashCount})` : ''}
+            </Text>
+          </TouchableOpacity>
+        </ScrollView>
+      )}
+
+      {/* Arama kutusu */}
+      {showSearch && activeTab === 'favorites' && (
+        <View style={styles.searchBox}>
+          <Ionicons name="search" size={16} color={Colors.text4} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Ürün veya marka adı..."
+            placeholderTextColor={Colors.text5}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            autoFocus
+            selectionColor={Colors.gold3}
           />
-          {SORT_OPTIONS.map((opt, i) => (
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery('')}>
+              <Ionicons name="close-circle" size={16} color={Colors.text4} />
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
+
+      {/* Sıralama menüsü */}
+      {showSort && (
+        <View style={styles.sortMenu}>
+          <LinearGradient colors={[Colors.surface2, Colors.surface3]} style={StyleSheet.absoluteFill} />
+          {['Son Kaydedilen', 'Fiyat Az→Çok', 'Fiyat Çok→Az'].map((opt, i) => (
             <TouchableOpacity
               key={i}
-              onPress={() => {
-                Haptics.selectionAsync();
-                setSortIndex(i);
-                setShowSortMenu(false);
-              }}
+              onPress={() => { setSortIndex(i); setShowSort(false); Haptics.selectionAsync(); }}
               style={[styles.sortOption, i === sortIndex && styles.sortOptionActive]}
             >
-              <Text style={[styles.sortText, i === sortIndex && styles.sortTextActive]}>
-                {opt}
-              </Text>
-              {i === sortIndex && (
-                <Ionicons name="checkmark" size={14} color={Colors.gold3} />
-              )}
+              <Text style={[styles.sortText, i === sortIndex && styles.sortTextActive]}>{opt}</Text>
+              {i === sortIndex && <Ionicons name="checkmark" size={14} color={Colors.gold3} />}
             </TouchableOpacity>
           ))}
         </View>
       )}
 
-      {/* Empty state */}
-      {displayProducts.length === 0 && (
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyIcon}>🤍</Text>
-          <Text style={styles.emptyTitle}>
-            {filterOnSale ? 'İndirimli ürün yok' : 'Henüz ürün kaydetmedin'}
-          </Text>
-          <Text style={styles.emptySubtitle}>
-            {filterOnSale
-              ? 'Filreyi kaldır veya başka ürünler keşfet.'
-              : 'Instagram\'dan ya da Keşfet\'ten beğendiğin ürünleri buraya kaydet.'}
-          </Text>
-        </View>
-      )}
+      {/* ── İçerik ── */}
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
 
-      {/* Products */}
-      {displayProducts.length > 0 && (
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
-        >
-          {viewMode === 'list' ? (
-            displayProducts.map((p) => (
-              <SavedProductListItem key={p.id} product={p} onUnsave={handleUnsave} />
-            ))
-          ) : (
-            <View style={styles.masonryGrid}>
-              <View style={styles.productCol}>
-                {displayProducts.filter((_, i) => i % 2 === 0).map((p, i) => (
-                  <ProductCard key={p.id} product={p} tall={i % 3 === 1} />
+        {/* FAVORİLERİM */}
+        {activeTab === 'favorites' && (
+          displayProducts.length === 0
+            ? <EmptyState icon="🤍" title="Henüz ürün kaydetmedin" subtitle="Beğendiğin ürünlere ❤️ basarak buraya ekle." />
+            : viewMode === 'masonry'
+              ? <MasonryGrid products={displayProducts} />
+              : displayProducts.map(p => <ProductListRow key={p.id} product={p} />)
+        )}
+
+        {/* ÖNCEDEN GEZDİKLERİM */}
+        {activeTab === 'history' && (
+          historyLoading
+            ? <ActivityIndicator color={Colors.gold3} style={{ marginTop: 48 }} />
+            : historyProducts.length === 0
+              ? <EmptyState icon="🕐" title="Geçmiş boş" subtitle="Ürünlere baktıkça burada görünür." />
+              : <MasonryGrid products={historyProducts} />
+        )}
+
+        {/* TEKRAR SATIN AL */}
+        {activeTab === 'reorder' && (
+          reorderItems.length === 0
+            ? <EmptyState icon="🔄" title="Sipariş geçmişi yok" subtitle="Kargo takibine sipariş ekledikçe burada görünür." />
+            : <View style={styles.reorderList}>
+                {reorderItems.map((item, i) => (
+                  <View key={i} style={styles.reorderCard}>
+                    <LinearGradient colors={[Colors.surface2, Colors.surface1]} style={StyleSheet.absoluteFill} />
+                    {item.image
+                      ? <Image source={{ uri: item.image }} style={styles.reorderImg} />
+                      : <View style={[styles.reorderImg, { backgroundColor: Colors.surface3, alignItems: 'center', justifyContent: 'center' }]}>
+                          <Ionicons name="image-outline" size={20} color={Colors.text5} />
+                        </View>}
+                    <View style={styles.reorderInfo}>
+                      <Text style={styles.reorderName} numberOfLines={2}>{item.name}</Text>
+                      <View style={styles.reorderBrand}>
+                        {item.brandLogo ? <Image source={{ uri: item.brandLogo }} style={styles.reorderLogo} /> : null}
+                        <Text style={styles.reorderBrandName}>{item.brandName}</Text>
+                      </View>
+                    </View>
+                  </View>
                 ))}
               </View>
-              <View style={[styles.productCol, styles.productColOffset]}>
-                {displayProducts.filter((_, i) => i % 2 === 1).map((p, i) => (
-                  <ProductCard key={p.id} product={p} tall={i % 3 === 0} />
+        )}
+
+        {/* KOLEKSİYONLAR */}
+        {activeTab === 'collections' && (
+          savedBrands.length === 0
+            ? <EmptyState icon="⭐" title="Koleksiyon boş" subtitle="Butikler sekmesinden marka ekle." />
+            : <View style={styles.collectionList}>
+                {savedBrands.map(brand => (
+                  <BrandCard
+                    key={brand.id}
+                    brand={brand}
+                    variant="horizontal"
+                    onPress={b => router.push(`/brand/${b.id}` as any)}
+                  />
                 ))}
               </View>
-            </View>
-          )}
-          <View style={{ height: 100 }} />
-        </ScrollView>
-      )}
+        )}
+
+        <View style={{ height: 100 }} />
+      </ScrollView>
     </View>
   );
 }
 
+// ─── Liste satırı (list view) ─────────────────────────────────────────────
+function ProductListRow({ product }: { product: Product }) {
+  const discount = product.originalPrice
+    ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
+    : 0;
+  return (
+    <TouchableOpacity style={listRow.card} onPress={() => router.push(`/product/${product.id}` as any)} activeOpacity={0.85}>
+      <Image source={{ uri: product.image }} style={listRow.img} />
+      <View style={listRow.info}>
+        <Text style={listRow.brand}>{product.brandName}</Text>
+        <Text style={listRow.name} numberOfLines={2}>{product.name}</Text>
+        <View style={listRow.priceRow}>
+          <Text style={listRow.price}>₺{product.price.toLocaleString('tr-TR')}</Text>
+          {product.originalPrice && (
+            <Text style={listRow.orig}>₺{product.originalPrice.toLocaleString('tr-TR')}</Text>
+          )}
+          {discount > 0 && (
+            <View style={listRow.badge}><Text style={listRow.badgeText}>-%{discount}</Text></View>
+          )}
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+}
+const listRow = StyleSheet.create({
+  card: { flexDirection: 'row', gap: 12, backgroundColor: Colors.surface2, borderRadius: 16, padding: 12, borderWidth: 1, borderColor: Colors.border1, marginBottom: 10 },
+  img: { width: 80, height: 80, borderRadius: 12, backgroundColor: Colors.surface3 },
+  info: { flex: 1, gap: 4 },
+  brand: { fontSize: 11, fontWeight: '600', color: Colors.text4 },
+  name: { fontSize: 14, fontWeight: '600', color: Colors.text1, lineHeight: 18 },
+  priceRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  price: { fontSize: 15, fontWeight: '800', color: Colors.gold3 },
+  orig: { fontSize: 12, color: Colors.text5, textDecorationLine: 'line-through' },
+  badge: { backgroundColor: Colors.roseGlow, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 },
+  badgeText: { fontSize: 10, fontWeight: '700', color: Colors.rose3 },
+});
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.bg,
+  container: { flex: 1, backgroundColor: Colors.bg },
+  bgGlow: { position: 'absolute', top: 100, right: -100, width: 300, height: 300, borderRadius: 150, backgroundColor: Colors.roseGlow, opacity: 0.35 },
+
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 12, paddingBottom: 10 },
+  headerTitle: { fontSize: 28, fontWeight: '800', color: Colors.text1, letterSpacing: -1 },
+  headerRight: { flexDirection: 'row', gap: 8 },
+  iconBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: Colors.surface2, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: Colors.border2 },
+
+  // Sekme kartları
+  tabsScroll: { paddingHorizontal: 20, gap: 10, marginBottom: 14 },
+  tabCard: {
+    alignItems: 'center', gap: 8, padding: 14, paddingHorizontal: 16,
+    borderRadius: 20, backgroundColor: Colors.surface2,
+    borderWidth: 1, borderColor: Colors.border2,
+    minWidth: 110, overflow: 'hidden',
   },
-  bgGlow: {
-    position: 'absolute',
-    top: 100,
-    right: -100,
-    width: 300,
-    height: 300,
-    borderRadius: 150,
-    backgroundColor: Colors.roseGlow,
-    opacity: 0.4,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 16,
-  },
-  headerLabel: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: Colors.gold3,
-    letterSpacing: 2,
-    marginBottom: 2,
-  },
-  headerTitle: {
-    fontSize: 26,
-    fontWeight: '800',
-    color: Colors.text1,
-    letterSpacing: -1,
-  },
-  headerActions: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 4,
-  },
-  iconBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.surface2,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: Colors.border2,
-  },
-  statsBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginHorizontal: 20,
-    backgroundColor: Colors.surface2,
-    borderRadius: 16,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: Colors.border1,
-    marginBottom: 16,
-  },
-  statItem: {
-    flex: 1,
-    alignItems: 'center',
-    gap: 2,
-  },
-  statItemActive: {},
-  statValue: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: Colors.text1,
-    letterSpacing: -0.5,
-  },
-  statLabel: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: Colors.text4,
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
-  },
-  statDivider: {
-    width: 1,
-    height: 32,
-    backgroundColor: Colors.border2,
-  },
-  sortMenu: {
-    position: 'absolute',
-    top: 130,
-    right: 20,
-    zIndex: 100,
-    borderRadius: 16,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: Colors.border2,
-    minWidth: 200,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 20,
-    elevation: 20,
-  },
-  sortOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 13,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border1,
-  },
-  sortOptionActive: {
-    backgroundColor: Colors.glassGold,
-  },
-  sortText: {
-    fontSize: 14,
-    color: Colors.text2,
-    fontWeight: '500',
-  },
-  sortTextActive: {
-    color: Colors.gold4,
-    fontWeight: '700',
-  },
-  emptyState: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 48,
-    gap: 12,
-  },
-  emptyIcon: {
-    fontSize: 52,
-    marginBottom: 8,
-  },
-  emptyTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: Colors.text2,
-    textAlign: 'center',
-    letterSpacing: -0.5,
-  },
-  emptySubtitle: {
-    fontSize: 14,
-    color: Colors.text4,
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-  scrollContent: {
-    paddingHorizontal: 16,
-  },
-  masonryGrid: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  productCol: {
-    flex: 1,
-  },
-  productColOffset: {
-    marginTop: 40,
-  },
+  tabIconWrap: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  tabEmoji: { fontSize: 22 },
+  tabLabel: { fontSize: 11, fontWeight: '600', color: Colors.text3, textAlign: 'center' },
+  tabLabelActive: { color: '#fff', fontWeight: '700' },
+
+  // Filtre çipleri
+  filterScroll: { paddingHorizontal: 20, gap: 8, marginBottom: 12 },
+  filterChip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 9, borderRadius: 50, backgroundColor: Colors.surface2, borderWidth: 1, borderColor: Colors.border2, overflow: 'hidden' },
+  filterChipActive: { borderColor: Colors.rose3 },
+  filterEmoji: { fontSize: 13 },
+  filterLabel: { fontSize: 13, fontWeight: '600', color: Colors.text3 },
+  filterLabelActive: { color: '#fff', fontWeight: '700' },
+
+  // Arama
+  searchBox: { flexDirection: 'row', alignItems: 'center', gap: 10, marginHorizontal: 20, backgroundColor: Colors.surface2, borderRadius: 14, borderWidth: 1, borderColor: Colors.border2, paddingHorizontal: 14, height: 46, marginBottom: 12 },
+  searchInput: { flex: 1, fontSize: 14, color: Colors.text1 },
+
+  // Sıralama
+  sortMenu: { position: 'absolute', top: 130, right: 20, zIndex: 100, borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: Colors.border2, minWidth: 180, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.35, shadowRadius: 20, elevation: 20 },
+  sortOption: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: Colors.border1 },
+  sortOptionActive: { backgroundColor: Colors.glassGold },
+  sortText: { fontSize: 14, color: Colors.text2, fontWeight: '500' },
+  sortTextActive: { color: Colors.gold4, fontWeight: '700' },
+
+  // İçerik
+  content: { paddingHorizontal: 16 },
+  emptyState: { alignItems: 'center', paddingTop: 60, paddingHorizontal: 40, gap: 10 },
+  emptyIcon: { fontSize: 52, marginBottom: 8 },
+  emptyTitle: { fontSize: 20, fontWeight: '700', color: Colors.text2, textAlign: 'center', letterSpacing: -0.5 },
+  emptySubtitle: { fontSize: 14, color: Colors.text4, textAlign: 'center', lineHeight: 20 },
+
+  masonryGrid: { flexDirection: 'row', gap: 12 },
+  productCol: { flex: 1 },
+  productColOffset: { marginTop: 40 },
+
+  // Tekrar satın al
+  reorderList: { gap: 10 },
+  reorderCard: { flexDirection: 'row', gap: 12, borderRadius: 16, padding: 14, overflow: 'hidden', borderWidth: 1, borderColor: Colors.border1 },
+  reorderImg: { width: 70, height: 70, borderRadius: 12, backgroundColor: Colors.surface3 },
+  reorderInfo: { flex: 1, gap: 6, justifyContent: 'center' },
+  reorderName: { fontSize: 14, fontWeight: '600', color: Colors.text1, lineHeight: 18 },
+  reorderBrand: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  reorderLogo: { width: 20, height: 20, borderRadius: 10, backgroundColor: Colors.surface3 },
+  reorderBrandName: { fontSize: 12, color: Colors.text4 },
+
+  // Koleksiyonlar
+  collectionList: { gap: 10 },
 });
