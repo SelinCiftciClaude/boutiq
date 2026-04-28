@@ -43,39 +43,48 @@ function CampaignBanner({ campaign, onCopyCode, userId }: { campaign: Campaign; 
     <TouchableOpacity activeOpacity={0.88} style={styles.campaignCard} onPress={handlePress}>
       <LinearGradient
         colors={[Colors.surface1, Colors.surface2]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
+        start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
         style={StyleSheet.absoluteFill}
       />
+      {/* Üst altın çizgi */}
       <View style={styles.campaignAccent} />
-      {campaign.isSponsored && (
-        <View style={styles.sponsoredBadge}>
-          <Text style={styles.sponsoredText}>Sponsorlu</Text>
-        </View>
-      )}
+
       <View style={styles.campaignContent}>
-        <View style={styles.campaignLeft}>
+        {/* Üst satır: logo + marka adı + sponsorlu badge */}
+        <View style={styles.campaignTopRow}>
           <Image source={{ uri: campaign.brandLogo }} style={styles.campaignLogo} />
-          <View>
-            <Text style={styles.campaignBrand}>{campaign.brandName}</Text>
-            <Text style={styles.campaignTitle} numberOfLines={1}>{campaign.title}</Text>
-            {campaign.discount && (
-              <Text style={styles.campaignDiscount}>
-                {campaign.discountType === 'percent'
-                  ? `%${campaign.discount} indirim`
-                  : `₺${campaign.discount} indirim`}
-              </Text>
-            )}
-          </View>
+          <Text style={styles.campaignBrand} numberOfLines={1}>{campaign.brandName}</Text>
+          {campaign.isSponsored && (
+            <View style={styles.sponsoredBadge}>
+              <Text style={styles.sponsoredText}>Sponsorlu</Text>
+            </View>
+          )}
         </View>
-        <TouchableOpacity
-          style={styles.codeBox}
-          onPress={(e) => { e.stopPropagation?.(); onCopyCode(code); }}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.codeText}>{code}</Text>
-          <Ionicons name="copy-outline" size={11} color={Colors.rose3} style={{ marginTop: 1 }} />
-        </TouchableOpacity>
+
+        {/* Kampanya başlığı */}
+        <Text style={styles.campaignTitle} numberOfLines={2}>{campaign.title}</Text>
+
+        {/* Alt satır: indirim + kupon kodu */}
+        <View style={styles.campaignBottomRow}>
+          {campaign.discount ? (
+            <View style={styles.discountBadge}>
+              <Text style={styles.discountText}>
+                {campaign.discountType === 'percent'
+                  ? `%${campaign.discount} İndirim`
+                  : `₺${campaign.discount} İndirim`}
+              </Text>
+            </View>
+          ) : <View />}
+
+          <TouchableOpacity
+            style={styles.codeBox}
+            onPress={(e) => { e.stopPropagation?.(); onCopyCode(code); }}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.codeText}>{code}</Text>
+            <Ionicons name="copy-outline" size={13} color={Colors.rose3} />
+          </TouchableOpacity>
+        </View>
       </View>
     </TouchableOpacity>
   );
@@ -534,42 +543,47 @@ const styles = StyleSheet.create({
   emptyFilter: { fontSize: 14, color: Colors.text4, textAlign: 'center', paddingVertical: 24 },
   // Campaign
   campaignCard: {
-    borderRadius: 18, overflow: 'hidden',
-    borderWidth: 1, borderColor: Colors.borderGold, position: 'relative',
+    borderRadius: 20, overflow: 'hidden',
+    borderWidth: 1, borderColor: Colors.borderGold,
   },
   campaignAccent: {
-    position: 'absolute', top: 0, left: 0, right: 0, height: 2,
-    backgroundColor: Colors.gold3, opacity: 0.8,
+    position: 'absolute', top: 0, left: 0, right: 0, height: 3,
+    backgroundColor: Colors.gold3, opacity: 0.9,
   },
+  campaignContent: { padding: 16, gap: 10 },
+  campaignTopRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  campaignLogo: {
+    width: 36, height: 36, borderRadius: 18,
+    backgroundColor: Colors.surface3, borderWidth: 1, borderColor: Colors.borderGold,
+  },
+  campaignBrand: { flex: 1, fontSize: 13, color: Colors.text3, fontWeight: '600' },
   sponsoredBadge: {
-    position: 'absolute', top: 8, right: 8,
     backgroundColor: Colors.glassGold, borderRadius: 6,
-    paddingHorizontal: 7, paddingVertical: 2,
+    paddingHorizontal: 7, paddingVertical: 3,
     borderWidth: 1, borderColor: Colors.borderGold,
   },
   sponsoredText: { fontSize: 9, fontWeight: '700', color: Colors.gold3, letterSpacing: 0.5 },
-  campaignContent: {
-    flexDirection: 'row', alignItems: 'center',
-    justifyContent: 'space-between', padding: 16, gap: 12,
-  },
-  campaignLeft: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
-  campaignLogo: {
-    width: 44, height: 44, borderRadius: 22,
-    backgroundColor: Colors.surface3, borderWidth: 1, borderColor: Colors.borderGold,
-  },
-  campaignBrand: { fontSize: 11, color: Colors.text3, fontWeight: '500' },
   campaignTitle: {
-    fontSize: 14, fontWeight: '700', color: Colors.text1,
-    letterSpacing: -0.2, marginVertical: 2,
+    fontSize: 15, fontWeight: '700', color: Colors.text1,
+    letterSpacing: -0.3, lineHeight: 21,
   },
-  campaignDiscount: { fontSize: 13, color: Colors.rose3, fontWeight: '700' },
+  campaignBottomRow: {
+    flexDirection: 'row', alignItems: 'center',
+    justifyContent: 'space-between', marginTop: 4,
+  },
+  discountBadge: {
+    backgroundColor: Colors.roseGlow, borderRadius: 8,
+    paddingHorizontal: 10, paddingVertical: 5,
+    borderWidth: 1, borderColor: Colors.borderRose,
+  },
+  discountText: { fontSize: 13, fontWeight: '700', color: Colors.rose3 },
   codeBox: {
-    flexDirection: 'row', alignItems: 'center', gap: 5,
-    backgroundColor: Colors.glassGold, borderRadius: 8,
-    paddingHorizontal: 10, paddingVertical: 7,
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    backgroundColor: Colors.glassGold, borderRadius: 10,
+    paddingHorizontal: 12, paddingVertical: 7,
     borderWidth: 1, borderColor: Colors.borderGold,
   },
-  codeText: { fontSize: 12, fontWeight: '800', color: Colors.rose3, letterSpacing: 1.5 },
+  codeText: { fontSize: 13, fontWeight: '800', color: Colors.rose3, letterSpacing: 1.5 },
   // Category
   categoryScroll: { paddingRight: 16, gap: 8, marginBottom: 24 },
   categoryChip: {
