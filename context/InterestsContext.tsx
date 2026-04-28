@@ -34,17 +34,24 @@ const InterestsContext = createContext<Value>({
 export function InterestsProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const [hasInterests, setHasInterests] = useState(false);
-  const [checked, setChecked] = useState(false);
   const [interests, setInterests] = useState<string[]>([]);
+  // Hangi userId için kontrol yapıldığını takip et.
+  // checked = (checkedForUserId === user?.id ?? null)
+  const [checkedForUserId, setCheckedForUserId] = useState<string | null>(undefined as any);
+
+  // checked: sadece MEVCUT kullanıcı için AsyncStorage okunmuşsa true
+  const currentUserId = user?.id ?? null;
+  const checked = checkedForUserId === currentUserId;
 
   useEffect(() => {
     if (!user) {
       setHasInterests(false);
       setInterests([]);
-      setChecked(true);
+      setCheckedForUserId(null); // null user için okuma tamamlandı
       return;
     }
-    setChecked(false);
+    // Kullanıcı değişti — yeni kullanıcı için henüz okumadık
+    // checked false olarak kalacak (checkedForUserId !== user.id)
     AsyncStorage.getItem(KEY(user.id)).then(val => {
       if (val !== null) {
         try { setInterests(JSON.parse(val)); } catch { setInterests([]); }
@@ -53,7 +60,7 @@ export function InterestsProvider({ children }: { children: React.ReactNode }) {
         setHasInterests(false);
         setInterests([]);
       }
-      setChecked(true);
+      setCheckedForUserId(user.id); // bu kullanıcı için kontrol tamamlandı
     });
   }, [user?.id]);
 
