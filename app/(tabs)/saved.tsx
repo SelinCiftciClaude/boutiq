@@ -391,7 +391,7 @@ const styles = StyleSheet.create({
 
   masonryGrid: { flexDirection: 'row', gap: 12 },
   productCol: { flex: 1 },
-  productColOffset: { marginTop: 40 },
+  productColOffset: { paddingTop: 20 },
 
   // Tekrar satın al
   reorderList: { gap: 10 },

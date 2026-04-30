@@ -59,7 +59,9 @@ export default function OnboardingScreen() {
   const goToNext = () => {
     Haptics.selectionAsync();
     if (currentIndex < SLIDES.length - 1) {
-      flatListRef.current?.scrollToIndex({ index: currentIndex + 1, animated: true });
+      const nextIndex = currentIndex + 1;
+      flatListRef.current?.scrollToOffset({ offset: nextIndex * width, animated: true });
+      setCurrentIndex(nextIndex);
     } else {
       router.replace('/(auth)/login');
     }

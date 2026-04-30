@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   Dimensions,
+  GestureResponderEvent,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
@@ -32,7 +33,8 @@ export function ProductCard({ product, onUnsave, tall = false }: ProductCardProp
   // Kayıtlı durumu hook'tan al (her zaman sunucuyla senkron)
   const saved = isSaved(product.id);
 
-  const handleSaveToggle = () => {
+  const handleSaveToggle = (e: GestureResponderEvent) => {
+    e.stopPropagation();
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     if (saved) {
       remove.mutate(product.id);

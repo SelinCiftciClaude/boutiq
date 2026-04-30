@@ -600,7 +600,7 @@ const styles = StyleSheet.create({
   // Products masonry
   productsGrid: { flexDirection: 'row', gap: 12 },
   productCol: { flex: 1, gap: 0 },
-  productColOffset: { marginTop: 40 },
+  productColOffset: { paddingTop: 20 },
   feedTabs: { flexDirection: 'row', gap: 8, marginBottom: 20 },
   feedTab: {
     flex: 1, paddingVertical: 10, borderRadius: 12, alignItems: 'center',

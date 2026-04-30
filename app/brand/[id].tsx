@@ -438,7 +438,7 @@ const styles = StyleSheet.create({
   codeText: { fontSize: 12, fontWeight: '800', color: Colors.rose3, letterSpacing: 1.5 },
   grid: { flexDirection: 'row', gap: 12 },
   col: { flex: 1 },
-  colOffset: { marginTop: 40 },
+  colOffset: { paddingTop: 20 },
   // Reviews
   reviewsHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14 },
   avgBadge: {
