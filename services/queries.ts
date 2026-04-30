@@ -270,7 +270,7 @@ export type DashboardStats = {
 };
 
 export async function fetchDashboard(userId: string): Promise<DashboardStats> {
-  const { data, error } = await supabase.rpc('get_user_dashboard', { p_user_id: userId });
+  const { data, error } = await supabase.rpc('get_user_dashboard');
   if (error) throw error;
   const d = (data ?? {}) as Record<string, unknown>;
   return {
