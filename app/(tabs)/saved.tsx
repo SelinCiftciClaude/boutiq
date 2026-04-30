@@ -83,19 +83,22 @@ export default function SavedScreen() {
   useEffect(() => {
     if (activeTab !== 'history' || !user) return;
     setHistoryLoading(true);
-    AsyncStorage.getItem('viewHistory').then(async raw => {
-      const ids: string[] = raw ? JSON.parse(raw) : [];
-      if (ids.length === 0) { setHistoryProducts([]); setHistoryLoading(false); return; }
-      const { data } = await supabase
-        .from('products')
-        .select('*, brands(name, logo_url)')
-        .in('id', ids.slice(0, 30));
-      const ordered = ids
-        .map(id => (data ?? []).find((p: any) => p.id === id))
-        .filter(Boolean)
-        .map((p: any) => fromDbProduct(p, p.brands));
-      setHistoryProducts(ordered);
-    }).finally(() => setHistoryLoading(false));
+    AsyncStorage.getItem('viewHistory')
+      .then(async raw => {
+        const ids: string[] = raw ? JSON.parse(raw) : [];
+        if (ids.length === 0) { setHistoryProducts([]); return; }
+        const { data } = await supabase
+          .from('products')
+          .select('*, brands(name, logo_url)')
+          .in('id', ids.slice(0, 30));
+        const ordered = ids
+          .map(id => (data ?? []).find((p: any) => p.id === id))
+          .filter(Boolean)
+          .map((p: any) => fromDbProduct(p, p.brands));
+        setHistoryProducts(ordered);
+      })
+      .catch(() => setHistoryProducts([]))
+      .finally(() => setHistoryLoading(false));
   }, [activeTab, user]);
 
   // Tekrar satın al: kargo ürünleri

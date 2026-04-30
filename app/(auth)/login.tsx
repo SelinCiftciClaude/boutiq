@@ -18,12 +18,9 @@ import { Colors } from '../../constants/Colors';
 import { Button } from '../../components/ui/Button';
 import { useAuth } from '@/context/AuthContext';
 
-const DEMO_EMAIL = 'demo@boutiq.app';
-const DEMO_PASSWORD = 'demo1234';
-
 export default function LoginScreen() {
-  const [email, setEmail] = useState(DEMO_EMAIL);
-  const [password, setPassword] = useState(DEMO_PASSWORD);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -44,15 +41,6 @@ export default function LoginScreen() {
     // RouteGate handles redirect after checking interests
   };
 
-  const handleGuestLogin = async () => {
-    Haptics.selectionAsync();
-    setLoading(true);
-    setErrorMsg(null);
-    const { error } = await signIn(DEMO_EMAIL, DEMO_PASSWORD);
-    setLoading(false);
-    if (error) setErrorMsg(error.message);
-    // RouteGate handles redirect after checking interests
-  };
 
   return (
     <KeyboardAvoidingView
@@ -91,12 +79,12 @@ export default function LoginScreen() {
 
         {/* Social Login */}
         <View style={styles.socialRow}>
-          <TouchableOpacity style={styles.socialBtn} onPress={handleGuestLogin}>
-            <Ionicons name="logo-google" size={20} color={Colors.text1} />
-            <Text style={styles.socialText}>Google ile devam</Text>
+          <TouchableOpacity style={[styles.socialBtn, styles.socialBtnDisabled]} disabled>
+            <Ionicons name="logo-google" size={20} color={Colors.text4} />
+            <Text style={[styles.socialText, { color: Colors.text4 }]}>Google ile devam</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.socialBtnSmall} onPress={handleGuestLogin}>
-            <Ionicons name="logo-apple" size={22} color={Colors.text1} />
+          <TouchableOpacity style={[styles.socialBtnSmall, styles.socialBtnDisabled]} disabled>
+            <Ionicons name="logo-apple" size={22} color={Colors.text4} />
           </TouchableOpacity>
         </View>
 
@@ -195,10 +183,6 @@ export default function LoginScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Guest */}
-        <TouchableOpacity onPress={handleGuestLogin} style={styles.guestBtn}>
-          <Text style={styles.guestText}>Misafir olarak devam et</Text>
-        </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -294,6 +278,9 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface2,
     borderWidth: 1,
     borderColor: Colors.border2,
+  },
+  socialBtnDisabled: {
+    opacity: 0.4,
   },
   socialText: {
     fontSize: 14,

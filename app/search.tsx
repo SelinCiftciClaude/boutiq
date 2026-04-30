@@ -31,15 +31,15 @@ export default function SearchScreen() {
 
   useEffect(() => {
     inputRef.current?.focus();
-    AsyncStorage.getItem(RECENT_KEY).then(v => {
-      if (v) setRecent(JSON.parse(v));
-    });
+    AsyncStorage.getItem(RECENT_KEY)
+      .then(v => { if (v) setRecent(JSON.parse(v)); })
+      .catch(() => {});
   }, []);
 
   const saveRecent = async (q: string) => {
     const updated = [q, ...recent.filter(r => r !== q)].slice(0, MAX_RECENT);
     setRecent(updated);
-    await AsyncStorage.setItem(RECENT_KEY, JSON.stringify(updated));
+    AsyncStorage.setItem(RECENT_KEY, JSON.stringify(updated)).catch(() => {});
   };
 
   const doSearch = async (q: string) => {

@@ -5,6 +5,11 @@ import {
   fromDbProduct,
   fromDbProfile,
   fromDbShipment,
+  type BrandRow,
+  type ProductRow,
+  type ShipmentRow,
+  type CampaignRow,
+  type ProfileRow,
 } from '@/services/mappers';
 import type { Brand, BrandCategory, Campaign, Product, Review, Shipment, UserProfile } from '@/types';
 
@@ -18,9 +23,9 @@ export async function fetchAllBrands(userId?: string): Promise<Brand[]> {
   if (brandsRes.error) throw brandsRes.error;
   if (savedRes.error) throw savedRes.error;
   const savedMap = new Map<string, boolean>(
-    (savedRes.data ?? []).map((r: any) => [r.brand_id, !!r.is_favorite])
+    (savedRes.data ?? []).map((r: { brand_id: string; is_favorite: boolean }) => [r.brand_id, !!r.is_favorite])
   );
-  return (brandsRes.data ?? []).map((b: any) => fromDbBrand(b, savedMap.has(b.id)));
+  return (brandsRes.data ?? []).map((b: BrandRow) => fromDbBrand(b, savedMap.has(b.id)));
 }
 
 export async function fetchSavedBrands(userId: string): Promise<Brand[]> {
@@ -30,9 +35,11 @@ export async function fetchSavedBrands(userId: string): Promise<Brand[]> {
     .eq('user_id', userId)
     .order('created_at', { ascending: false });
   if (error) throw error;
-  return (data ?? [])
-    .filter((row: any) => row.brands)
-    .map((row: any) => fromDbBrand(row.brands, !!row.is_favorite));
+  type SavedBrandRow = { brands: BrandRow; is_favorite: boolean };
+  const rows = (data ?? []) as unknown as SavedBrandRow[];
+  return rows
+    .filter((row) => row.brands)
+    .map((row) => fromDbBrand(row.brands, !!row.is_favorite));
 }
 
 export async function addSavedBrand(
@@ -73,9 +80,9 @@ export async function fetchAllProducts(userId?: string): Promise<Product[]> {
   if (productsRes.error) throw productsRes.error;
   if (savedRes.error) throw savedRes.error;
   const savedMap = new Map<string, string>(
-    (savedRes.data ?? []).map((r: any) => [r.product_id, r.saved_at])
+    (savedRes.data ?? []).map((r: { product_id: string; saved_at: string }) => [r.product_id, r.saved_at])
   );
-  return (productsRes.data ?? []).map((p: any) =>
+  return (productsRes.data ?? []).map((p: ProductRow) =>
     fromDbProduct(p, p.brands, savedMap.has(p.id), savedMap.get(p.id))
   );
 }
@@ -87,9 +94,11 @@ export async function fetchSavedProducts(userId: string): Promise<Product[]> {
     .eq('user_id', userId)
     .order('saved_at', { ascending: false });
   if (error) throw error;
-  return (data ?? [])
-    .filter((row: any) => row.products)
-    .map((row: any) => fromDbProduct(row.products, row.products.brands, true, row.saved_at));
+  type SavedProductRow = { saved_at: string; products: ProductRow };
+  const savedRows = (data ?? []) as unknown as SavedProductRow[];
+  return savedRows
+    .filter((row) => row.products)
+    .map((row) => fromDbProduct(row.products, row.products.brands, true, row.saved_at));
 }
 
 export async function addSavedProduct(userId: string, productId: string): Promise<void> {
@@ -135,7 +144,7 @@ export async function fetchShipments(userId: string): Promise<Shipment[]> {
     .eq('user_id', userId)
     .order('updated_at', { ascending: false });
   if (error) throw error;
-  return (data ?? []).map((row: any) => fromDbShipment(row, row.brands));
+  return (data ?? [] as unknown as ShipmentRow[]).map((row: ShipmentRow) => fromDbShipment(row, row.brands ?? undefined));
 }
 
 export async function fetchCampaignsForUser(userId: string): Promise<Campaign[]> {
@@ -146,9 +155,9 @@ export async function fetchCampaignsForUser(userId: string): Promise<Campaign[]>
   if (brandsRes.error) throw brandsRes.error;
   if (readsRes.error) throw readsRes.error;
 
-  const brandIds = (brandsRes.data ?? []).map((r: any) => r.brand_id);
+  const brandIds = (brandsRes.data ?? []).map((r: { brand_id: string }) => r.brand_id);
   if (brandIds.length === 0) return [];
-  const readSet = new Set<string>((readsRes.data ?? []).map((r: any) => r.campaign_id));
+  const readSet = new Set<string>((readsRes.data ?? []).map((r: { campaign_id: string }) => r.campaign_id));
 
   const { data, error } = await supabase
     .from('campaigns')
@@ -158,7 +167,7 @@ export async function fetchCampaignsForUser(userId: string): Promise<Campaign[]>
     .order('is_sponsored', { ascending: false })
     .order('created_at', { ascending: false });
   if (error) throw error;
-  return (data ?? []).map((row: any) => fromDbCampaign(row, row.brands, readSet.has(row.id)));
+  return (data ?? []).map((row: CampaignRow) => fromDbCampaign(row, row.brands, readSet.has(row.id)));
 }
 
 export async function markCampaignRead(userId: string, campaignId: string): Promise<void> {
@@ -191,8 +200,8 @@ export async function fetchProductsByBrand(brandId: string, userId?: string): Pr
   ]);
   if (productsRes.error) throw productsRes.error;
   if (savedRes.error) throw savedRes.error;
-  const savedMap = new Map<string, string>((savedRes.data ?? []).map((r: any) => [r.product_id, r.saved_at]));
-  return (productsRes.data ?? []).map((p: any) => fromDbProduct(p, p.brands, savedMap.has(p.id), savedMap.get(p.id)));
+  const savedMap = new Map<string, string>((savedRes.data ?? []).map((r: { product_id: string; saved_at: string }) => [r.product_id, r.saved_at]));
+  return (productsRes.data ?? []).map((p: ProductRow) => fromDbProduct(p, p.brands, savedMap.has(p.id), savedMap.get(p.id)));
 }
 
 export async function fetchProductById(productId: string, userId?: string): Promise<Product | null> {
@@ -216,8 +225,8 @@ export async function fetchRelatedProducts(category: string, excludeId: string, 
   ]);
   if (productsRes.error) throw productsRes.error;
   if (savedRes.error) throw savedRes.error;
-  const savedMap = new Map<string, string>((savedRes.data ?? []).map((r: any) => [r.product_id, r.saved_at]));
-  return (productsRes.data ?? []).map((p: any) => fromDbProduct(p, p.brands, savedMap.has(p.id), savedMap.get(p.id)));
+  const savedMap = new Map<string, string>((savedRes.data ?? []).map((r: { product_id: string; saved_at: string }) => [r.product_id, r.saved_at]));
+  return (productsRes.data ?? []).map((p: ProductRow) => fromDbProduct(p, p.brands, savedMap.has(p.id), savedMap.get(p.id)));
 }
 
 export async function fetchPriceHistory(productId: string): Promise<{ price: number; recordedAt: string }[]> {
@@ -228,7 +237,7 @@ export async function fetchPriceHistory(productId: string): Promise<{ price: num
     .order('recorded_at', { ascending: true })
     .limit(30);
   if (error) throw error;
-  return (data ?? []).map((r: any) => ({ price: Number(r.price), recordedAt: r.recorded_at }));
+  return (data ?? []).map((r: { price: number | string; recorded_at: string }) => ({ price: Number(r.price), recordedAt: r.recorded_at }));
 }
 
 export async function fetchCampaignsByBrand(brandId: string): Promise<Campaign[]> {
@@ -240,7 +249,7 @@ export async function fetchCampaignsByBrand(brandId: string): Promise<Campaign[]
     .order('is_sponsored', { ascending: false })
     .order('created_at', { ascending: false });
   if (error) throw error;
-  return (data ?? []).map((row: any) => fromDbCampaign(row, row.brands));
+  return (data ?? []).map((row: CampaignRow) => fromDbCampaign(row, row.brands));
 }
 
 export async function fetchProfile(userId: string): Promise<UserProfile | null> {
@@ -250,7 +259,7 @@ export async function fetchProfile(userId: string): Promise<UserProfile | null> 
     .eq('id', userId)
     .maybeSingle();
   if (error) throw error;
-  return data ? fromDbProfile(data) : null;
+  return data ? fromDbProfile(data as ProfileRow) : null;
 }
 
 export type DashboardStats = {
@@ -311,17 +320,19 @@ export async function searchBrandsAndProducts(
   if (productsRes.error) throw productsRes.error;
 
   const savedBrandMap = new Map<string, boolean>(
-    ((savedBrandsRes as any).data ?? []).map((r: any) => [r.brand_id, !!r.is_favorite])
+    ((savedBrandsRes as { data: { brand_id: string; is_favorite: boolean }[] | null }).data ?? [])
+      .map(r => [r.brand_id, !!r.is_favorite])
   );
   const savedProductMap = new Map<string, string>(
-    ((savedProductsRes as any).data ?? []).map((r: any) => [r.product_id, r.saved_at])
+    ((savedProductsRes as { data: { product_id: string; saved_at: string }[] | null }).data ?? [])
+      .map(r => [r.product_id, r.saved_at])
   );
 
-  const brands = (brandsRes.data ?? []).map((b: any) =>
+  const brands = (brandsRes.data ?? []).map((b: BrandRow) =>
     fromDbBrand(b, savedBrandMap.has(b.id))
   );
 
-  const products = (productsRes.data ?? []).map((p: any) =>
+  const products = (productsRes.data ?? []).map((p: ProductRow) =>
     fromDbProduct(p, p.brands, savedProductMap.has(p.id), savedProductMap.get(p.id))
   );
 
@@ -432,9 +443,11 @@ export async function fetchPublicCollection(userId: string): Promise<Product[]> 
     .eq('user_id', userId)
     .order('saved_at', { ascending: false });
   if (error) throw error;
-  return (data ?? [])
-    .filter((r: any) => r.products)
-    .map((r: any) => fromDbProduct(r.products, r.products?.brands, true, r.saved_at));
+  type CollectionRow = { saved_at: string; products: ProductRow };
+  const collectionRows = (data ?? []) as unknown as CollectionRow[];
+  return collectionRows
+    .filter((r) => r.products)
+    .map((r) => fromDbProduct(r.products, r.products?.brands, true, r.saved_at));
 }
 
 export async function fetchTrendingBrands(): Promise<Brand[]> {
@@ -442,13 +455,13 @@ export async function fetchTrendingBrands(): Promise<Brand[]> {
     .from('popular_brands_week')
     .select('brand_id');
   if (viewErr) throw viewErr;
-  const ids = (viewData ?? []).map((r: any) => r.brand_id).filter(Boolean);
+  const ids = (viewData ?? []).map((r: { brand_id: string }) => r.brand_id).filter(Boolean);
   if (ids.length === 0) return [];
   const { data, error } = await supabase.from('brands').select('*').in('id', ids);
   if (error) throw error;
   const order = new Map(ids.map((id: string, i: number) => [id, i]));
   return (data ?? [])
-    .map((b: any) => fromDbBrand(b))
+    .map((b: BrandRow) => fromDbBrand(b))
     .sort((a, b) => (order.get(a.id) ?? 99) - (order.get(b.id) ?? 99));
 }
 
@@ -457,7 +470,7 @@ export async function fetchTrendingProducts(): Promise<Product[]> {
     .from('popular_products_week')
     .select('product_id');
   if (viewErr) throw viewErr;
-  const ids = (viewData ?? []).map((r: any) => r.product_id).filter(Boolean);
+  const ids = (viewData ?? []).map((r: { product_id: string }) => r.product_id).filter(Boolean);
   if (ids.length === 0) return [];
   const { data, error } = await supabase
     .from('products')
@@ -466,7 +479,7 @@ export async function fetchTrendingProducts(): Promise<Product[]> {
   if (error) throw error;
   const order = new Map(ids.map((id: string, i: number) => [id, i]));
   return (data ?? [])
-    .map((p: any) => fromDbProduct(p, p.brands))
+    .map((p: ProductRow) => fromDbProduct(p, p.brands))
     .sort((a, b) => (order.get(a.id) ?? 99) - (order.get(b.id) ?? 99));
 }
 
@@ -498,7 +511,9 @@ export async function getOrCreateReferralCode(userId: string): Promise<string> {
     .maybeSingle();
   if (existing?.code) return existing.code;
 
-  const code = 'BTQ' + Math.random().toString(36).slice(2, 7).toUpperCase();
+  const rand = new Uint32Array(1);
+  crypto.getRandomValues(rand);
+  const code = 'BTQ' + rand[0].toString(36).slice(0, 5).toUpperCase();
   const { error } = await supabase.from('referral_codes').insert({ code, owner_user_id: userId });
   if (error) throw error;
   return code;

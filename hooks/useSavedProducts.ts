@@ -14,8 +14,9 @@ export function useSavedProducts() {
   });
 
   const invalidate = () => {
-    qc.invalidateQueries({ queryKey: ['savedProducts'] });
-    qc.invalidateQueries({ queryKey: ['products'] });
+    const uid = user?.id ?? 'anon';
+    qc.invalidateQueries({ queryKey: ['savedProducts', uid] });
+    qc.invalidateQueries({ queryKey: ['products', uid] });
     qc.invalidateQueries({ queryKey: ['brand-products'] });
     qc.invalidateQueries({ queryKey: ['product'] });
   };

@@ -88,11 +88,13 @@ export default function ProductDetailScreen() {
   // Görüntüleme geçmişine kaydet
   React.useEffect(() => {
     if (!product?.id) return;
-    AsyncStorage.getItem('viewHistory').then(raw => {
-      const prev: string[] = raw ? JSON.parse(raw) : [];
-      const updated = [product.id, ...prev.filter(i => i !== product.id)].slice(0, 50);
-      AsyncStorage.setItem('viewHistory', JSON.stringify(updated));
-    });
+    AsyncStorage.getItem('viewHistory')
+      .then(raw => {
+        const prev: string[] = raw ? JSON.parse(raw) : [];
+        const updated = [product.id, ...prev.filter(i => i !== product.id)].slice(0, 50);
+        return AsyncStorage.setItem('viewHistory', JSON.stringify(updated));
+      })
+      .catch(() => {});
   }, [product?.id]);
 
   const allImages = product ? [product.image, ...(product.images ?? [])].filter(Boolean) : [];
