@@ -276,27 +276,53 @@ export async function searchBrandsAndProducts(
   query: string,
   userId?: string
 ): Promise<{ brands: Brand[]; products: Product[] }> {
-  const q = query.toLowerCase().trim();
+  const q = query.trim();
   if (!q) return { brands: [], products: [] };
 
-  const [allBrands, allProducts] = await Promise.all([
-    fetchAllBrands(userId),
-    fetchAllProducts(userId),
+  const likeQ = `%${q}%`;
+
+  const [brandsRes, savedBrandsRes, productsRes, savedProductsRes] = await Promise.all([
+    // Brands: name veya category ilike eşleşmesi
+    supabase
+      .from('brands')
+      .select('*')
+      .or(`name.ilike.${likeQ},category.ilike.${likeQ}`)
+      .limit(20),
+
+    // Kullanıcının kayıtlı marka listesi
+    userId
+      ? supabase.from('user_brands').select('brand_id, is_favorite').eq('user_id', userId)
+      : Promise.resolve({ data: [], error: null }),
+
+    // Products: name veya category ilike eşleşmesi (brand adı join'den)
+    supabase
+      .from('products')
+      .select('*, brands(name, logo_url)')
+      .or(`name.ilike.${likeQ},category.ilike.${likeQ}`)
+      .limit(30),
+
+    // Kullanıcının kayıtlı ürün listesi
+    userId
+      ? supabase.from('saved_products').select('product_id, saved_at').eq('user_id', userId)
+      : Promise.resolve({ data: [], error: null }),
   ]);
 
-  const brands = allBrands.filter(
-    (b) =>
-      b.name.toLowerCase().includes(q) ||
-      b.category.toLowerCase().includes(q) ||
-      b.tags.some((t) => t.toLowerCase().includes(q))
+  if (brandsRes.error) throw brandsRes.error;
+  if (productsRes.error) throw productsRes.error;
+
+  const savedBrandMap = new Map<string, boolean>(
+    ((savedBrandsRes as any).data ?? []).map((r: any) => [r.brand_id, !!r.is_favorite])
+  );
+  const savedProductMap = new Map<string, string>(
+    ((savedProductsRes as any).data ?? []).map((r: any) => [r.product_id, r.saved_at])
   );
 
-  const products = allProducts.filter(
-    (p) =>
-      p.name.toLowerCase().includes(q) ||
-      p.brandName.toLowerCase().includes(q) ||
-      p.category.toLowerCase().includes(q) ||
-      p.tags.some((t) => t.toLowerCase().includes(q))
+  const brands = (brandsRes.data ?? []).map((b: any) =>
+    fromDbBrand(b, savedBrandMap.has(b.id))
+  );
+
+  const products = (productsRes.data ?? []).map((p: any) =>
+    fromDbProduct(p, p.brands, savedProductMap.has(p.id), savedProductMap.get(p.id))
   );
 
   return { brands, products };
