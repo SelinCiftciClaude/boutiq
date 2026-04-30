@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Colors } from '../../constants/Colors';
+import { Fonts } from '../../constants/Typography';
 import { CATEGORIES } from '../../constants/MockData';
 import { BrandCard } from '../../components/BrandCard';
 import { BrandCategory, Brand } from '../../types';
@@ -469,7 +470,7 @@ const styles = StyleSheet.create({
 
   // Header
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 12, paddingBottom: 8 },
-  headerTitle: { fontSize: 28, fontWeight: '800', color: Colors.text1, letterSpacing: -1 },
+  headerTitle: { fontFamily: Fonts.editorial, fontSize: 34, color: Colors.text1, letterSpacing: 0 },
   searchIconBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: Colors.surface2, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: Colors.border2 },
 
   // Koleksiyon arama
@@ -510,7 +511,7 @@ const styles = StyleSheet.create({
   scrollContent: { paddingHorizontal: 16, gap: 10 },
   section: { gap: 10, marginBottom: 10 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 4, marginBottom: 4 },
-  sectionTitle: { fontSize: 14, fontWeight: '700', color: Colors.text3, letterSpacing: 0.3, textTransform: 'uppercase' },
+  sectionTitle: { fontFamily: Fonts.uiMedium, fontSize: 9, color: Colors.text4, letterSpacing: 2, textTransform: 'uppercase' },
   emptyState: { alignItems: 'center', paddingTop: 60, paddingHorizontal: 40, gap: 10 },
   emptyIcon: { fontSize: 48, marginBottom: 8 },
   emptyTitle: { fontSize: 20, fontWeight: '700', color: Colors.text2, textAlign: 'center' },

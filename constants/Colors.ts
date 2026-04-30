@@ -1,90 +1,90 @@
 export const Colors = {
-  // ── Backgrounds — warm cream whites
-  bg:       '#FDF8F5',
-  surface1: '#FFFFFF',
-  surface2: '#FFF5EF',
-  surface3: '#F5EDE7',
-  surface4: '#EDE0D8',
+  // ── Backgrounds — void noir (siyah kağıt dokusu)
+  bg:       '#07070C',
+  surface1: '#0C0C16',
+  surface2: '#11111E',
+  surface3: '#171728',
+  surface4: '#1D1D30',
 
-  // ── Orange — ana accent (canlı, unisex)
-  rose1: '#B84010',
-  rose2: '#D95515',
-  rose3: '#F0691A',
-  rose4: '#FF9052',
-  rose5: '#FFD0AB',
-  roseGlow:       'rgba(240,105,26,0.14)',
-  roseGlowStrong: 'rgba(240,105,26,0.28)',
+  // ── Terracotta / Cognac — birincil CTA (brick tonu, ordan rafine)
+  rose1: '#6A2818',
+  rose2: '#8C3820',
+  rose3: '#B4482A',  // primary CTA
+  rose4: '#CC6E50',
+  rose5: '#E4A488',
+  roseGlow:       'rgba(180,72,42,0.12)',
+  roseGlowStrong: 'rgba(180,72,42,0.26)',
 
-  // ── Gold — ısıl, zengin
-  gold1: '#9A7018',
-  gold2: '#C2900A',
-  gold3: '#D4A843',
-  gold4: '#E8C97A',
-  gold5: '#F5E0A8',
-  goldGlow:       'rgba(212,168,67,0.16)',
-  goldGlowStrong: 'rgba(212,168,67,0.32)',
+  // ── Antik Altın — ikincil accent (muted, worn gold)
+  gold1: '#5C4016',
+  gold2: '#896228',
+  gold3: '#B48440',  // primary gold
+  gold4: '#CAA868',
+  gold5: '#DED0A0',
+  goldGlow:       'rgba(180,132,64,0.14)',
+  goldGlowStrong: 'rgba(180,132,64,0.30)',
 
-  // ── Teal — ferahlatıcı üçüncü renk
-  teal1: '#0D7A66',
-  teal2: '#1BAD92',
-  teal3: '#4DCDB6',
-  tealGlow: 'rgba(27,173,146,0.14)',
+  // ── Teal (minimal; tracking ekranı)
+  teal1: '#124C3C',
+  teal2: '#1E7A62',
+  teal3: '#3AAA88',
+  tealGlow: 'rgba(30,122,98,0.12)',
 
-  // ── Purple — vurgu
-  purple1: '#5B21B6',
-  purple2: '#7C3AED',
-  purple3: '#9B6EF8',
-  purple4: '#C4B5FD',
-  purpleGlow: 'rgba(124,58,237,0.12)',
+  // ── Purple (minimal; vurgu)
+  purple1: '#2E1070',
+  purple2: '#4A22AA',
+  purple3: '#6E48D8',
+  purple4: '#9A84F0',
+  purpleGlow: 'rgba(74,34,170,0.10)',
 
-  // ── Text — koyu, okunabilir
-  text1: '#1A0E14',
-  text2: '#3A2030',
-  text3: '#7A5068',
-  text4: '#A88898',
-  text5: '#C8B5BE',
+  // ── Text — warm cream hierarchy
+  text1: '#E8E2D4',  // primary cream
+  text2: '#BEBAAA',  // secondary
+  text3: '#847A6C',  // tertiary
+  text4: '#524A40',  // quaternary
+  text5: '#302C24',  // barely visible
 
-  // ── Borders — siyah opasite, açık bg için
-  border1: 'rgba(30,10,20,0.07)',
-  border2: 'rgba(30,10,20,0.11)',
-  border3: 'rgba(30,10,20,0.18)',
-  borderGold: 'rgba(212,168,67,0.28)',
-  borderRose: 'rgba(240,105,26,0.28)',
+  // ── Borders — ultra-thin hairlines
+  border1: 'rgba(232,226,212,0.05)',
+  border2: 'rgba(232,226,212,0.09)',
+  border3: 'rgba(232,226,212,0.15)',
+  borderGold: 'rgba(180,132,64,0.22)',
+  borderRose: 'rgba(180,72,42,0.22)',
 
   // ── Status
-  success:     '#0A9070',
-  successGlow: 'rgba(10,144,112,0.13)',
-  warning:     '#D97E08',
-  error:       '#D03A3A',
-  info:        '#2F6EE8',
+  success:     '#368A6C',
+  successGlow: 'rgba(54,138,108,0.13)',
+  warning:     '#B48440',
+  error:       '#BC3C3C',
+  info:        '#4470B8',
 
-  // ── Overlays (açık tema)
-  overlay1: 'rgba(253,248,245,0.60)',
-  overlay2: 'rgba(253,248,245,0.82)',
-  overlay3: 'rgba(253,248,245,0.95)',
+  // ── Overlays (koyu)
+  overlay1: 'rgba(7,7,12,0.55)',
+  overlay2: 'rgba(7,7,12,0.78)',
+  overlay3: 'rgba(7,7,12,0.94)',
 
-  // ── Glass (açık cam efekti)
-  glass1: 'rgba(255,255,255,0.55)',
-  glass2: 'rgba(255,255,255,0.75)',
-  glass3: 'rgba(255,255,255,0.90)',
-  glassGold: 'rgba(212,168,67,0.10)',
-  glassRose: 'rgba(240,105,26,0.08)',
+  // ── Glass (koyu cam — frosted dark)
+  glass1: 'rgba(12,12,22,0.55)',
+  glass2: 'rgba(12,12,22,0.75)',
+  glass3: 'rgba(12,12,22,0.92)',
+  glassGold: 'rgba(180,132,64,0.08)',
+  glassRose: 'rgba(180,72,42,0.08)',
 
   // ── Gradients
   gradients: {
-    rose:           ['#D95515', '#FF9052'] as const,
-    roseDark:       ['#B84010', '#F0691A'] as const,
-    gold:           ['#C2900A', '#E8C97A'] as const,
-    goldDark:       ['#9A7018', '#D4A843'] as const,
-    light:          ['#FDF8F5', '#FFFFFF'] as const,
-    lightReverse:   ['#FFFFFF', '#FDF8F5'] as const,
-    surface:        ['#FFFFFF', '#FFF5EF'] as const,
-    hero:           ['#FDF8F5', '#FFF0EA', '#FDF5F8'] as const,
-    card:           ['rgba(255,255,255,0.96)', 'rgba(253,248,245,0.99)'] as const,
-    roseToTrans:    ['#F0691A', 'rgba(240,105,26,0)'] as const,
-    transToRose:    ['rgba(240,105,26,0)', '#F0691A'] as const,
-    teal:           ['#1BAD92', '#4DCDB6'] as const,
-    heroFull:       ['#FFF4EE', '#FFF8F2', '#FFFAF5'] as const,
+    rose:         ['#8C3820', '#CC6E50'] as const,
+    roseDark:     ['#6A2818', '#B4482A'] as const,
+    gold:         ['#896228', '#CAA868'] as const,
+    goldDark:     ['#5C4016', '#B48440'] as const,
+    light:        ['#07070C', '#0C0C16'] as const,
+    lightReverse: ['#0C0C16', '#07070C'] as const,
+    surface:      ['#0C0C16', '#11111E'] as const,
+    hero:         ['#07070C', '#0C0C16', '#09090F'] as const,
+    card:         ['rgba(12,12,22,0.96)', 'rgba(7,7,12,0.99)'] as const,
+    roseToTrans:  ['#B4482A', 'rgba(180,72,42,0)'] as const,
+    transToRose:  ['rgba(180,72,42,0)', '#B4482A'] as const,
+    teal:         ['#1E7A62', '#3AAA88'] as const,
+    heroFull:     ['#09090F', '#0C0C16', '#07070C'] as const,
   },
 };
 

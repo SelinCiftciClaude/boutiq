@@ -14,6 +14,7 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Colors } from '../../constants/Colors';
+import { Fonts } from '../../constants/Typography';
 import { Button } from '../../components/ui/Button';
 import { CATEGORIES } from '../../constants/MockData';
 import { useAuth } from '@/context/AuthContext';
@@ -295,7 +296,6 @@ export default function RegisterScreen() {
           disabled={!canProceed()}
           style={styles.cta}
           icon={step === STEPS.length - 1 ? <Ionicons name="sparkles" size={18} color={Colors.bg} /> : undefined}
-          iconPosition="right"
         />
 
         <TouchableOpacity onPress={() => router.push('/(auth)/login')} style={styles.loginRow}>

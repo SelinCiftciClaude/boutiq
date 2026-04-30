@@ -8,6 +8,7 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Colors } from '@/constants/Colors';
+import { Fonts } from '@/constants/Typography';
 import { Button } from '@/components/ui/Button';
 import { supabase } from '@/services/supabase';
 

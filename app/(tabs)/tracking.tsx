@@ -9,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { Colors } from '../../constants/Colors';
+import { Fonts } from '../../constants/Typography';
 import { useShipments } from '@/hooks/useShipments';
 import { useProfile } from '@/hooks/useProfile';
 import { Shipment } from '../../types';
@@ -324,7 +325,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   bgGlow: { position: 'absolute', top: 200, right: -100, width: 300, height: 300, borderRadius: 150, backgroundColor: Colors.successGlow, opacity: 0.3 },
   header: { paddingHorizontal: 20, paddingTop: 14, paddingBottom: 6 },
-  headerTitle: { fontSize: 28, fontWeight: '800', color: Colors.text1, letterSpacing: -1 },
+  headerTitle: { fontFamily: Fonts.editorial, fontSize: 34, color: Colors.text1, letterSpacing: 0 },
   actionRow: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
     paddingHorizontal: 20, paddingBottom: 16, paddingTop: 4,

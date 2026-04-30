@@ -4,27 +4,22 @@ import {
   Text,
   StyleSheet,
   ViewStyle,
-  TextStyle,
   ActivityIndicator,
+  View,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import * as Haptics from 'expo-haptics';
 import { Colors } from '../../constants/Colors';
-
-type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
-type ButtonSize = 'sm' | 'md' | 'lg' | 'xl';
+import { Fonts } from '../../constants/Typography';
 
 interface ButtonProps {
   label: string;
-  onPress: () => void;
-  variant?: ButtonVariant;
-  size?: ButtonSize;
+  onPress?: () => void;
+  variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
+  size?: 'sm' | 'md' | 'lg' | 'xl';
   loading?: boolean;
   disabled?: boolean;
   style?: ViewStyle;
-  textStyle?: TextStyle;
   icon?: React.ReactNode;
-  iconPosition?: 'left' | 'right';
 }
 
 export function Button({
@@ -35,152 +30,146 @@ export function Button({
   loading = false,
   disabled = false,
   style,
-  textStyle,
   icon,
-  iconPosition = 'left',
 }: ButtonProps) {
-  const handlePress = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    onPress();
-  };
+  const isDisabled = disabled || loading;
 
-  const sizeStyle = sizes[size];
-  const textSizeStyle = textSizes[size];
+  const heights: Record<string, number> = { sm: 38, md: 48, lg: 54, xl: 58 };
+  const fontSizes: Record<string, number> = { sm: 11, md: 12, lg: 12, xl: 13 };
+  const radii: Record<string, number>    = { sm: 8,  md: 10, lg: 12, xl: 14 };
+
+  const h  = heights[size];
+  const fs = fontSizes[size];
+  const r  = radii[size];
 
   if (variant === 'primary') {
     return (
       <TouchableOpacity
-        onPress={handlePress}
-        disabled={disabled || loading}
+        onPress={onPress}
+        disabled={isDisabled}
         activeOpacity={0.85}
-        style={[styles.base, style, (disabled || loading) && styles.disabled]}
+        style={[{ height: h, borderRadius: r, overflow: 'hidden', opacity: isDisabled ? 0.45 : 1 }, style]}
       >
         <LinearGradient
-          colors={disabled ? [Colors.surface3, Colors.surface4] : [Colors.rose2, Colors.rose4]}
+          colors={[Colors.gold2, Colors.gold3, Colors.gold4]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
-          style={[styles.gradient, sizeStyle]}
-        >
+          style={StyleSheet.absoluteFill}
+        />
+        <View style={styles.inner}>
           {loading ? (
-            <ActivityIndicator color={Colors.bg} size="small" />
+            <ActivityIndicator size="small" color={Colors.bg} />
           ) : (
             <>
-              {icon && iconPosition === 'left' && icon}
-              <Text style={[styles.primaryText, textSizeStyle, textStyle]}>{label}</Text>
-              {icon && iconPosition === 'right' && icon}
+              {icon}
+              <Text style={[styles.label, { fontSize: fs, letterSpacing: size === 'xl' ? 2.5 : 2 }]}>
+                {label.toUpperCase()}
+              </Text>
             </>
           )}
-        </LinearGradient>
+        </View>
+      </TouchableOpacity>
+    );
+  }
+
+  if (variant === 'secondary') {
+    return (
+      <TouchableOpacity
+        onPress={onPress}
+        disabled={isDisabled}
+        activeOpacity={0.8}
+        style={[
+          {
+            height: h,
+            borderRadius: r,
+            borderWidth: 0.5,
+            borderColor: Colors.borderGold,
+            backgroundColor: Colors.glassGold,
+            opacity: isDisabled ? 0.45 : 1,
+          },
+          style,
+        ]}
+      >
+        <View style={styles.inner}>
+          {loading ? (
+            <ActivityIndicator size="small" color={Colors.gold3} />
+          ) : (
+            <>
+              {icon}
+              <Text style={[styles.labelSecondary, { fontSize: fs, letterSpacing: 2 }]}>
+                {label.toUpperCase()}
+              </Text>
+            </>
+          )}
+        </View>
+      </TouchableOpacity>
+    );
+  }
+
+  if (variant === 'ghost') {
+    return (
+      <TouchableOpacity
+        onPress={onPress}
+        disabled={isDisabled}
+        activeOpacity={0.7}
+        style={[{ height: h, opacity: isDisabled ? 0.4 : 1, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6 }, style]}
+      >
+        {icon}
+        <Text style={[styles.labelGhost, { fontSize: fs }]}>{label}</Text>
       </TouchableOpacity>
     );
   }
 
   return (
     <TouchableOpacity
-      onPress={handlePress}
-      disabled={disabled || loading}
-      activeOpacity={0.75}
+      onPress={onPress}
+      disabled={isDisabled}
+      activeOpacity={0.8}
       style={[
-        styles.base,
-        sizeStyle,
-        variantStyles[variant],
+        {
+          height: h,
+          borderRadius: r,
+          borderWidth: 0.5,
+          borderColor: Colors.error + '55',
+          backgroundColor: Colors.error + '14',
+          opacity: isDisabled ? 0.45 : 1,
+        },
         style,
-        (disabled || loading) && styles.disabled,
       ]}
     >
-      {loading ? (
-        <ActivityIndicator color={Colors.gold3} size="small" />
-      ) : (
-        <>
-          {icon && iconPosition === 'left' && icon}
-          <Text
-            style={[
-              styles.text,
-              textSizeStyle,
-              variantTextStyles[variant],
-              textStyle,
-            ]}
-          >
-            {label}
-          </Text>
-          {icon && iconPosition === 'right' && icon}
-        </>
-      )}
+      <View style={styles.inner}>
+        <Text style={[styles.labelDanger, { fontSize: fs, letterSpacing: 2 }]}>
+          {label.toUpperCase()}
+        </Text>
+      </View>
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
-  base: {
-    borderRadius: 14,
-    overflow: 'hidden',
-  },
-  gradient: {
+  inner: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
+    paddingHorizontal: 16,
   },
-  primaryText: {
-    color: '#FFFFFF',
-    fontWeight: '700',
+  label: {
+    fontFamily: Fonts.ui,
+    color: Colors.bg,
+  },
+  labelSecondary: {
+    fontFamily: Fonts.uiMedium,
+    color: Colors.gold4,
+  },
+  labelGhost: {
+    fontFamily: Fonts.uiMedium,
+    color: Colors.text2,
     letterSpacing: 0.3,
   },
-  text: {
-    fontWeight: '600',
-    letterSpacing: 0.2,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  disabled: {
-    opacity: 0.4,
+  labelDanger: {
+    fontFamily: Fonts.uiMedium,
+    color: Colors.error,
   },
 });
-
-const sizes: Record<ButtonSize, ViewStyle> = {
-  sm: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: 10 },
-  md: { paddingVertical: 14, paddingHorizontal: 24, borderRadius: 14 },
-  lg: { paddingVertical: 16, paddingHorizontal: 28, borderRadius: 16 },
-  xl: { paddingVertical: 18, paddingHorizontal: 32, borderRadius: 18 },
-};
-
-const textSizes: Record<ButtonSize, TextStyle> = {
-  sm: { fontSize: 13, fontWeight: '600' },
-  md: { fontSize: 15, fontWeight: '700' },
-  lg: { fontSize: 16, fontWeight: '700' },
-  xl: { fontSize: 18, fontWeight: '800' },
-};
-
-const variantStyles: Record<Exclude<ButtonVariant, 'primary'>, ViewStyle> = {
-  secondary: {
-    backgroundColor: Colors.surface3,
-    borderWidth: 1,
-    borderColor: Colors.border2,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-  },
-  ghost: {
-    backgroundColor: 'transparent',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-  },
-  danger: {
-    backgroundColor: 'rgba(239,68,68,0.15)',
-    borderWidth: 1,
-    borderColor: 'rgba(239,68,68,0.30)',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-  },
-};
-
-const variantTextStyles: Record<Exclude<ButtonVariant, 'primary'>, TextStyle> = {
-  secondary: { color: Colors.text1 },
-  ghost: { color: Colors.gold3 },
-  danger: { color: Colors.error },
-};

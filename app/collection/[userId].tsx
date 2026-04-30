@@ -8,6 +8,7 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { Colors } from '@/constants/Colors';
+import { Fonts } from '@/constants/Typography';
 import { fetchPublicCollection } from '@/services/queries';
 import { ProductCard } from '@/components/ProductCard';
 

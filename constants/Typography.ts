@@ -1,121 +1,138 @@
 import { StyleSheet } from 'react-native';
 import { Colors } from './Colors';
 
+// Font family constants — loaded via useFonts in _layout.tsx
+export const Fonts = {
+  // Cormorant Garamond: editorial serif, başlıklar ve hero text için
+  editorial:        'CormorantGaramond_700Bold_Italic',
+  editorialMedium:  'CormorantGaramond_600SemiBold_Italic',
+  editorialLight:   'CormorantGaramond_300Light_Italic',
+  editorialRegular: 'CormorantGaramond_400Regular_Italic',
+  editorialBook:    'CormorantGaramond_500Medium',
+
+  // DM Sans: UI, body ve label text için
+  ui:         'DMSans_700Bold',
+  uiMedium:   'DMSans_600SemiBold',
+  uiRegular:  'DMSans_500Medium',
+  uiLight:    'DMSans_400Regular',
+  uiThin:     'DMSans_300Light',
+} as const;
+
 export const Typography = StyleSheet.create({
-  // Display
+  // ── Display — editorial serif (moda dergi hissi)
   displayXL: {
-    fontSize: 48,
-    fontWeight: '800' as const,
-    letterSpacing: -2,
-    color: Colors.text1,
-    lineHeight: 52,
-  },
-  displayL: {
-    fontSize: 36,
-    fontWeight: '700' as const,
-    letterSpacing: -1.5,
-    color: Colors.text1,
-    lineHeight: 40,
-  },
-  displayM: {
-    fontSize: 28,
-    fontWeight: '700' as const,
+    fontFamily: Fonts.editorial,
+    fontSize: 56,
     letterSpacing: -1,
     color: Colors.text1,
-    lineHeight: 32,
+    lineHeight: 58,
+  },
+  displayL: {
+    fontFamily: Fonts.editorial,
+    fontSize: 44,
+    letterSpacing: -0.5,
+    color: Colors.text1,
+    lineHeight: 46,
+  },
+  displayM: {
+    fontFamily: Fonts.editorial,
+    fontSize: 34,
+    letterSpacing: 0,
+    color: Colors.text1,
+    lineHeight: 36,
   },
 
-  // Headlines
+  // ── Headlines — DM Sans bold
   h1: {
+    fontFamily: Fonts.ui,
     fontSize: 24,
-    fontWeight: '700' as const,
-    letterSpacing: -0.8,
+    letterSpacing: -0.5,
     color: Colors.text1,
     lineHeight: 28,
   },
   h2: {
+    fontFamily: Fonts.uiMedium,
     fontSize: 20,
-    fontWeight: '600' as const,
-    letterSpacing: -0.5,
+    letterSpacing: -0.3,
     color: Colors.text1,
     lineHeight: 24,
   },
   h3: {
+    fontFamily: Fonts.uiMedium,
     fontSize: 17,
-    fontWeight: '600' as const,
-    letterSpacing: -0.3,
+    letterSpacing: -0.2,
     color: Colors.text1,
     lineHeight: 22,
   },
 
-  // Body
+  // ── Body — DM Sans
   bodyL: {
+    fontFamily: Fonts.uiLight,
     fontSize: 16,
-    fontWeight: '400' as const,
     letterSpacing: 0,
     color: Colors.text2,
-    lineHeight: 24,
+    lineHeight: 25,
   },
   bodyM: {
+    fontFamily: Fonts.uiLight,
     fontSize: 14,
-    fontWeight: '400' as const,
     letterSpacing: 0,
     color: Colors.text2,
-    lineHeight: 20,
+    lineHeight: 21,
   },
   bodyS: {
+    fontFamily: Fonts.uiLight,
     fontSize: 12,
-    fontWeight: '400' as const,
     letterSpacing: 0,
     color: Colors.text3,
-    lineHeight: 16,
+    lineHeight: 17,
   },
 
-  // Labels
+  // ── Labels
   labelL: {
+    fontFamily: Fonts.uiMedium,
     fontSize: 13,
-    fontWeight: '600' as const,
-    letterSpacing: 0.5,
+    letterSpacing: 0.3,
     color: Colors.text2,
   },
   labelM: {
-    fontSize: 11,
-    fontWeight: '600' as const,
-    letterSpacing: 0.8,
+    fontFamily: Fonts.uiMedium,
+    fontSize: 10,
+    letterSpacing: 1.5,
     textTransform: 'uppercase' as const,
     color: Colors.text3,
   },
   labelS: {
-    fontSize: 10,
-    fontWeight: '700' as const,
-    letterSpacing: 1.2,
+    fontFamily: Fonts.ui,
+    fontSize: 9,
+    letterSpacing: 2,
     textTransform: 'uppercase' as const,
     color: Colors.text4,
   },
 
-  // Special
+  // ── Özel
   editorial: {
-    fontSize: 13,
-    fontWeight: '500' as const,
-    letterSpacing: 2,
+    fontFamily: Fonts.uiMedium,
+    fontSize: 10,
+    letterSpacing: 2.5,
     textTransform: 'uppercase' as const,
     color: Colors.gold3,
   },
   price: {
+    fontFamily: Fonts.ui,
     fontSize: 16,
-    fontWeight: '700' as const,
     letterSpacing: -0.3,
     color: Colors.text1,
   },
   priceLarge: {
+    fontFamily: Fonts.ui,
     fontSize: 22,
-    fontWeight: '800' as const,
     letterSpacing: -0.8,
     color: Colors.text1,
   },
   caption: {
+    fontFamily: Fonts.uiLight,
     fontSize: 11,
-    fontWeight: '400' as const,
     letterSpacing: 0,
     color: Colors.text4,
     lineHeight: 15,

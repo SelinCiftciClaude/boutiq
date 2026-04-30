@@ -10,6 +10,7 @@ import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Colors } from '../../constants/Colors';
+import { Fonts } from '../../constants/Typography';
 import { ProductCard } from '../../components/ProductCard';
 import { BrandCard } from '../../components/BrandCard';
 import { Product } from '../../types';
@@ -349,7 +350,7 @@ const styles = StyleSheet.create({
   bgGlow: { position: 'absolute', top: 100, right: -100, width: 300, height: 300, borderRadius: 150, backgroundColor: Colors.roseGlow, opacity: 0.35 },
 
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 12, paddingBottom: 10 },
-  headerTitle: { fontSize: 28, fontWeight: '800', color: Colors.text1, letterSpacing: -1 },
+  headerTitle: { fontFamily: Fonts.editorial, fontSize: 34, color: Colors.text1, letterSpacing: 0 },
   headerRight: { flexDirection: 'row', gap: 8 },
   iconBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: Colors.surface2, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: Colors.border2 },
 

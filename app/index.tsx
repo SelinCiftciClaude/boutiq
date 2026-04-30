@@ -178,7 +178,6 @@ export default function OnboardingScreen() {
           size="xl"
           style={styles.ctaButton}
           icon={<Ionicons name={currentIndex === SLIDES.length - 1 ? 'sparkles' : 'arrow-forward'} size={18} color="#fff" />}
-          iconPosition="right"
         />
 
         <TouchableOpacity onPress={() => router.replace('/(auth)/login')} style={styles.skipBtn}>

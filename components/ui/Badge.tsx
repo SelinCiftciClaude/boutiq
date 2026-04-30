@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ViewStyle } from 'react-native';
 import { Colors } from '../../constants/Colors';
+import { Fonts } from '../../constants/Typography';
 
 type BadgeVariant = 'gold' | 'purple' | 'success' | 'error' | 'neutral' | 'sale';
 
@@ -15,7 +16,7 @@ export function Badge({ label, variant = 'neutral', size = 'sm', style }: BadgeP
   return (
     <View style={[styles.base, variantStyles[variant], sizeStyles[size], style]}>
       <Text style={[styles.text, textStyles[variant], size === 'md' && styles.textMd]}>
-        {label}
+        {label.toUpperCase()}
       </Text>
     </View>
   );
@@ -23,20 +24,17 @@ export function Badge({ label, variant = 'neutral', size = 'sm', style }: BadgeP
 
 const styles = StyleSheet.create({
   base: {
-    borderRadius: 6,
+    borderRadius: 4,
     alignSelf: 'flex-start',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
   },
   text: {
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
+    fontFamily: Fonts.uiMedium,
+    fontSize: 9,
+    letterSpacing: 1.2,
   },
   textMd: {
-    fontSize: 12,
-    letterSpacing: 0.5,
+    fontSize: 11,
+    letterSpacing: 0.8,
   },
 });
 
@@ -46,19 +44,19 @@ const sizeStyles = {
 };
 
 const variantStyles: Record<BadgeVariant, ViewStyle> = {
-  gold: { backgroundColor: 'rgba(212,168,67,0.20)', borderWidth: 1, borderColor: 'rgba(212,168,67,0.40)' },
-  purple: { backgroundColor: 'rgba(139,92,246,0.20)', borderWidth: 1, borderColor: 'rgba(139,92,246,0.35)' },
-  success: { backgroundColor: 'rgba(16,185,129,0.20)', borderWidth: 1, borderColor: 'rgba(16,185,129,0.35)' },
-  error: { backgroundColor: 'rgba(239,68,68,0.20)', borderWidth: 1, borderColor: 'rgba(239,68,68,0.35)' },
-  neutral: { backgroundColor: Colors.surface3, borderWidth: 1, borderColor: Colors.border2 },
-  sale: { backgroundColor: 'rgba(244,63,94,0.20)', borderWidth: 1, borderColor: 'rgba(244,63,94,0.35)' },
+  gold:    { backgroundColor: Colors.glassGold, borderWidth: 0.5, borderColor: Colors.borderGold },
+  purple:  { backgroundColor: 'rgba(110,72,216,0.15)', borderWidth: 0.5, borderColor: 'rgba(110,72,216,0.35)' },
+  success: { backgroundColor: 'rgba(54,138,108,0.15)', borderWidth: 0.5, borderColor: 'rgba(54,138,108,0.35)' },
+  error:   { backgroundColor: 'rgba(188,60,60,0.15)', borderWidth: 0.5, borderColor: 'rgba(188,60,60,0.35)' },
+  neutral: { backgroundColor: Colors.surface3, borderWidth: 0.5, borderColor: Colors.border2 },
+  sale:    { backgroundColor: Colors.glassRose, borderWidth: 0.5, borderColor: Colors.borderRose },
 };
 
 const textStyles: Record<BadgeVariant, object> = {
-  gold: { color: Colors.gold4 },
-  purple: { color: Colors.purple4 },
+  gold:    { color: Colors.gold4 },
+  purple:  { color: Colors.purple3 },
   success: { color: Colors.success },
-  error: { color: Colors.error },
+  error:   { color: Colors.error },
   neutral: { color: Colors.text3 },
-  sale: { color: '#FB7185' },
+  sale:    { color: Colors.rose4 },
 };

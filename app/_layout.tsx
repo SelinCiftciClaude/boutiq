@@ -6,6 +6,27 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StyleSheet } from 'react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Linking from 'expo-linking';
+import { useFonts } from 'expo-font';
+import {
+  CormorantGaramond_300Light,
+  CormorantGaramond_400Regular,
+  CormorantGaramond_500Medium,
+  CormorantGaramond_600SemiBold,
+  CormorantGaramond_700Bold,
+  CormorantGaramond_300Light_Italic,
+  CormorantGaramond_400Regular_Italic,
+  CormorantGaramond_500Medium_Italic,
+  CormorantGaramond_600SemiBold_Italic,
+  CormorantGaramond_700Bold_Italic,
+} from '@expo-google-fonts/cormorant-garamond';
+import {
+  DMSans_300Light,
+  DMSans_400Regular,
+  DMSans_500Medium,
+  DMSans_600SemiBold,
+  DMSans_700Bold,
+  DMSans_800ExtraBold,
+} from '@expo-google-fonts/dm-sans';
 import { Colors } from '@/constants/Colors';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { InterestsProvider, useInterests } from '@/context/InterestsContext';
@@ -30,12 +51,10 @@ function RouteGate() {
   const router = useRouter();
   const [shareUrl, setShareUrl] = useState<string | null>(null);
 
-  // Push token kayıt — oturum açıldığında bir kez çalışır
   useEffect(() => {
     if (session?.user) getAndSavePushToken(session.user.id);
   }, [session?.user?.id]);
 
-  // Deep link handler: boutiq://save?url=... and boutiq://collection/:userId
   useEffect(() => {
     const handleUrl = (event: { url: string }) => {
       try {
@@ -87,12 +106,33 @@ function RouteGate() {
 }
 
 export default function RootLayout() {
+  const [fontsLoaded] = useFonts({
+    CormorantGaramond_300Light,
+    CormorantGaramond_400Regular,
+    CormorantGaramond_500Medium,
+    CormorantGaramond_600SemiBold,
+    CormorantGaramond_700Bold,
+    CormorantGaramond_300Light_Italic,
+    CormorantGaramond_400Regular_Italic,
+    CormorantGaramond_500Medium_Italic,
+    CormorantGaramond_600SemiBold_Italic,
+    CormorantGaramond_700Bold_Italic,
+    DMSans_300Light,
+    DMSans_400Regular,
+    DMSans_500Medium,
+    DMSans_600SemiBold,
+    DMSans_700Bold,
+    DMSans_800ExtraBold,
+  });
+
+  if (!fontsLoaded) return null;
+
   return (
     <GestureHandlerRootView style={styles.root}>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <InterestsProvider>
-            <StatusBar style="dark" backgroundColor={Colors.bg} />
+            <StatusBar style="light" backgroundColor={Colors.bg} />
             <RouteGate />
           </InterestsProvider>
         </AuthProvider>

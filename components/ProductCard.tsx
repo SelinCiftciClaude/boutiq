@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,7 @@ import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Colors } from '../constants/Colors';
+import { Fonts } from '../constants/Typography';
 import { Product } from '../types';
 import { Badge } from './ui/Badge';
 import { useSavedProducts } from '@/hooks/useSavedProducts';
@@ -22,7 +23,7 @@ const CARD_WIDTH = (width - 48) / 2;
 
 interface ProductCardProps {
   product: Product;
-  onUnsave?: (id: string) => void; // opsiyonel: üst ekran listeyi güncellemek isterse
+  onUnsave?: (id: string) => void;
   tall?: boolean;
 }
 
@@ -30,7 +31,6 @@ export function ProductCard({ product, onUnsave, tall = false }: ProductCardProp
   const { add, remove, isSaved } = useSavedProducts();
   const [imgError, setImgError] = useState(false);
 
-  // Kayıtlı durumu hook'tan al (her zaman sunucuyla senkron)
   const saved = isSaved(product.id);
 
   const handleSaveToggle = (e: GestureResponderEvent) => {
@@ -59,7 +59,8 @@ export function ProductCard({ product, onUnsave, tall = false }: ProductCardProp
       activeOpacity={0.92}
       style={[styles.card, tall && styles.cardTall]}
     >
-      <View style={styles.imageContainer}>
+      {/* Görsel */}
+      <View style={styles.imageWrap}>
         <Image
           source={{ uri: imgError ? 'https://via.placeholder.com/400x500' : product.image }}
           style={[styles.image, tall && styles.imageTall]}
@@ -67,35 +68,35 @@ export function ProductCard({ product, onUnsave, tall = false }: ProductCardProp
           onError={() => setImgError(true)}
         />
         <LinearGradient
-          colors={['transparent', 'rgba(7,7,15,0.85)']}
+          colors={['transparent', 'rgba(7,7,12,0.80)']}
           style={styles.imageGradient}
         />
 
-        {/* Badges */}
+        {/* Üst etiketler */}
         <View style={styles.topBadges}>
           {product.isOnSale && discount > 0 && (
-            <Badge label={`-%${discount}`} variant="sale" />
+            <Badge label={`–%${discount}`} variant="sale" />
           )}
           {!product.inStock && (
             <Badge label="Tükendi" variant="neutral" />
           )}
         </View>
 
-        {/* Save button */}
+        {/* Kaydet butonu */}
         <TouchableOpacity
-          style={styles.saveBtn}
+          style={[styles.saveBtn, saved && styles.saveBtnActive]}
           onPress={handleSaveToggle}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
           <Ionicons
             name={saved ? 'heart' : 'heart-outline'}
-            size={18}
-            color={saved ? '#F43F5E' : Colors.text2}
+            size={16}
+            color={saved ? '#E8504A' : Colors.text2}
           />
         </TouchableOpacity>
       </View>
 
-      {/* Info */}
+      {/* Bilgi alanı */}
       <View style={styles.info}>
         <View style={styles.brandRow}>
           <Image source={{ uri: product.brandLogo }} style={styles.brandLogo} />
@@ -122,78 +123,82 @@ export function ProductCard({ product, onUnsave, tall = false }: ProductCardProp
 const styles = StyleSheet.create({
   card: {
     width: CARD_WIDTH,
-    borderRadius: 18,
+    borderRadius: 14,
     backgroundColor: Colors.surface2,
     overflow: 'hidden',
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: Colors.border1,
-    marginBottom: 12,
+    marginBottom: 10,
   },
   cardTall: {},
-  imageContainer: {
+  imageWrap: {
     position: 'relative',
   },
   image: {
     width: '100%',
-    height: 220,
+    height: 210,
     backgroundColor: Colors.surface3,
   },
   imageTall: {
-    height: 260,
+    height: 255,
   },
   imageGradient: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    height: 80,
+    height: 70,
   },
   topBadges: {
     position: 'absolute',
-    top: 10,
-    left: 10,
+    top: 8,
+    left: 8,
     gap: 4,
   },
   saveBtn: {
     position: 'absolute',
-    top: 10,
-    right: 10,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(7,7,15,0.70)',
+    top: 8,
+    right: 8,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: 'rgba(7,7,12,0.65)',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: Colors.border2,
   },
+  saveBtnActive: {
+    backgroundColor: 'rgba(232,80,74,0.15)',
+    borderColor: 'rgba(232,80,74,0.35)',
+  },
   info: {
-    padding: 12,
-    gap: 6,
+    padding: 11,
+    gap: 5,
   },
   brandRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 5,
   },
   brandLogo: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
     backgroundColor: Colors.surface3,
   },
   brandName: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: Colors.text3,
-    letterSpacing: 0.3,
+    fontFamily: Fonts.uiMedium,
+    fontSize: 10,
+    color: Colors.text4,
+    letterSpacing: 0.5,
     flex: 1,
   },
   productName: {
+    fontFamily: Fonts.uiMedium,
     fontSize: 13,
-    fontWeight: '600',
     color: Colors.text1,
-    letterSpacing: -0.2,
+    letterSpacing: -0.1,
     lineHeight: 18,
   },
   priceRow: {
@@ -202,15 +207,15 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   price: {
+    fontFamily: Fonts.ui,
     fontSize: 14,
-    fontWeight: '700',
     color: Colors.gold4,
-    letterSpacing: -0.3,
+    letterSpacing: -0.2,
   },
   originalPrice: {
-    fontSize: 12,
-    fontWeight: '400',
-    color: Colors.text4,
+    fontFamily: Fonts.uiLight,
+    fontSize: 11,
+    color: Colors.text5,
     textDecorationLine: 'line-through',
   },
 });

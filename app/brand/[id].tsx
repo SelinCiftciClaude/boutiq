@@ -10,6 +10,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import * as Linking from 'expo-linking';
 import { Colors } from '@/constants/Colors';
+import { Fonts } from '@/constants/Typography';
 import { useBrandDetail } from '@/hooks/useBrandDetail';
 import { useSavedBrands } from '@/hooks/useSavedBrands';
 import { useAuth } from '@/context/AuthContext';

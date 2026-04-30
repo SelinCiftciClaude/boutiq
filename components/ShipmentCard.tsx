@@ -11,6 +11,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Colors } from '../constants/Colors';
+import { Fonts } from '../constants/Typography';
 import { Shipment, ShipmentStatus } from '../types';
 
 const STATUS_CONFIG: Record<ShipmentStatus, { label: string; color: string; icon: string; step: number }> = {
@@ -178,8 +179,8 @@ export function ShipmentCard({ shipment }: ShipmentCardProps) {
 const styles = StyleSheet.create({
   card: {
     backgroundColor: Colors.surface2,
-    borderRadius: 22,
-    borderWidth: 1,
+    borderRadius: 16,
+    borderWidth: 0.5,
     borderColor: Colors.border2,
     overflow: 'hidden',
     marginBottom: 14,
@@ -213,12 +214,13 @@ const styles = StyleSheet.create({
     borderColor: Colors.border2,
   },
   brandName: {
+    fontFamily: Fonts.uiMedium,
     fontSize: 14,
-    fontWeight: '700',
     color: Colors.text1,
     letterSpacing: -0.2,
   },
   orderNum: {
+    fontFamily: Fonts.uiLight,
     fontSize: 11,
     color: Colors.text4,
     marginTop: 1,
@@ -233,9 +235,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   statusText: {
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 0.3,
+    fontFamily: Fonts.uiMedium,
+    fontSize: 10,
+    letterSpacing: 0.8,
   },
   productsRow: {
     flexDirection: 'row',

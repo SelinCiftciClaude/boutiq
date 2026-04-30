@@ -10,6 +10,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Colors } from '@/constants/Colors';
+import { Fonts } from '@/constants/Typography';
 import { searchBrandsAndProducts } from '@/services/queries';
 import { useAuth } from '@/context/AuthContext';
 import { Brand, Product } from '@/types';

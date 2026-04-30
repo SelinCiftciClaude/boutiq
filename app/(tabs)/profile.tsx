@@ -21,6 +21,7 @@ import { MOCK_NOTIFICATIONS } from '../../constants/MockData';
 import { Badge } from '../../components/ui/Badge';
 import { AddBrandSheet } from '../../components/AddBrandSheet';
 import { Brand, BrandCategory } from '../../types';
+import { Fonts } from '@/constants/Typography';
 import { useAuth } from '@/context/AuthContext';
 import { useInterests } from '@/context/InterestsContext';
 import { useSavedBrands } from '@/hooks/useSavedBrands';
@@ -488,64 +489,64 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center',
     justifyContent: 'space-between', paddingTop: 12, paddingBottom: 16,
   },
-  headerTitle: { fontSize: 26, fontWeight: '800', color: Colors.text1, letterSpacing: -1 },
+  headerTitle: { fontFamily: Fonts.editorial, fontSize: 34, color: Colors.text1, letterSpacing: 0 },
   settingsBtn: {
     width: 40, height: 40, borderRadius: 20,
     backgroundColor: Colors.surface2, alignItems: 'center', justifyContent: 'center',
     borderWidth: 1, borderColor: Colors.border2,
   },
   profileCard: {
-    borderRadius: 24, padding: 20, borderWidth: 1,
+    borderRadius: 16, padding: 20, borderWidth: 0.5,
     borderColor: Colors.border2, overflow: 'hidden',
     position: 'relative', marginBottom: 16, gap: 16,
   },
-  profileCardAccent: { position: 'absolute', top: 0, left: 0, right: 0, height: 3 },
+  profileCardAccent: { position: 'absolute', top: 0, left: 0, right: 0, height: 1.5 },
   profileTop: { flexDirection: 'row', gap: 16, alignItems: 'center' },
   avatarContainer: { position: 'relative' },
-  avatar: { width: 68, height: 68, borderRadius: 34 },
+  avatar: { width: 66, height: 66, borderRadius: 33 },
   avatarPlaceholder: {
-    width: 68, height: 68, borderRadius: 34,
+    width: 66, height: 66, borderRadius: 33,
     alignItems: 'center', justifyContent: 'center',
   },
-  avatarInitials: { fontSize: 24, fontWeight: '800', color: Colors.bg, letterSpacing: 1 },
+  avatarInitials: { fontFamily: Fonts.editorial, fontSize: 26, color: Colors.bg },
   avatarEdit: {
     position: 'absolute', bottom: 0, right: 0,
     width: 22, height: 22, borderRadius: 11,
     backgroundColor: Colors.gold3, alignItems: 'center', justifyContent: 'center',
-    borderWidth: 2, borderColor: Colors.surface2,
+    borderWidth: 1.5, borderColor: Colors.surface2,
   },
   profileInfo: { flex: 1, gap: 4 },
-  profileName: { fontSize: 18, fontWeight: '800', color: Colors.text1, letterSpacing: -0.5 },
-  profileEmail: { fontSize: 13, color: Colors.text4, marginBottom: 4 },
+  profileName: { fontFamily: Fonts.uiMedium, fontSize: 18, color: Colors.text1, letterSpacing: -0.3 },
+  profileEmail: { fontFamily: Fonts.uiLight, fontSize: 12, color: Colors.text4, marginBottom: 4 },
   statsRow: {
     flexDirection: 'row', backgroundColor: Colors.surface3,
-    borderRadius: 16, padding: 14,
+    borderRadius: 12, padding: 14,
   },
   statItem: { flex: 1, alignItems: 'center', gap: 2 },
-  statNum: { fontSize: 20, fontWeight: '800', color: Colors.text1, letterSpacing: -0.5 },
-  statLabel: { fontSize: 10, fontWeight: '600', color: Colors.text4, textTransform: 'uppercase', letterSpacing: 0.5 },
-  statDivider: { width: 1, height: 30, backgroundColor: Colors.border2 },
+  statNum: { fontFamily: Fonts.ui, fontSize: 20, color: Colors.text1, letterSpacing: -0.5 },
+  statLabel: { fontFamily: Fonts.uiMedium, fontSize: 9, color: Colors.text4, textTransform: 'uppercase', letterSpacing: 1 },
+  statDivider: { width: 0.5, height: 28, backgroundColor: Colors.border2 },
   // Tabs
   tabRow: {
     flexDirection: 'row', gap: 8, marginBottom: 20,
   },
   tab: {
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: 7, paddingVertical: 12, borderRadius: 14,
-    backgroundColor: Colors.surface2, borderWidth: 1, borderColor: Colors.border2,
+    gap: 7, paddingVertical: 12, borderRadius: 10,
+    backgroundColor: Colors.surface2, borderWidth: 0.5, borderColor: Colors.border2,
     overflow: 'hidden',
   },
   tabActive: { borderColor: Colors.gold3 },
-  tabLabel: { fontSize: 13, fontWeight: '600', color: Colors.text3 },
-  tabLabelActive: { color: Colors.bg, fontWeight: '700' },
+  tabLabel: { fontFamily: Fonts.uiMedium, fontSize: 11, color: Colors.text3, letterSpacing: 0.5, textTransform: 'uppercase' },
+  tabLabelActive: { color: Colors.bg },
 
   // Collection
   emptyCollection: {
     alignItems: 'center', paddingTop: 48, paddingHorizontal: 32, gap: 10,
   },
   emptyIcon: { fontSize: 48, marginBottom: 8 },
-  emptyTitle: { fontSize: 20, fontWeight: '700', color: Colors.text2, textAlign: 'center', letterSpacing: -0.5 },
-  emptySubtitle: { fontSize: 14, color: Colors.text4, textAlign: 'center', lineHeight: 21 },
+  emptyTitle: { fontFamily: Fonts.editorial, fontSize: 24, color: Colors.text2, textAlign: 'center' },
+  emptySubtitle: { fontFamily: Fonts.uiLight, fontSize: 14, color: Colors.text4, textAlign: 'center', lineHeight: 21 },
 
   categorySection: { marginBottom: 24 },
   categoryHeader: {
@@ -564,23 +565,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12,
   },
   sectionTitle: {
-    fontSize: 13, fontWeight: '700', color: Colors.text4,
-    letterSpacing: 1, textTransform: 'uppercase', marginBottom: 12, flex: 1,
+    fontFamily: Fonts.uiMedium, fontSize: 9, color: Colors.text4,
+    letterSpacing: 2.5, textTransform: 'uppercase', marginBottom: 12, flex: 1,
   },
   settingsGroup: {
-    backgroundColor: Colors.surface2, borderRadius: 20,
-    borderWidth: 1, borderColor: Colors.border1, overflow: 'hidden',
+    backgroundColor: Colors.surface2, borderRadius: 14,
+    borderWidth: 0.5, borderColor: Colors.border1, overflow: 'hidden',
   },
   settingRow: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
     paddingHorizontal: 16, paddingVertical: 14,
-    borderBottomWidth: 1, borderBottomColor: Colors.border1,
+    borderBottomWidth: 0.5, borderBottomColor: Colors.border1,
   },
-  settingIcon: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  settingLabel: { flex: 1, fontSize: 15, fontWeight: '500', color: Colors.text1, letterSpacing: -0.1 },
-  settingValue: { fontSize: 13, color: Colors.text4, fontWeight: '500' },
+  settingIcon: { width: 34, height: 34, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
+  settingLabel: { flex: 1, fontFamily: Fonts.uiLight, fontSize: 15, color: Colors.text1, letterSpacing: -0.1 },
+  settingValue: { fontFamily: Fonts.uiLight, fontSize: 12, color: Colors.text4 },
   settingRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   footer: { alignItems: 'center', gap: 6, paddingVertical: 16 },
-  footerText: { fontSize: 13, fontWeight: '600', color: Colors.gold3, letterSpacing: 1 },
-  footerSub: { fontSize: 11, color: Colors.text5, textAlign: 'center', lineHeight: 16 },
+  footerText: { fontFamily: Fonts.uiMedium, fontSize: 10, color: Colors.gold3, letterSpacing: 2, textTransform: 'uppercase' },
+  footerSub: { fontFamily: Fonts.uiLight, fontSize: 10, color: Colors.text5, textAlign: 'center', lineHeight: 16 },
 });

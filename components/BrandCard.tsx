@@ -12,6 +12,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
+import { Fonts } from '../constants/Typography';
 import { Brand } from '../types';
 import { Badge } from './ui/Badge';
 
@@ -28,50 +29,70 @@ interface BrandCardProps {
 export function BrandCard({ brand, variant = 'horizontal', onPress, onAdd, isSaved }: BrandCardProps) {
   const handlePress = () => {
     Haptics.selectionAsync();
-    if (onPress) {
-      onPress(brand);
-    } else {
-      Linking.openURL(brand.affiliateUrl);
-    }
+    if (onPress) onPress(brand);
+    else Linking.openURL(brand.affiliateUrl);
   };
 
   if (variant === 'featured') {
     return (
-      <TouchableOpacity
-        onPress={handlePress}
-        activeOpacity={0.90}
-        style={styles.featured}
-      >
+      <TouchableOpacity onPress={handlePress} activeOpacity={0.92} style={styles.featured}>
         <Image
           source={{ uri: brand.coverImage }}
           style={styles.featuredImage}
           resizeMode="cover"
         />
+        {/* Deep editorial gradient */}
         <LinearGradient
-          colors={['transparent', 'rgba(7,7,15,0.95)']}
+          colors={['rgba(7,7,12,0)', 'rgba(7,7,12,0.55)', 'rgba(7,7,12,0.97)']}
+          locations={[0.2, 0.55, 1]}
           style={styles.featuredGradient}
         />
+
+        {/* Üst köşe — kategori etiketi */}
+        <View style={styles.featuredTopLeft}>
+          <Text style={styles.featuredCategory}>{brand.category.toUpperCase()}</Text>
+        </View>
+
+        {/* Add button */}
+        {onAdd && (
+          <TouchableOpacity
+            style={[styles.featuredAddBtn, isSaved && styles.featuredAddBtnSaved]}
+            onPress={(e) => {
+              e.stopPropagation?.();
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              onAdd(brand);
+            }}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            {isSaved ? (
+              <Ionicons name="checkmark" size={14} color={Colors.gold3} />
+            ) : (
+              <Ionicons name="add" size={16} color={Colors.text1} />
+            )}
+          </TouchableOpacity>
+        )}
+
+        {/* İçerik — alt kısım */}
         <View style={styles.featuredContent}>
-          <View style={styles.featuredHeader}>
+          {/* Logo + isim satırı */}
+          <View style={styles.featuredTop}>
             <Image source={{ uri: brand.logo }} style={styles.featuredLogo} />
-            <View style={styles.featuredInfo}>
-              <View style={styles.nameRow}>
-                <Text style={styles.featuredName}>{brand.name}</Text>
-                {brand.isVerified && (
-                  <Ionicons name="checkmark-circle" size={14} color={Colors.gold3} />
-                )}
+            {brand.isVerified && (
+              <View style={styles.verifiedDot}>
+                <Ionicons name="checkmark" size={9} color={Colors.bg} />
               </View>
-              <Text style={styles.handle}>{brand.handle}</Text>
-            </View>
+            )}
           </View>
-          <Text style={styles.featuredDesc} numberOfLines={2}>
-            {brand.description}
-          </Text>
+
+          {/* İsim — Cormorant Garamond */}
+          <Text style={styles.featuredName} numberOfLines={1}>{brand.name}</Text>
+
+          {/* Alt bilgi satırı */}
           <View style={styles.featuredMeta}>
-            <Badge label={brand.category} variant="gold" />
+            <Text style={styles.featuredHandle}>{brand.handle}</Text>
             {brand.rating && (
               <View style={styles.ratingRow}>
-                <Ionicons name="star" size={12} color={Colors.gold3} />
+                <View style={styles.ratingDot} />
                 <Text style={styles.rating}>{brand.rating}</Text>
               </View>
             )}
@@ -83,21 +104,13 @@ export function BrandCard({ brand, variant = 'horizontal', onPress, onAdd, isSav
 
   if (variant === 'grid') {
     return (
-      <TouchableOpacity
-        onPress={handlePress}
-        activeOpacity={0.88}
-        style={styles.grid}
-      >
+      <TouchableOpacity onPress={handlePress} activeOpacity={0.88} style={styles.grid}>
         <Image source={{ uri: brand.coverImage }} style={styles.gridCover} resizeMode="cover" />
         <LinearGradient
-          colors={['transparent', 'rgba(7,7,15,0.90)']}
+          colors={['rgba(7,7,12,0)', 'rgba(7,7,12,0.92)']}
+          locations={[0.3, 1]}
           style={styles.gridGradient}
         />
-        <View style={styles.gridContent}>
-          <Image source={{ uri: brand.logo }} style={styles.gridLogo} />
-          <Text style={styles.gridName} numberOfLines={1}>{brand.name}</Text>
-          <Badge label={brand.category} variant="neutral" size="sm" />
-        </View>
 
         {/* Add button */}
         {onAdd && (
@@ -111,23 +124,25 @@ export function BrandCard({ brand, variant = 'horizontal', onPress, onAdd, isSav
             hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
           >
             {isSaved ? (
-              <Ionicons name="checkmark" size={14} color={Colors.gold4} />
+              <Ionicons name="checkmark" size={13} color={Colors.gold3} />
             ) : (
-              <Ionicons name="add" size={16} color={Colors.text1} />
+              <Ionicons name="add" size={15} color={Colors.text1} />
             )}
           </TouchableOpacity>
         )}
+
+        <View style={styles.gridContent}>
+          <Image source={{ uri: brand.logo }} style={styles.gridLogo} />
+          <Text style={styles.gridName} numberOfLines={1}>{brand.name}</Text>
+          <Text style={styles.gridCategory}>{brand.category.toUpperCase()}</Text>
+        </View>
       </TouchableOpacity>
     );
   }
 
   // Horizontal (default)
   return (
-    <TouchableOpacity
-      onPress={handlePress}
-      activeOpacity={0.88}
-      style={styles.horizontal}
-    >
+    <TouchableOpacity onPress={handlePress} activeOpacity={0.85} style={styles.horizontal}>
       <Image source={{ uri: brand.logo }} style={styles.logo} />
       <View style={styles.hInfo}>
         <View style={styles.nameRow}>
@@ -148,20 +163,20 @@ export function BrandCard({ brand, variant = 'horizontal', onPress, onAdd, isSav
         {brand.productCount !== undefined && (
           <Text style={styles.productCount}>{brand.productCount} ürün</Text>
         )}
-        <Ionicons name="chevron-forward" size={16} color={Colors.text4} />
+        <Ionicons name="chevron-forward" size={14} color={Colors.text5} />
       </View>
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
-  // Featured
+  // ── Featured
   featured: {
     width: width - 32,
-    height: 240,
-    borderRadius: 24,
+    height: 300,
+    borderRadius: 18,
     overflow: 'hidden',
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: Colors.border2,
   },
   featuredImage: {
@@ -175,54 +190,118 @@ const styles = StyleSheet.create({
     right: 0,
     height: '75%',
   },
+  featuredTopLeft: {
+    position: 'absolute',
+    top: 14,
+    left: 14,
+  },
+  featuredCategory: {
+    fontFamily: Fonts.uiMedium,
+    fontSize: 8,
+    letterSpacing: 2,
+    color: Colors.text2,
+    backgroundColor: Colors.glass2,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 3,
+    borderWidth: 0.5,
+    borderColor: Colors.border2,
+    overflow: 'hidden',
+  },
+  featuredAddBtn: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: Colors.glass2,
+    borderWidth: 0.5,
+    borderColor: Colors.border3,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  featuredAddBtnSaved: {
+    backgroundColor: Colors.glassGold,
+    borderColor: Colors.borderGold,
+  },
   featuredContent: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    padding: 20,
-    gap: 10,
+    padding: 18,
+    gap: 5,
   },
-  featuredHeader: {
+  featuredTop: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 0,
+    marginBottom: 6,
+    position: 'relative',
+    alignSelf: 'flex-start',
   },
   featuredLogo: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    borderWidth: 2,
-    borderColor: Colors.gold3,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: Colors.borderGold,
   },
-  featuredInfo: {
-    flex: 1,
-    gap: 2,
+  verifiedDot: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: Colors.gold3,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: Colors.bg,
   },
   featuredName: {
-    fontSize: 20,
-    fontWeight: '700',
+    fontFamily: Fonts.editorial,
+    fontSize: 32,
     color: Colors.text1,
-    letterSpacing: -0.5,
-  },
-  featuredDesc: {
-    fontSize: 13,
-    color: Colors.text3,
-    lineHeight: 18,
+    letterSpacing: 0.5,
+    lineHeight: 34,
   },
   featuredMeta: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
   },
+  featuredHandle: {
+    fontFamily: Fonts.uiLight,
+    fontSize: 12,
+    color: Colors.text3,
+  },
+  ratingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  ratingDot: {
+    width: 3,
+    height: 3,
+    borderRadius: 1.5,
+    backgroundColor: Colors.text5,
+  },
+  rating: {
+    fontFamily: Fonts.uiMedium,
+    fontSize: 11,
+    color: Colors.gold3,
+  },
 
-  // Grid
+  // ── Grid
   grid: {
     width: (width - 48) / 2,
-    height: 180,
-    borderRadius: 20,
+    height: 195,
+    borderRadius: 14,
     overflow: 'hidden',
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: Colors.border1,
   },
   gridCover: {
@@ -234,7 +313,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: '60%',
+    height: '65%',
   },
   gridContent: {
     position: 'absolute',
@@ -242,31 +321,37 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     padding: 12,
-    gap: 4,
+    gap: 3,
   },
   gridLogo: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    borderWidth: 1.5,
-    borderColor: Colors.border2,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: Colors.borderGold,
     marginBottom: 2,
   },
   gridName: {
+    fontFamily: Fonts.uiMedium,
     fontSize: 13,
-    fontWeight: '700',
     color: Colors.text1,
-    letterSpacing: -0.2,
+    letterSpacing: -0.1,
+  },
+  gridCategory: {
+    fontFamily: Fonts.uiMedium,
+    fontSize: 8,
+    color: Colors.text4,
+    letterSpacing: 1.5,
   },
   addBtn: {
     position: 'absolute',
-    top: 10,
-    right: 10,
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: 'rgba(7,7,15,0.72)',
-    borderWidth: 1,
+    top: 9,
+    right: 9,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(7,7,12,0.70)',
+    borderWidth: 0.5,
     borderColor: Colors.border3,
     alignItems: 'center',
     justifyContent: 'center',
@@ -276,23 +361,23 @@ const styles = StyleSheet.create({
     borderColor: Colors.borderGold,
   },
 
-  // Horizontal
+  // ── Horizontal
   horizontal: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.surface2,
-    borderRadius: 18,
+    borderRadius: 14,
     padding: 14,
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: Colors.border1,
     gap: 14,
   },
   logo: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     backgroundColor: Colors.surface3,
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: Colors.border2,
   },
   hInfo: {
@@ -301,7 +386,7 @@ const styles = StyleSheet.create({
   },
   hRight: {
     alignItems: 'flex-end',
-    gap: 6,
+    gap: 4,
   },
   nameRow: {
     flexDirection: 'row',
@@ -309,15 +394,15 @@ const styles = StyleSheet.create({
     gap: 5,
   },
   name: {
+    fontFamily: Fonts.uiMedium,
     fontSize: 15,
-    fontWeight: '700',
     color: Colors.text1,
-    letterSpacing: -0.3,
+    letterSpacing: -0.2,
   },
   handle: {
+    fontFamily: Fonts.uiLight,
     fontSize: 12,
     color: Colors.text4,
-    fontWeight: '400',
   },
   metaRow: {
     flexDirection: 'row',
@@ -326,22 +411,13 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   lastActive: {
+    fontFamily: Fonts.uiLight,
     fontSize: 11,
     color: Colors.text4,
   },
   productCount: {
+    fontFamily: Fonts.uiLight,
     fontSize: 12,
     color: Colors.text3,
-    fontWeight: '500',
-  },
-  ratingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  rating: {
-    fontSize: 12,
-    color: Colors.gold3,
-    fontWeight: '600',
   },
 });

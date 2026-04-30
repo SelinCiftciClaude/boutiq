@@ -16,6 +16,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Colors } from '../constants/Colors';
+import { Fonts } from '../constants/Typography';
 import { Brand, BrandCategory } from '../types';
 import { CATEGORIES } from '../constants/MockData';
 import { supabase } from '../services/supabase';

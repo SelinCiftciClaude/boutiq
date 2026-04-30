@@ -11,6 +11,7 @@ import * as Haptics from 'expo-haptics';
 import * as Linking from 'expo-linking';
 import Svg, { Polyline, Line, Circle } from 'react-native-svg';
 import { Colors } from '@/constants/Colors';
+import { Fonts } from '@/constants/Typography';
 import { useProductDetail } from '@/hooks/useProductDetail';
 import { useSavedProducts } from '@/hooks/useSavedProducts';
 import { useAuth } from '@/context/AuthContext';
