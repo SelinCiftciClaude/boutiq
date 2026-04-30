@@ -22,6 +22,7 @@ import { Badge } from '../../components/ui/Badge';
 import { AddBrandSheet } from '../../components/AddBrandSheet';
 import { Brand, BrandCategory } from '../../types';
 import { useAuth } from '@/context/AuthContext';
+import { useInterests } from '@/context/InterestsContext';
 import { useSavedBrands } from '@/hooks/useSavedBrands';
 import { useDashboard } from '@/hooks/useDashboard';
 import { useProfile } from '@/hooks/useProfile';
@@ -179,6 +180,7 @@ export default function ProfileScreen() {
   const [editSheet, setEditSheet] = useState<SavedBrand | null>(null);
 
   const { user: authUser, signOut } = useAuth();
+  const { clearInterests } = useInterests();
   const { data: savedBrandsList = [], add: addSaved, remove: removeSaved } = useSavedBrands();
   const { data: dashboard } = useDashboard();
   const { data: profile, updateNotifications } = useProfile();
@@ -440,6 +442,7 @@ export default function ProfileScreen() {
                 <SettingRow icon="shield-checkmark" iconColor={Colors.success} iconBg={Colors.successGlow} label="Gizlilik & KVKK" onPress={() => {}} />
                 <SettingRow icon="document-text" iconColor={Colors.text3} iconBg={Colors.surface3} label="Kullanım Şartları" onPress={() => {}} />
                 <SettingRow icon="information-circle" iconColor={Colors.text3} iconBg={Colors.surface3} label="Versiyon" value="1.0.0" />
+                <SettingRow icon="refresh" iconColor={Colors.gold3} iconBg={Colors.glassGold} label="Tanıtım Ekranını Sıfırla" onPress={clearInterests} />
               </View>
             </View>
 

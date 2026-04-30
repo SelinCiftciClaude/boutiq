@@ -22,6 +22,7 @@ type Value = {
   checked: boolean;
   interests: string[];
   markDone: (interests: string[]) => Promise<void>;
+  clearInterests: () => Promise<void>;
 };
 
 const InterestsContext = createContext<Value>({
@@ -29,6 +30,7 @@ const InterestsContext = createContext<Value>({
   checked: false,
   interests: [],
   markDone: async () => {},
+  clearInterests: async () => {},
 });
 
 export function InterestsProvider({ children }: { children: React.ReactNode }) {
@@ -71,8 +73,15 @@ export function InterestsProvider({ children }: { children: React.ReactNode }) {
     setHasInterests(true);
   }, [user?.id]);
 
+  const clearInterests = useCallback(async () => {
+    if (!user) return;
+    await AsyncStorage.removeItem(KEY(user.id));
+    setInterests([]);
+    setHasInterests(false);
+  }, [user?.id]);
+
   return (
-    <InterestsContext.Provider value={{ hasInterests, checked, interests, markDone }}>
+    <InterestsContext.Provider value={{ hasInterests, checked, interests, markDone, clearInterests }}>
       {children}
     </InterestsContext.Provider>
   );
