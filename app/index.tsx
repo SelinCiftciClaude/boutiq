@@ -124,8 +124,7 @@ export default function OnboardingScreen() {
     <View style={styles.container}>
       {/* Logo */}
       <View style={styles.logoContainer}>
-        <LinearGradient colors={[Colors.rose3, Colors.gold3]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.logoDot} />
-        <Text style={styles.logoText}>BUTİKA</Text>
+        <Image source={require('../assets/images/logo-butika.png')} style={styles.logoImg} resizeMode="contain" />
       </View>
 
       {/* Slides */}
@@ -202,12 +201,8 @@ const styles = StyleSheet.create({
     gap: 8,
     zIndex: 10,
   },
-  logoDot: {
-    width: 28, height: 28, borderRadius: 8,
-  },
-  logoText: {
-    fontFamily: Fonts.ui,
-    fontSize: 18, color: Colors.text1, letterSpacing: 5,
+  logoImg: {
+    width: 180, height: 58,
   },
   flatList: { flex: 1 },
   slide: {

@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
+  Image,
   StyleSheet,
   TextInput,
   TouchableOpacity,
@@ -82,12 +83,13 @@ export default function LoginScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {/* Üst logomark */}
+        {/* Logo */}
         <View style={styles.topBar}>
-          <View style={styles.logoMark}>
-            <View style={styles.logoMarkInner} />
-          </View>
-          <Text style={styles.logoText}>BUTİKA</Text>
+          <Image
+            source={require('../../assets/images/logo-butika.png')}
+            style={styles.logoImg}
+            resizeMode="contain"
+          />
         </View>
 
         {/* Hero başlık */}
@@ -278,20 +280,12 @@ const styles = StyleSheet.create({
 
   // Top bar
   topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
     marginTop: 64,
     marginBottom: 0,
   },
-  logoMark: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    borderWidth: 1.5,
-    borderColor: Colors.gold3,
-    alignItems: 'center',
-    justifyContent: 'center',
+  logoImg: {
+    width: 180,
+    height: 58,
   },
   logoMarkInner: {
     width: 12,

@@ -271,9 +271,11 @@ export default function HomeScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <View>
-            <Text style={styles.headerTitle}>BUTİKA</Text>
-          </View>
+          <Image
+            source={require('../../assets/images/logo-butika.png')}
+            style={styles.headerLogo}
+            resizeMode="contain"
+          />
           <View style={styles.headerActions}>
             <TouchableOpacity style={styles.notifBtn} onPress={() => router.push('/notifications' as any)}>
               <Ionicons name="notifications-outline" size={20} color={Colors.text2} />
@@ -555,8 +557,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'flex-start',
     justifyContent: 'space-between', paddingTop: 8, paddingBottom: 20,
   },
-  greeting: { fontFamily: Fonts.uiLight, fontSize: 12, color: Colors.text4, marginBottom: 2, letterSpacing: 0.3 },
-  headerTitle: { fontFamily: Fonts.ui, fontSize: 28, color: Colors.text1, letterSpacing: 5 },
+  headerLogo: { width: 160, height: 52 },
   headerActions: { flexDirection: 'row', gap: 8, marginTop: 4 },
   searchBtn: {
     width: 40, height: 40, borderRadius: 20,
