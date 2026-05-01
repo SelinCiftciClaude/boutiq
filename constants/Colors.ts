@@ -15,14 +15,14 @@ export const Colors = {
   roseGlow:       'rgba(180,72,42,0.12)',
   roseGlowStrong: 'rgba(180,72,42,0.26)',
 
-  // ── Antik Altın — ikincil accent (muted, worn gold)
-  gold1: '#5C4016',
-  gold2: '#896228',
-  gold3: '#B48440',  // primary gold
-  gold4: '#CAA868',
-  gold5: '#DED0A0',
-  goldGlow:       'rgba(180,132,64,0.14)',
-  goldGlowStrong: 'rgba(180,132,64,0.30)',
+  // ── Açık Sarı / Altın — ana accent
+  gold1: '#8A7020',
+  gold2: '#C0A030',
+  gold3: '#E8C040',  // primary — açık sarı
+  gold4: '#F0D060',
+  gold5: '#F8ECA0',
+  goldGlow:       'rgba(232,192,64,0.14)',
+  goldGlowStrong: 'rgba(232,192,64,0.30)',
 
   // ── Teal (minimal; tracking ekranı)
   teal1: '#124C3C',
@@ -48,7 +48,7 @@ export const Colors = {
   border1: 'rgba(232,226,212,0.05)',
   border2: 'rgba(232,226,212,0.09)',
   border3: 'rgba(232,226,212,0.15)',
-  borderGold: 'rgba(180,132,64,0.22)',
+  borderGold: 'rgba(232,192,64,0.28)',
   borderRose: 'rgba(180,72,42,0.22)',
 
   // ── Status
@@ -67,15 +67,15 @@ export const Colors = {
   glass1: 'rgba(12,12,22,0.55)',
   glass2: 'rgba(12,12,22,0.75)',
   glass3: 'rgba(12,12,22,0.92)',
-  glassGold: 'rgba(180,132,64,0.08)',
+  glassGold: 'rgba(232,192,64,0.10)',
   glassRose: 'rgba(180,72,42,0.08)',
 
   // ── Gradients
   gradients: {
     rose:         ['#8C3820', '#CC6E50'] as const,
     roseDark:     ['#6A2818', '#B4482A'] as const,
-    gold:         ['#896228', '#CAA868'] as const,
-    goldDark:     ['#5C4016', '#B48440'] as const,
+    gold:         ['#C0A030', '#F0D060'] as const,
+    goldDark:     ['#8A7020', '#E8C040'] as const,
     light:        ['#07070C', '#0C0C16'] as const,
     lightReverse: ['#0C0C16', '#07070C'] as const,
     surface:      ['#0C0C16', '#11111E'] as const,

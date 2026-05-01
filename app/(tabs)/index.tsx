@@ -131,14 +131,14 @@ function ShipmentCard2({ s }: { s: Shipment }) {
       activeOpacity={0.85}
       onPress={() => router.push(`/shipment/${s.id}` as any)}
     >
-      {/* Üst satır: kargo firması + nokta */}
+      {/* Üst satır: butik adı + nokta */}
       <View style={sw.topRow}>
-        <Text style={sw.carrier}>{s.carrier}</Text>
+        <Text style={sw.brandName} numberOfLines={1}>{s.brandName}</Text>
         <View style={[sw.dot, { backgroundColor: dot }]} />
       </View>
 
-      {/* Butik adı */}
-      <Text style={sw.brandName} numberOfLines={1}>{s.brandName}</Text>
+      {/* Kargo firması */}
+      <Text style={sw.carrier}>{s.carrier}</Text>
 
       {/* Durum */}
       <Text style={[sw.statusText, { color: dot }]}>{label}</Text>
@@ -272,13 +272,9 @@ export default function HomeScreen() {
         {/* Header */}
         <View style={styles.header}>
           <View>
-            <Text style={styles.greeting}>Merhaba 👋</Text>
             <Text style={styles.headerTitle}>BOUTIQ</Text>
           </View>
           <View style={styles.headerActions}>
-            <TouchableOpacity style={styles.searchBtn} onPress={() => router.push('/search' as any)}>
-              <Ionicons name="search" size={20} color={Colors.text2} />
-            </TouchableOpacity>
             <TouchableOpacity style={styles.notifBtn} onPress={() => router.push('/notifications' as any)}>
               <Ionicons name="notifications-outline" size={20} color={Colors.text2} />
               {unreadCount > 0 && (
