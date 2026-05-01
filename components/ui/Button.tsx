@@ -51,7 +51,7 @@ export function Button({
         style={[{ height: h, borderRadius: r, overflow: 'hidden', opacity: isDisabled ? 0.45 : 1 }, style]}
       >
         <LinearGradient
-          colors={[Colors.gold2, Colors.gold3, Colors.gold4]}
+          colors={[Colors.rose2, Colors.rose3, Colors.rose4]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={StyleSheet.absoluteFill}
@@ -161,7 +161,7 @@ const styles = StyleSheet.create({
   },
   labelSecondary: {
     fontFamily: Fonts.uiMedium,
-    color: Colors.gold4,
+    color: Colors.rose3,
   },
   labelGhost: {
     fontFamily: Fonts.uiMedium,

@@ -60,36 +60,30 @@ export default function LoginScreen() {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      {/* Arka plan — void noir */}
-      <View style={StyleSheet.absoluteFill}>
-        <LinearGradient
-          colors={['#0F0A18', Colors.bg, '#0A0C10']}
-          locations={[0, 0.5, 1]}
-          style={StyleSheet.absoluteFill}
-        />
+      {/* Sıcak krem arka plan */}
+      <LinearGradient
+        colors={[Colors.surface2, Colors.bg, Colors.surface1]}
+        style={StyleSheet.absoluteFill}
+      />
+
+      {/* Tente şerit doku — üst kısım */}
+      <View style={styles.tenteStripes}>
+        {[...Array(8)].map((_, i) => (
+          <View key={i} style={[styles.tenteStripe, { backgroundColor: i % 2 === 0 ? Colors.stripeWarm : Colors.stripeCool }]} />
+        ))}
       </View>
-
-      {/* Ambient ışık — sol üst köşe, altın tonu */}
-      <View style={styles.ambientGold} />
-      {/* Ambient ışık — sağ alt, rose tonu */}
-      <View style={styles.ambientRose} />
-
-      {/* İnce dikey çizgiler (editorial grid hissi) */}
-      <View style={styles.gridLine1} />
-      <View style={styles.gridLine2} />
+      {/* Tente alt kenarı — burgund çizgi */}
+      <View style={styles.tenteEdge} />
 
       <ScrollView
         contentContainerStyle={styles.scroll}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {/* Logo */}
+        {/* Logo — Playfair + burgund */}
         <View style={styles.topBar}>
-          <Image
-            source={require('../../assets/images/logo-butika.png')}
-            style={styles.logoImg}
-            resizeMode="contain"
-          />
+          <Text style={styles.logoText}>BUTİKA</Text>
+          <Text style={styles.logoTagline}>bağımsız modanın çatısı</Text>
         </View>
 
         {/* Hero başlık */}
@@ -187,7 +181,7 @@ export default function LoginScreen() {
           activeOpacity={0.85}
         >
           <LinearGradient
-            colors={[Colors.gold2, Colors.gold3, Colors.gold4]}
+            colors={[Colors.rose2, Colors.rose3, Colors.rose4]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={StyleSheet.absoluteFill}
@@ -238,88 +232,73 @@ const styles = StyleSheet.create({
     paddingBottom: 48,
   },
 
-  // Ambient lights
-  ambientGold: {
+  // Tente şerit dokusu — üst kısım
+  tenteStripes: {
     position: 'absolute',
-    top: -80,
-    left: -60,
-    width: 280,
-    height: 280,
-    borderRadius: 140,
-    backgroundColor: Colors.goldGlow,
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 120,
+    flexDirection: 'row',
+    overflow: 'hidden',
+  },
+  tenteStripe: {
+    flex: 1,
+    height: '100%',
+    opacity: 0.55,
+  },
+  tenteEdge: {
+    position: 'absolute',
+    top: 120,
+    left: 0,
+    right: 0,
+    height: 3,
+    backgroundColor: Colors.rose3,
     opacity: 0.7,
-  },
-  ambientRose: {
-    position: 'absolute',
-    bottom: 60,
-    right: -100,
-    width: 320,
-    height: 320,
-    borderRadius: 160,
-    backgroundColor: Colors.roseGlow,
-    opacity: 0.5,
-  },
-
-  // Editorial grid lines
-  gridLine1: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    left: '33%',
-    width: 0.5,
-    backgroundColor: Colors.border1,
-  },
-  gridLine2: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    left: '66%',
-    width: 0.5,
-    backgroundColor: Colors.border1,
   },
 
   // Top bar
   topBar: {
-    marginTop: 64,
+    marginTop: 100,
     marginBottom: 0,
-  },
-  logoImg: {
-    width: 180,
-    height: 58,
-  },
-  logoMarkInner: {
-    width: 12,
-    height: 12,
-    borderRadius: 3,
-    backgroundColor: Colors.gold3,
-    opacity: 0.6,
+    gap: 4,
   },
   logoText: {
-    fontFamily: Fonts.ui,
-    fontSize: 13,
-    letterSpacing: 4,
-    color: Colors.gold3,
+    fontFamily: Fonts.display,
+    fontSize: 42,
+    letterSpacing: 2,
+    color: Colors.rose3,
+    lineHeight: 46,
   },
+  logoTagline: {
+    fontFamily: Fonts.uiLight,
+    fontSize: 11,
+    letterSpacing: 2,
+    color: Colors.teal2,
+    textTransform: 'uppercase',
+  },
+  logoImg: { width: 180, height: 58 },
 
   // Hero
   heroSection: {
-    marginTop: 48,
-    marginBottom: 40,
+    marginTop: 40,
+    marginBottom: 36,
     gap: 10,
   },
   heroEyebrow: {
     fontFamily: Fonts.uiMedium,
     fontSize: 9,
     letterSpacing: 3,
-    color: Colors.gold3,
+    color: Colors.rose3,
     marginBottom: 4,
+    textTransform: 'uppercase',
   },
   heroTitle: {
-    fontFamily: Fonts.editorial,
-    fontSize: 52,
-    letterSpacing: -0.5,
+    fontFamily: Fonts.displayBold,
+    fontSize: 48,
+    letterSpacing: -0.3,
     color: Colors.text1,
-    lineHeight: 54,
+    lineHeight: 52,
   },
   heroSub: {
     fontFamily: Fonts.uiLight,
@@ -337,9 +316,9 @@ const styles = StyleSheet.create({
   field: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.surface2,
-    borderRadius: 14,
-    borderWidth: 0.5,
+    backgroundColor: Colors.surface1,
+    borderRadius: 10,
+    borderWidth: 1,
     borderColor: Colors.border2,
     paddingHorizontal: 16,
     height: 54,
@@ -347,16 +326,16 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   fieldFocused: {
-    borderColor: Colors.borderGold,
-    backgroundColor: Colors.surface3,
+    borderColor: Colors.borderBurgund,
+    backgroundColor: Colors.surface1,
   },
   fieldActiveLine: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    height: 1.5,
-    backgroundColor: Colors.gold3,
+    height: 2,
+    backgroundColor: Colors.rose3,
   },
   fieldIcon: {
     marginRight: 12,

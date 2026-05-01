@@ -1,90 +1,107 @@
+// ── BUTİKA Renk Sistemi — "Tente" tasarım dili ──────────────────────────────
+// Logodaki tenteden çıkarılan 3 ana renk:
+//   Burgund   #6B1520  → dikkat, CTA, aktif, logo
+//   Sıcak Krem #F5E8C0 → zemin, davetkar, sıcak
+//   Periwinkle #8FA8C8  → sakin, bilgi, ikincil
+
 export const Colors = {
-  // ── Backgrounds — açık sarı tema
-  bg:       '#FDFBEA',
-  surface1: '#FFFEF5',
-  surface2: '#FFF8D0',
-  surface3: '#FFF3B0',
-  surface4: '#FFEE90',
+  // ── Arka plan — sıcak krem, tente kumaşı
+  bg:       '#FAF6E8',
+  surface1: '#FFF9EE',
+  surface2: '#FFF4DA',
+  surface3: '#FAECC4',
+  surface4: '#F0E0A8',
 
-  // ── Terracotta / Cognac — birincil CTA
-  rose1: '#6A2818',
-  rose2: '#8C3820',
-  rose3: '#B4482A',
-  rose4: '#CC6E50',
-  rose5: '#E4A488',
-  roseGlow:       'rgba(180,72,42,0.12)',
-  roseGlowStrong: 'rgba(180,72,42,0.26)',
+  // ── Burgund — ana accent (logo rengi, CTA)
+  rose1: '#3A0810',
+  rose2: '#521015',
+  rose3: '#6B1520',  // birincil burgund
+  rose4: '#8C2535',
+  rose5: '#B05060',
+  roseGlow:       'rgba(107,21,32,0.10)',
+  roseGlowStrong: 'rgba(107,21,32,0.22)',
 
-  // ── Açık Sarı / Altın — ana accent
-  gold1: '#8A7020',
-  gold2: '#C0A030',
-  gold3: '#D4920A',  // primary — koyu altın (açık arka planda okunabilir)
-  gold4: '#E8B020',
-  gold5: '#F5D060',
-  goldGlow:       'rgba(212,146,10,0.15)',
-  goldGlowStrong: 'rgba(212,146,10,0.30)',
+  // ── Sıcak Altın / Hardal — tente sarı şeridi
+  gold1: '#7A5A10',
+  gold2: '#A87A18',
+  gold3: '#C89A28',  // ana altın
+  gold4: '#E0B840',
+  gold5: '#F5D870',
+  goldGlow:       'rgba(200,154,40,0.15)',
+  goldGlowStrong: 'rgba(200,154,40,0.30)',
 
-  // ── Teal (minimal)
-  teal1: '#124C3C',
-  teal2: '#1E7A62',
-  teal3: '#3AAA88',
-  tealGlow: 'rgba(30,122,98,0.12)',
+  // ── Periwinkle Mavi — tente mavi şeridi (sakin alanlar)
+  teal1: '#4A6080',
+  teal2: '#6A88A8',
+  teal3: '#8FA8C8',  // ana periwinkle
+  teal4: '#B0C8E0',
+  teal5: '#D4E4F0',
+  tealGlow: 'rgba(143,168,200,0.18)',
 
   // ── Purple (minimal)
-  purple1: '#2E1070',
-  purple2: '#4A22AA',
-  purple3: '#6E48D8',
-  purple4: '#9A84F0',
-  purpleGlow: 'rgba(74,34,170,0.10)',
+  purple1: '#3A2060',
+  purple2: '#5A3890',
+  purple3: '#7A58B8',
+  purple4: '#A088D8',
+  purpleGlow: 'rgba(90,56,144,0.10)',
 
-  // ── Text — koyu, açık arka plan için
-  text1: '#1A1206',  // neredeyse siyah, sıcak ton
-  text2: '#3A2E10',
-  text3: '#6A5C20',
-  text4: '#9A8840',
-  text5: '#C8B860',
+  // ── Metin — koyu sıcak kahve
+  text1: '#1C0E08',   // neredeyse siyah, ılık ton
+  text2: '#3C2415',
+  text3: '#705038',
+  text4: '#A08060',
+  text5: '#C8B090',
 
-  // ── Borders
-  border1: 'rgba(26,18,6,0.07)',
-  border2: 'rgba(26,18,6,0.12)',
-  border3: 'rgba(26,18,6,0.18)',
-  borderGold: 'rgba(212,146,10,0.35)',
-  borderRose: 'rgba(180,72,42,0.25)',
+  // ── Kenarlıklar
+  border1: 'rgba(28,14,8,0.07)',
+  border2: 'rgba(28,14,8,0.12)',
+  border3: 'rgba(28,14,8,0.18)',
+  borderBurgund: 'rgba(107,21,32,0.30)',
+  borderRose:    'rgba(107,21,32,0.30)',
+  borderGold:    'rgba(200,154,40,0.35)',
+  borderBlue:    'rgba(143,168,200,0.40)',
 
   // ── Status
-  success:     '#1A7A50',
-  successGlow: 'rgba(26,122,80,0.13)',
-  warning:     '#C08010',
-  error:       '#B03030',
-  info:        '#2A60B0',
+  success:     '#1A6A40',
+  successGlow: 'rgba(26,106,64,0.12)',
+  warning:     '#B07A10',
+  error:       '#8C1520',
+  info:        '#4A6888',
 
-  // ── Overlays (açık)
-  overlay1: 'rgba(253,251,234,0.55)',
-  overlay2: 'rgba(253,251,234,0.80)',
-  overlay3: 'rgba(253,251,234,0.95)',
+  // ── Overlays (açık zemin)
+  overlay1: 'rgba(250,246,232,0.60)',
+  overlay2: 'rgba(250,246,232,0.82)',
+  overlay3: 'rgba(250,246,232,0.96)',
 
-  // ── Glass (açık cam)
-  glass1: 'rgba(255,253,230,0.60)',
-  glass2: 'rgba(255,253,230,0.80)',
-  glass3: 'rgba(255,253,230,0.95)',
-  glassGold: 'rgba(212,146,10,0.10)',
-  glassRose: 'rgba(180,72,42,0.08)',
+  // ── Glass
+  glass1: 'rgba(255,249,238,0.65)',
+  glass2: 'rgba(255,249,238,0.82)',
+  glass3: 'rgba(255,249,238,0.96)',
+  glassGold:    'rgba(200,154,40,0.10)',
+  glassRose:    'rgba(107,21,32,0.08)',
+  glassBlue:    'rgba(143,168,200,0.15)',
+
+  // ── Stripe (tente şerit dokusu için)
+  stripeWarm: '#F0E0A0',   // sıcak şerit
+  stripeCool: '#C8D8E8',   // mavi şerit
 
   // ── Gradients
   gradients: {
-    rose:         ['#8C3820', '#CC6E50'] as const,
-    roseDark:     ['#6A2818', '#B4482A'] as const,
-    gold:         ['#C0A030', '#E8B020'] as const,
-    goldDark:     ['#8A7020', '#D4920A'] as const,
-    light:        ['#FDFBEA', '#FFFEF5'] as const,
-    lightReverse: ['#FFFEF5', '#FDFBEA'] as const,
-    surface:      ['#FFFEF5', '#FFF8D0'] as const,
-    hero:         ['#FDFBEA', '#FFF8D0', '#FFFEF5'] as const,
-    card:         ['rgba(255,254,245,0.97)', 'rgba(253,251,234,0.99)'] as const,
-    roseToTrans:  ['#B4482A', 'rgba(180,72,42,0)'] as const,
-    transToRose:  ['rgba(180,72,42,0)', '#B4482A'] as const,
-    teal:         ['#1E7A62', '#3AAA88'] as const,
-    heroFull:     ['#FFF8D0', '#FFFEF5', '#FDFBEA'] as const,
+    rose:         ['#521015', '#8C2535'] as const,
+    roseDark:     ['#3A0810', '#6B1520'] as const,
+    gold:         ['#A87A18', '#E0B840'] as const,
+    goldDark:     ['#7A5A10', '#C89A28'] as const,
+    blue:         ['#6A88A8', '#B0C8E0'] as const,
+    light:        ['#FAF6E8', '#FFF9EE'] as const,
+    lightReverse: ['#FFF9EE', '#FAF6E8'] as const,
+    surface:      ['#FFF9EE', '#FFF4DA'] as const,
+    hero:         ['#FAF6E8', '#FFF4DA', '#FAF0D0'] as const,
+    card:         ['rgba(255,249,238,0.97)', 'rgba(250,246,232,0.99)'] as const,
+    stripe:       ['#F5E8C0', '#C8D8E8'] as const,  // tente şeridi
+    roseToTrans:  ['#6B1520', 'rgba(107,21,32,0)'] as const,
+    transToRose:  ['rgba(107,21,32,0)', '#6B1520'] as const,
+    teal:         ['#6A88A8', '#8FA8C8'] as const,
+    heroFull:     ['#FFF4DA', '#FAF6E8', '#FFF9EE'] as const,
   },
 };
 

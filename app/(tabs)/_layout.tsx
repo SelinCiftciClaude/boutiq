@@ -108,7 +108,7 @@ function CustomTabBar({ state, navigation }: any) {
                   <Ionicons
                     name={(isFocused ? tab.iconFilled : tab.icon) as any}
                     size={21}
-                    color={isFocused ? Colors.gold3 : Colors.text3}
+                    color={isFocused ? Colors.rose3 : Colors.text3}
                   />
                 </Animated.View>
 
@@ -175,7 +175,7 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.uiMedium,
     fontSize: 8,
     letterSpacing: 1.2,
-    color: Colors.gold3,
+    color: Colors.rose3,
     textTransform: 'uppercase',
   },
   dot: {
@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
     bottom: 6,
     width: 16,
     height: 1.5,
-    backgroundColor: Colors.gold3,
+    backgroundColor: Colors.rose3,
     borderRadius: 1,
   },
 });

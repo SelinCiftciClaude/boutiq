@@ -8,17 +8,16 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Linking from 'expo-linking';
 import { useFonts } from 'expo-font';
 import {
-  CormorantGaramond_300Light,
-  CormorantGaramond_400Regular,
-  CormorantGaramond_500Medium,
-  CormorantGaramond_600SemiBold,
-  CormorantGaramond_700Bold,
-  CormorantGaramond_300Light_Italic,
-  CormorantGaramond_400Regular_Italic,
-  CormorantGaramond_500Medium_Italic,
-  CormorantGaramond_600SemiBold_Italic,
-  CormorantGaramond_700Bold_Italic,
-} from '@expo-google-fonts/cormorant-garamond';
+  PlayfairDisplay_400Regular,
+  PlayfairDisplay_500Medium,
+  PlayfairDisplay_600SemiBold,
+  PlayfairDisplay_700Bold,
+  PlayfairDisplay_800ExtraBold,
+  PlayfairDisplay_400Regular_Italic,
+  PlayfairDisplay_500Medium_Italic,
+  PlayfairDisplay_600SemiBold_Italic,
+  PlayfairDisplay_700Bold_Italic,
+} from '@expo-google-fonts/playfair-display';
 import {
   DMSans_300Light,
   DMSans_400Regular,
@@ -107,16 +106,15 @@ function RouteGate() {
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
-    CormorantGaramond_300Light,
-    CormorantGaramond_400Regular,
-    CormorantGaramond_500Medium,
-    CormorantGaramond_600SemiBold,
-    CormorantGaramond_700Bold,
-    CormorantGaramond_300Light_Italic,
-    CormorantGaramond_400Regular_Italic,
-    CormorantGaramond_500Medium_Italic,
-    CormorantGaramond_600SemiBold_Italic,
-    CormorantGaramond_700Bold_Italic,
+    PlayfairDisplay_400Regular,
+    PlayfairDisplay_500Medium,
+    PlayfairDisplay_600SemiBold,
+    PlayfairDisplay_700Bold,
+    PlayfairDisplay_800ExtraBold,
+    PlayfairDisplay_400Regular_Italic,
+    PlayfairDisplay_500Medium_Italic,
+    PlayfairDisplay_600SemiBold_Italic,
+    PlayfairDisplay_700Bold_Italic,
     DMSans_300Light,
     DMSans_400Regular,
     DMSans_500Medium,
