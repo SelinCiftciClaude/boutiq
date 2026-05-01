@@ -290,24 +290,6 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* Feed sekme geçişi */}
-        <View style={styles.feedTabs}>
-          {(['discover', 'foryou'] as const).map(tab => {
-            const active = feedTab === tab;
-            return (
-              <TouchableOpacity
-                key={tab}
-                onPress={() => { Haptics.selectionAsync(); setFeedTab(tab); }}
-                style={[styles.feedTab, active && styles.feedTabActive]}
-              >
-                {active && <LinearGradient colors={[Colors.gold2, Colors.gold4]} style={StyleSheet.absoluteFill} />}
-                <Text style={[styles.feedTabText, active && styles.feedTabTextActive]}>
-                  {tab === 'discover' ? 'Keşfet' : 'Senin İçin'}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
 
         {/* Senin İçin feed */}
         {feedTab === 'foryou' && (
@@ -700,11 +682,11 @@ const CARD_W = 164;
 const sw = StyleSheet.create({
   dateLabel: {
     fontFamily: Fonts.uiMedium,
-    fontSize: 10,
-    letterSpacing: 1.5,
-    color: Colors.text4,
+    fontSize: 12,
+    letterSpacing: 1.8,
+    color: Colors.text2,
     textTransform: 'uppercase',
-    marginBottom: 10,
+    marginBottom: 12,
   },
   card: {
     width: CARD_W,
