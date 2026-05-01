@@ -8,6 +8,7 @@ import {
   Image,
   Animated,
   FlatList,
+  Dimensions,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -116,6 +117,39 @@ const STATUS_LABEL: Record<ShipmentStatus, string> = {
 // Tarih: "1 Mayıs 2026" formatı
 function todayLabel() {
   return new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+// Tente saçağı — alt kenar, aşağı bakan üçgenler
+const SACAK_W = 22;  // her üçgenin genişliği
+const SACAK_H = 14;  // her üçgenin yüksekliği
+const SCREEN_W = Dimensions.get('window').width;
+const SACAK_COUNT = Math.ceil(SCREEN_W / SACAK_W) + 1;
+
+function TenteSacak() {
+  return (
+    <View style={{ overflow: 'hidden' }}>
+      {/* Burgund ana çizgi */}
+      <View style={{ height: 4, backgroundColor: Colors.rose3 }} />
+      {/* Üçgenler */}
+      <View style={{ flexDirection: 'row', height: SACAK_H }}>
+        {[...Array(SACAK_COUNT)].map((_, i) => (
+          <View
+            key={i}
+            style={{
+              width: 0,
+              height: 0,
+              borderLeftWidth: SACAK_W / 2,
+              borderRightWidth: SACAK_W / 2,
+              borderTopWidth: SACAK_H,
+              borderLeftColor: 'transparent',
+              borderRightColor: 'transparent',
+              borderTopColor: Colors.rose3,
+            }}
+          />
+        ))}
+      </View>
+    </View>
+  );
 }
 
 // Tente şerit aksanı — bölüm başlıklarında kullanılır
@@ -305,8 +339,8 @@ export default function HomeScreen() {
             <Text style={styles.tenteTagline}>tek çatı altında bağımsız butikler</Text>
           </View>
 
-          {/* Alt burgund kenar — tente saçağı */}
-          <View style={styles.tenteSaçak} />
+          {/* Tente saçağı — üçgen dişler */}
+          <TenteSacak />
         </View>
 
 
@@ -625,10 +659,6 @@ const styles = StyleSheet.create({
     letterSpacing: 1.5,
     color: Colors.rose2,
     textTransform: 'uppercase',
-  },
-  tenteSaçak: {
-    height: 4,
-    backgroundColor: Colors.rose3,
   },
 
   notifBtn: {
