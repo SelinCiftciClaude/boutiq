@@ -27,12 +27,13 @@ import { useBrands } from '@/hooks/useBrands';
 import { useSavedBrands } from '@/hooks/useSavedBrands';
 import { useProducts } from '@/hooks/useProducts';
 import { useCampaigns } from '@/hooks/useCampaigns';
+import { useShipments } from '@/hooks/useShipments';
 import { useInterests, INTEREST_TO_CATEGORY } from '@/context/InterestsContext';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useAuth } from '@/context/AuthContext';
 import { useTrending } from '@/hooks/useTrending';
 import { trackAffiliateClick } from '@/services/queries';
-import { Brand, Campaign } from '../../types';
+import { Brand, Campaign, Shipment, ShipmentStatus } from '../../types';
 
 function CampaignBanner({ campaign, onCopyCode, userId }: { campaign: Campaign; onCopyCode: (code: string) => void; userId?: string }) {
   const code = campaign.code ?? 'BOUTIQ10';
@@ -91,6 +92,70 @@ function CampaignBanner({ campaign, onCopyCode, userId }: { campaign: Campaign; 
   );
 }
 
+// ── Kargo durumu renkleri ────────────────────────────────────────────────────
+const STATUS_DOT: Record<ShipmentStatus, string> = {
+  delivered:        '#3AAA78',  // yeşil
+  out_for_delivery: '#C49450',  // sarı-altın
+  in_transit:       '#C49450',
+  shipped:          '#C49450',
+  processing:       '#BC3C3C',  // kırmızı
+  ordered:          '#BC3C3C',
+  returned:         '#BC3C3C',
+};
+
+const STATUS_PROGRESS: Record<ShipmentStatus, number> = {
+  ordered: 0.08, processing: 0.25, shipped: 0.45,
+  in_transit: 0.65, out_for_delivery: 0.85, delivered: 1, returned: 0,
+};
+
+const STATUS_LABEL: Record<ShipmentStatus, string> = {
+  ordered: 'Sipariş alındı', processing: 'Hazırlanıyor', shipped: 'Kargoya verildi',
+  in_transit: 'Yolda', out_for_delivery: 'Dağıtımda', delivered: 'Teslim edildi', returned: 'İade',
+};
+
+// Tarih: "1 Mayıs 2026" formatı
+function todayLabel() {
+  return new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+function ShipmentCard2({ s }: { s: Shipment }) {
+  const dot   = STATUS_DOT[s.status];
+  const prog  = STATUS_PROGRESS[s.status];
+  const label = STATUS_LABEL[s.status];
+  const isDelivered = s.status === 'delivered';
+  const isActive    = !isDelivered && s.status !== 'returned';
+
+  return (
+    <TouchableOpacity
+      style={sw.card}
+      activeOpacity={0.85}
+      onPress={() => router.push(`/shipment/${s.id}` as any)}
+    >
+      {/* Üst satır: kargo firması + nokta */}
+      <View style={sw.topRow}>
+        <Text style={sw.carrier}>{s.carrier}</Text>
+        <View style={[sw.dot, { backgroundColor: dot }]} />
+      </View>
+
+      {/* Butik adı */}
+      <Text style={sw.brandName} numberOfLines={1}>{s.brandName}</Text>
+
+      {/* Durum */}
+      <Text style={[sw.statusText, { color: dot }]}>{label}</Text>
+
+      {/* Progress bar */}
+      <View style={sw.progressTrack}>
+        <View style={[sw.progressFill, { width: `${prog * 100}%` as any, backgroundColor: dot }]} />
+      </View>
+
+      {/* ETA */}
+      <Text style={[sw.eta, isDelivered && { color: '#3AAA78' }]} numberOfLines={1}>
+        {s.estimatedDelivery}
+      </Text>
+    </TouchableOpacity>
+  );
+}
+
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const [feedTab, setFeedTab] = useState<'discover' | 'foryou'>('discover');
@@ -104,6 +169,7 @@ export default function HomeScreen() {
   const { data: products = [] } = useProducts();
   const { data: campaigns = [] } = useCampaigns();
   const savedBrands = useSavedBrands();
+  const { data: allShipments = [] } = useShipments();
   const { interests } = useInterests();
   const { unreadCount } = useNotifications();
   const { brands: trendingBrandsQ } = useTrending();
@@ -291,24 +357,31 @@ export default function HomeScreen() {
         )}
 
         {feedTab === 'discover' && <>
-        {/* Aktif Kampanyalar */}
-        {activeCampaigns.length > 0 && (
+        {/* Kargo Durumu Widget */}
+        {allShipments.length > 0 && (
           <View style={styles.section}>
+            {/* Tarih başlığı */}
+            <Text style={sw.dateLabel}>{todayLabel()}</Text>
+
+            {/* Bölüm başlığı */}
             <View style={styles.sectionHeader}>
-              <View style={styles.sectionTitleRow}>
-                <View style={styles.liveDot} />
-                <Text style={styles.sectionTitle}>Aktif Kampanyalar</Text>
-              </View>
-              <Badge label={`${activeCampaigns.length} yeni`} variant="gold" />
-            </View>
-            <FlatList
-              data={activeCampaigns}
-              keyExtractor={(c) => c.id}
-              renderItem={({ item }) => (
-                <CampaignBanner campaign={item} onCopyCode={handleCopyCode} userId={user?.id} />
+              <Text style={styles.sectionTitle}>Yoldaki Kargolar</Text>
+              {allShipments.filter(s => s.status !== 'delivered').length > 0 && (
+                <Badge
+                  label={`${allShipments.filter(s => s.status !== 'delivered').length} aktif`}
+                  variant="gold"
+                />
               )}
-              ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
-              scrollEnabled={false}
+            </View>
+
+            {/* Yatay kayan kartlar */}
+            <FlatList
+              data={allShipments}
+              keyExtractor={s => s.id}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ gap: 10, paddingRight: 16 }}
+              renderItem={({ item }) => <ShipmentCard2 s={item} />}
             />
           </View>
         )}
@@ -620,4 +693,69 @@ const styles = StyleSheet.create({
   },
   affiliateText: { fontFamily: Fonts.uiLight, fontSize: 10, color: Colors.text5, lineHeight: 16, flex: 1 },
   trendingList: { paddingRight: 4 },
+});
+
+// Kargo widget stilleri
+const CARD_W = 164;
+const sw = StyleSheet.create({
+  dateLabel: {
+    fontFamily: Fonts.uiMedium,
+    fontSize: 10,
+    letterSpacing: 1.5,
+    color: Colors.text4,
+    textTransform: 'uppercase',
+    marginBottom: 10,
+  },
+  card: {
+    width: CARD_W,
+    backgroundColor: Colors.surface2,
+    borderRadius: 14,
+    borderWidth: 0.5,
+    borderColor: Colors.border2,
+    padding: 14,
+    gap: 5,
+  },
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 2,
+  },
+  carrier: {
+    fontFamily: Fonts.uiLight,
+    fontSize: 11,
+    color: Colors.text4,
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  brandName: {
+    fontFamily: Fonts.ui,
+    fontSize: 15,
+    color: Colors.text1,
+    letterSpacing: -0.2,
+  },
+  statusText: {
+    fontFamily: Fonts.uiMedium,
+    fontSize: 12,
+    letterSpacing: 0.1,
+  },
+  progressTrack: {
+    height: 3,
+    backgroundColor: Colors.border2,
+    borderRadius: 3,
+    overflow: 'hidden',
+    marginVertical: 4,
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 3,
+  },
+  eta: {
+    fontFamily: Fonts.uiLight,
+    fontSize: 11,
+    color: Colors.text3,
+  },
 });
