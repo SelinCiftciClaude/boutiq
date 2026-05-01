@@ -45,12 +45,12 @@ export const Colors = {
   purple4: '#A088D8',
   purpleGlow: 'rgba(90,56,144,0.10)',
 
-  // ── Metin — koyu sıcak kahve
-  text1: '#1C0E08',   // neredeyse siyah, ılık ton
-  text2: '#3C2415',
-  text3: '#705038',
-  text4: '#A08060',
-  text5: '#C8B090',
+  // ── Metin — koyu bordo (siyah yerine)
+  text1: '#2C0810',   // koyu bordo — siyah yerine
+  text2: '#4A1820',
+  text3: '#7A4050',
+  text4: '#A87888',
+  text5: '#CEB0B8',
 
   // ── Kenarlıklar
   border1: 'rgba(28,14,8,0.07)',

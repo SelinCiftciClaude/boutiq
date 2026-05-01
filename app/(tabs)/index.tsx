@@ -398,7 +398,7 @@ export default function HomeScreen() {
             {/* Bölüm başlığı */}
             <TenteAccent />
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Bugünkü Kargolar</Text>
+              <Text style={styles.sectionTitle}>Bugünün Kargoları</Text>
               {allShipments.filter(s => s.status !== 'delivered').length > 0 && (
                 <Badge
                   label={`${allShipments.filter(s => s.status !== 'delivered').length} aktif`}

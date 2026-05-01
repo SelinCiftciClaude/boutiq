@@ -1,81 +1,70 @@
 import { StyleSheet } from 'react-native';
 import { Colors } from './Colors';
 
-// Font ailesi sabitleri
-// Playfair Display: logo ile aynı yüksek-kontrast serif → başlıklar, marka isimleri, hero
-// DM Sans: temiz geometric sans-serif → UI, body, label
 export const Fonts = {
-  // Playfair Display — tente logosuyla aynı ruhun taşıyıcısı
-  display:        'PlayfairDisplay_800ExtraBold',
-  displayBold:    'PlayfairDisplay_700Bold',
-  displayMedium:  'PlayfairDisplay_600SemiBold',
-  displayRegular: 'PlayfairDisplay_400Regular',
-  displayItalic:  'PlayfairDisplay_400Regular_Italic',
-  displayBoldItalic: 'PlayfairDisplay_700Bold_Italic',
+  // Oregano — display, başlıklar, hero text
+  display:        'Oregano_400Regular',
+  displayBold:    'Oregano_400Regular',       // Oregano tek weightte gelir
+  displayItalic:  'Oregano_400Regular_Italic',
+  editorialBook:  'Oregano_400Regular',
 
-  // DM Sans — UI dili
-  ui:        'DMSans_700Bold',
-  uiMedium:  'DMSans_600SemiBold',
-  uiRegular: 'DMSans_500Medium',
-  uiLight:   'DMSans_400Regular',
-  uiThin:    'DMSans_300Light',
+  // Josefin Sans — Quiche Sans'ın en yakın Google Fonts karşılığı
+  ui:        'JosefinSans_700Bold',
+  uiMedium:  'JosefinSans_600SemiBold',
+  uiRegular: 'JosefinSans_400Regular',
+  uiLight:   'JosefinSans_300Light',
+  uiThin:    'JosefinSans_100Thin',
 
-  // Alias — logodaki görselle aynı: düz bold Playfair
-  editorial:        'PlayfairDisplay_700Bold',
-  editorialMedium:  'PlayfairDisplay_600SemiBold',
-  editorialLight:   'PlayfairDisplay_400Regular',
-  editorialRegular: 'PlayfairDisplay_400Regular',
-  editorialBook:    'PlayfairDisplay_500Medium',
+  // Alias — mevcut kodla uyumluluk
+  editorial:        'Oregano_400Regular',
+  editorialMedium:  'Oregano_400Regular',
+  editorialLight:   'Oregano_400Regular_Italic',
+  editorialRegular: 'Oregano_400Regular',
 } as const;
 
 export const Typography = StyleSheet.create({
-  // ── Display — Playfair (logo ruhu)
   displayXL: {
     fontFamily: Fonts.display,
     fontSize: 54,
-    letterSpacing: -0.5,
+    letterSpacing: 1,
     color: Colors.text1,
-    lineHeight: 58,
+    lineHeight: 60,
   },
   displayL: {
-    fontFamily: Fonts.displayBold,
+    fontFamily: Fonts.display,
     fontSize: 42,
-    letterSpacing: -0.3,
+    letterSpacing: 0.5,
     color: Colors.text1,
-    lineHeight: 46,
+    lineHeight: 48,
   },
   displayM: {
-    fontFamily: Fonts.displayBold,
+    fontFamily: Fonts.display,
     fontSize: 32,
-    letterSpacing: 0,
+    letterSpacing: 0.5,
     color: Colors.text1,
-    lineHeight: 36,
+    lineHeight: 38,
   },
-
-  // ── Headlines — DM Sans
   h1: {
     fontFamily: Fonts.ui,
-    fontSize: 24,
-    letterSpacing: -0.4,
+    fontSize: 22,
+    letterSpacing: 1,
     color: Colors.text1,
     lineHeight: 28,
   },
   h2: {
     fontFamily: Fonts.uiMedium,
-    fontSize: 20,
-    letterSpacing: -0.2,
+    fontSize: 18,
+    letterSpacing: 0.5,
     color: Colors.text1,
     lineHeight: 24,
   },
   h3: {
     fontFamily: Fonts.uiMedium,
-    fontSize: 17,
-    letterSpacing: -0.1,
+    fontSize: 15,
+    letterSpacing: 0.3,
     color: Colors.text1,
-    lineHeight: 22,
+    lineHeight: 20,
   },
-
-  // ── Body
   bodyL: {
     fontFamily: Fonts.uiLight,
     fontSize: 16,
@@ -94,30 +83,26 @@ export const Typography = StyleSheet.create({
     color: Colors.text3,
     lineHeight: 17,
   },
-
-  // ── Labels
   labelL: {
     fontFamily: Fonts.uiMedium,
     fontSize: 13,
-    letterSpacing: 0.3,
+    letterSpacing: 1,
     color: Colors.text2,
   },
   labelM: {
     fontFamily: Fonts.uiMedium,
     fontSize: 10,
-    letterSpacing: 1.5,
+    letterSpacing: 2,
     textTransform: 'uppercase' as const,
     color: Colors.text3,
   },
   labelS: {
     fontFamily: Fonts.ui,
     fontSize: 9,
-    letterSpacing: 2,
+    letterSpacing: 2.5,
     textTransform: 'uppercase' as const,
     color: Colors.text4,
   },
-
-  // ── Özel
   editorial: {
     fontFamily: Fonts.uiMedium,
     fontSize: 10,
@@ -128,13 +113,13 @@ export const Typography = StyleSheet.create({
   price: {
     fontFamily: Fonts.ui,
     fontSize: 16,
-    letterSpacing: -0.3,
+    letterSpacing: 0.5,
     color: Colors.text1,
   },
   priceLarge: {
     fontFamily: Fonts.ui,
     fontSize: 22,
-    letterSpacing: -0.8,
+    letterSpacing: 0.5,
     color: Colors.text1,
   },
   caption: {

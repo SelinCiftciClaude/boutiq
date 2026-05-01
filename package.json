@@ -17,6 +17,8 @@
   "dependencies": {
     "@expo-google-fonts/cormorant-garamond": "^0.4.1",
     "@expo-google-fonts/dm-sans": "^0.4.2",
+    "@expo-google-fonts/josefin-sans": "^0.4.2",
+    "@expo-google-fonts/oregano": "^0.4.1",
     "@expo-google-fonts/playfair-display": "^0.4.2",
     "@expo/metro-runtime": "^55.0.10",
     "@expo/vector-icons": "^15.0.3",
