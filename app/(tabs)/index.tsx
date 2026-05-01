@@ -118,6 +118,17 @@ function todayLabel() {
   return new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
+// Tente şerit aksanı — bölüm başlıklarında kullanılır
+function TenteAccent() {
+  return (
+    <View style={{ flexDirection: 'row', height: 5, width: 32, marginBottom: 8, borderRadius: 2, overflow: 'hidden' }}>
+      {[...Array(6)].map((_, i) => (
+        <View key={i} style={{ flex: 1, backgroundColor: i % 2 === 0 ? Colors.stripeWarm : Colors.stripeCool }} />
+      ))}
+    </View>
+  );
+}
+
 function ShipmentCard2({ s }: { s: Shipment }) {
   const dot   = STATUS_DOT[s.status];
   const prog  = STATUS_PROGRESS[s.status];
@@ -243,14 +254,6 @@ export default function HomeScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <Animated.View style={[styles.floatingHeader, { opacity: headerOpacity }]}>
-        <LinearGradient
-          colors={[Colors.bg, 'rgba(7,7,15,0)']}
-          style={StyleSheet.absoluteFill}
-        />
-      </Animated.View>
-      <View style={styles.bgGlow1} />
-      <View style={styles.bgGlow2} />
 
       {/* Kopyalandı toast */}
       {copiedCode && (
@@ -269,19 +272,41 @@ export default function HomeScreen() {
         )}
         scrollEventThrottle={16}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.headerLogo}>BUTİKA</Text>
-          <View style={styles.headerActions}>
-            <TouchableOpacity style={styles.notifBtn} onPress={() => router.push('/notifications' as any)}>
-              <Ionicons name="notifications-outline" size={20} color={Colors.text2} />
-              {unreadCount > 0 && (
-                <View style={styles.notifBadge}>
-                  <Text style={styles.notifCount}>{unreadCount}</Text>
-                </View>
-              )}
-            </TouchableOpacity>
+        {/* ── TENTE HERO ─────────────────────────────────── */}
+        <View style={styles.tenteHero}>
+          {/* Şerit arka plan */}
+          <View style={styles.tenteStripes}>
+            {[...Array(14)].map((_, i) => (
+              <View
+                key={i}
+                style={[styles.tenteStripe, {
+                  backgroundColor: i % 2 === 0 ? Colors.stripeWarm : Colors.stripeCool,
+                }]}
+              />
+            ))}
           </View>
+
+          {/* Üst çizgi aksanı */}
+          <View style={styles.tenteTopLine} />
+
+          {/* Logo + bildirim */}
+          <View style={styles.tenteContent}>
+            <View style={styles.tenteLogoRow}>
+              <Text style={styles.headerLogo}>BUTİKA</Text>
+              <TouchableOpacity style={styles.notifBtn} onPress={() => router.push('/notifications' as any)}>
+                <Ionicons name="notifications-outline" size={20} color={Colors.rose3} />
+                {unreadCount > 0 && (
+                  <View style={styles.notifBadge}>
+                    <Text style={styles.notifCount}>{unreadCount}</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.tenteTagline}>tek çatı altında bağımsız butikler</Text>
+          </View>
+
+          {/* Alt burgund kenar — tente saçağı */}
+          <View style={styles.tenteSaçak} />
         </View>
 
 
@@ -336,10 +361,8 @@ export default function HomeScreen() {
         {/* Kargo Durumu Widget */}
         {allShipments.length > 0 && (
           <View style={styles.section}>
-            {/* Tarih başlığı */}
-            <Text style={sw.dateLabel}>{todayLabel()}</Text>
-
             {/* Bölüm başlığı */}
+            <TenteAccent />
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Yoldaki Kargolar</Text>
               {allShipments.filter(s => s.status !== 'delivered').length > 0 && (
@@ -349,6 +372,9 @@ export default function HomeScreen() {
                 />
               )}
             </View>
+
+            {/* Tarih */}
+            <Text style={sw.dateLabel}>{todayLabel()}</Text>
 
             {/* Yatay kayan kartlar */}
             <FlatList
@@ -365,6 +391,7 @@ export default function HomeScreen() {
         {/* Bu Hafta Trend */}
         {trendingBrands.length > 0 && (
           <View style={styles.section}>
+            <TenteAccent />
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Bu Hafta Trend 🔥</Text>
             </View>
@@ -390,6 +417,7 @@ export default function HomeScreen() {
 
         {/* Öne Çıkan Butik */}
         <View style={styles.section}>
+          <TenteAccent />
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionLabel}>HAFTANIN</Text>
             <Text style={styles.sectionTitle}>Öne Çıkan Butik</Text>
@@ -548,31 +576,74 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2, shadowRadius: 16, elevation: 8, zIndex: 100,
   },
   toastText: { fontFamily: Fonts.uiMedium, fontSize: 13, color: Colors.text1 },
-  scrollContent: { paddingHorizontal: 16, paddingTop: 8 },
-  header: {
-    flexDirection: 'row', alignItems: 'flex-start',
-    justifyContent: 'space-between', paddingTop: 8, paddingBottom: 20,
+  scrollContent: { paddingTop: 0 },
+
+  // ── Tente Hero
+  tenteHero: {
+    position: 'relative',
+    marginBottom: 20,
+    overflow: 'hidden',
   },
-  headerLogo: { fontFamily: Fonts.display, fontSize: 32, letterSpacing: 1.5, color: Colors.rose3 },
-  headerActions: { flexDirection: 'row', gap: 8, marginTop: 4 },
-  searchBtn: {
-    width: 40, height: 40, borderRadius: 20,
-    backgroundColor: Colors.surface2, alignItems: 'center', justifyContent: 'center',
-    borderWidth: 0.5, borderColor: Colors.border2,
+  tenteStripes: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0, bottom: 0,
+    flexDirection: 'row',
   },
+  tenteStripe: {
+    flex: 1,
+    height: '100%',
+  },
+  tenteTopLine: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0,
+    height: 3,
+    backgroundColor: Colors.rose3,
+  },
+  tenteContent: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 20,
+  },
+  tenteLogoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  headerLogo: {
+    fontFamily: Fonts.display,
+    fontSize: 38,
+    letterSpacing: 2,
+    color: Colors.rose3,
+    textShadowColor: 'rgba(255,255,255,0.7)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
+  tenteTagline: {
+    fontFamily: Fonts.uiLight,
+    fontSize: 11,
+    letterSpacing: 1.5,
+    color: Colors.rose2,
+    textTransform: 'uppercase',
+  },
+  tenteSaçak: {
+    height: 4,
+    backgroundColor: Colors.rose3,
+  },
+
   notifBtn: {
-    width: 40, height: 40, borderRadius: 20,
-    backgroundColor: Colors.surface2, alignItems: 'center', justifyContent: 'center',
-    borderWidth: 0.5, borderColor: Colors.border2, position: 'relative',
+    width: 38, height: 38, borderRadius: 19,
+    backgroundColor: 'rgba(255,255,255,0.6)', alignItems: 'center', justifyContent: 'center',
+    borderWidth: 1, borderColor: Colors.borderBurgund, position: 'relative',
   },
   notifBadge: {
-    position: 'absolute', top: 8, right: 8,
-    width: 15, height: 15, borderRadius: 7.5,
+    position: 'absolute', top: 6, right: 6,
+    width: 14, height: 14, borderRadius: 7,
     backgroundColor: Colors.rose3, alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1.5, borderColor: Colors.bg,
+    borderWidth: 1.5, borderColor: Colors.surface1,
   },
-  notifCount: { fontFamily: Fonts.ui, fontSize: 8, color: Colors.text1 },
-  section: { marginBottom: 28 },
+  notifCount: { fontFamily: Fonts.ui, fontSize: 8, color: Colors.surface1 },
+  section: { marginBottom: 28, paddingHorizontal: 16 },
   sectionHeader: {
     flexDirection: 'row', justifyContent: 'space-between',
     alignItems: 'flex-end', marginBottom: 14,
@@ -634,7 +705,7 @@ const styles = StyleSheet.create({
   },
   codeText: { fontFamily: Fonts.ui, fontSize: 13, color: Colors.gold4, letterSpacing: 2 },
   // Category
-  categoryScroll: { paddingRight: 16, gap: 8, marginBottom: 24 },
+  categoryScroll: { paddingLeft: 16, paddingRight: 16, gap: 8, marginBottom: 24 },
   categoryChip: {
     flexDirection: 'row', alignItems: 'center', gap: 5,
     paddingHorizontal: 14, paddingVertical: 8, borderRadius: 6,
