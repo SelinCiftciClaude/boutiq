@@ -20,10 +20,10 @@ export const Fonts = {
   uiLight:   'DMSans_400Regular',
   uiThin:    'DMSans_300Light',
 
-  // Alias — kodda display yerine kullanım kolaylığı
-  editorial:        'PlayfairDisplay_700Bold_Italic',
-  editorialMedium:  'PlayfairDisplay_600SemiBold_Italic',
-  editorialLight:   'PlayfairDisplay_400Regular_Italic',
+  // Alias — logodaki görselle aynı: düz bold Playfair
+  editorial:        'PlayfairDisplay_700Bold',
+  editorialMedium:  'PlayfairDisplay_600SemiBold',
+  editorialLight:   'PlayfairDisplay_400Regular',
   editorialRegular: 'PlayfairDisplay_400Regular',
   editorialBook:    'PlayfairDisplay_500Medium',
 } as const;
