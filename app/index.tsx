@@ -14,6 +14,7 @@ import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
+import { Fonts } from '../constants/Typography';
 import { Button } from '../components/ui/Button';
 
 const { width, height } = Dimensions.get('window');
@@ -26,7 +27,7 @@ const SLIDES = [
     subtitle: 'Instagram\'da kalbini çarpan o markalar artık tek bir yerde seni bekliyor.',
     image: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=800&h=1200&fit=crop',
     accent: Colors.rose3,
-    gradient: ['#FFF4EE', '#FFEDE0', '#FDF8F5'] as const,
+    gradient: [Colors.bg, '#0D0A10', Colors.bg] as const,
     bgGlow: Colors.roseGlow,
   },
   {
@@ -36,7 +37,7 @@ const SLIDES = [
     subtitle: 'Geçip gitmesin. Instagram\'da dikkatini çeken ürünü hemen BOUTIQ\'e ekle.',
     image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&h=1200&fit=crop',
     accent: Colors.gold3,
-    gradient: ['#FFFAF0', '#FFF5E0', '#FDF8F5'] as const,
+    gradient: [Colors.bg, '#0C0C0A', Colors.bg] as const,
     bgGlow: Colors.goldGlow,
   },
   {
@@ -46,7 +47,7 @@ const SLIDES = [
     subtitle: 'E-postanı bağla, tüm kargolarını tek yerden otomatik olarak takip et.',
     image: 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?w=800&h=1200&fit=crop',
     accent: Colors.teal2,
-    gradient: ['#F0FBF9', '#E8F7F5', '#FDF8F5'] as const,
+    gradient: [Colors.bg, '#080C0C', Colors.bg] as const,
     bgGlow: Colors.tealGlow,
   },
 ];
@@ -97,7 +98,7 @@ export default function OnboardingScreen() {
           />
           {/* Fade image into background */}
           <LinearGradient
-            colors={['transparent', item.gradient[0]]}
+            colors={['transparent', Colors.bg]}
             style={styles.imageFade}
           />
         </View>
@@ -205,8 +206,8 @@ const styles = StyleSheet.create({
     width: 28, height: 28, borderRadius: 8,
   },
   logoText: {
-    fontSize: 22, fontWeight: '800',
-    color: Colors.text1, letterSpacing: 5,
+    fontFamily: Fonts.ui,
+    fontSize: 18, color: Colors.text1, letterSpacing: 5,
   },
   flatList: { flex: 1 },
   slide: {
@@ -258,17 +259,18 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   eyebrow: {
-    fontSize: 11, fontWeight: '700',
-    letterSpacing: 2, textTransform: 'uppercase',
+    fontFamily: Fonts.uiMedium,
+    fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase',
   },
   title: {
-    fontSize: 40, fontWeight: '800',
-    color: Colors.text1, letterSpacing: -1.5,
-    lineHeight: 44,
+    fontFamily: Fonts.editorial,
+    fontSize: 44, color: Colors.text1, letterSpacing: 0,
+    lineHeight: 46,
   },
   subtitle: {
+    fontFamily: Fonts.uiLight,
     fontSize: 15, color: Colors.text3,
-    lineHeight: 22, maxWidth: 320,
+    lineHeight: 23, maxWidth: 320,
   },
   controls: {
     position: 'absolute',
@@ -280,5 +282,5 @@ const styles = StyleSheet.create({
   dot: { height: 4, borderRadius: 4 },
   ctaButton: { width: '100%' },
   skipBtn: { paddingVertical: 8 },
-  skipText: { fontSize: 14, color: Colors.text4, fontWeight: '500' },
+  skipText: { fontFamily: Fonts.uiLight, fontSize: 13, color: Colors.text4 },
 });
