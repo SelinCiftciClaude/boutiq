@@ -217,7 +217,7 @@ export default function ProfileScreen() {
     if (!referral.data) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     await Share.share({
-      message: 'BOUTIQ uygulamasını dene! Davet kodum: ' + referral.data + ' — boutiq://referral/' + referral.data,
+      message: 'BUTİKA uygulamasını dene! Davet kodum: ' + referral.data + ' — butika://referral/' + referral.data,
     });
   };
 
@@ -255,7 +255,7 @@ export default function ProfileScreen() {
   const handleShareCollection = async () => {
     if (!authUser?.id) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    await Share.share({ message: 'boutiq://collection/' + authUser.id });
+    await Share.share({ message: 'butika://collection/' + authUser.id });
   };
 
   const handleViewProfile = () => {
@@ -454,7 +454,7 @@ export default function ProfileScreen() {
             </View>
 
             <View style={styles.footer}>
-              <Text style={styles.footerText}>✦ BOUTIQ — bağımsız modanın evi</Text>
+              <Text style={styles.footerText}>✦ BUTİKA — bağımsız modanın evi</Text>
               <Text style={styles.footerSub}>Butik yönlendirmelerinden affiliate komisyonu kazanılmaktadır.</Text>
             </View>
           </>

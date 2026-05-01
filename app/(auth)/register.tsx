@@ -131,7 +131,7 @@ export default function RegisterScreen() {
 
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.logo}>BOUTIQ</Text>
+          <Text style={styles.logo}>BUTİKA</Text>
           {step === 0 && (
             <>
               <Text style={styles.title}>Hesap oluştur</Text>
@@ -288,7 +288,7 @@ export default function RegisterScreen() {
         {errorMsg && <Text style={styles.errorText}>{errorMsg}</Text>}
 
         <Button
-          label={step === STEPS.length - 1 ? 'BOUTIQ\'e Gir' : 'Devam Et'}
+          label={step === STEPS.length - 1 ? 'BUTİKA\'e Gir' : 'Devam Et'}
           onPress={handleNext}
           variant="primary"
           size="xl"

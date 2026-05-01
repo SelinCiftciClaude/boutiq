@@ -43,7 +43,7 @@ export default function ForgotPasswordScreen() {
         {!sent ? (
           <>
             <View style={styles.header}>
-              <Text style={styles.logo}>BOUTIQ</Text>
+              <Text style={styles.logo}>BUTİKA</Text>
               <Text style={styles.title}>Şifreni{'\n'}sıfırla</Text>
               <Text style={styles.subtitle}>
                 E-posta adresini gir, sana sıfırlama bağlantısı gönderelim.

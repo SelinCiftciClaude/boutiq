@@ -15,7 +15,7 @@ import { searchBrandsAndProducts } from '@/services/queries';
 import { useAuth } from '@/context/AuthContext';
 import { Brand, Product } from '@/types';
 
-const RECENT_KEY = 'boutiq_recent_searches_v1';
+const RECENT_KEY = 'butika_recent_searches_v1';
 const MAX_RECENT = 6;
 
 export default function SearchScreen() {

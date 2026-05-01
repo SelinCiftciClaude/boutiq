@@ -36,7 +36,7 @@ import { trackAffiliateClick } from '@/services/queries';
 import { Brand, Campaign, Shipment, ShipmentStatus } from '../../types';
 
 function CampaignBanner({ campaign, onCopyCode, userId }: { campaign: Campaign; onCopyCode: (code: string) => void; userId?: string }) {
-  const code = campaign.code ?? 'BOUTIQ10';
+  const code = campaign.code ?? 'BUTİKA10';
   const handlePress = () => {
     trackAffiliateClick(userId ?? null, campaign.brandId, null, campaign.affiliateUrl || campaign.url);
     Linking.openURL(campaign.affiliateUrl || campaign.url);
@@ -272,7 +272,7 @@ export default function HomeScreen() {
         {/* Header */}
         <View style={styles.header}>
           <View>
-            <Text style={styles.headerTitle}>BOUTIQ</Text>
+            <Text style={styles.headerTitle}>BUTİKA</Text>
           </View>
           <View style={styles.headerActions}>
             <TouchableOpacity style={styles.notifBtn} onPress={() => router.push('/notifications' as any)}>
@@ -506,7 +506,7 @@ export default function HomeScreen() {
         {feedTab === 'discover' && <View style={styles.affiliateNote}>
           <Ionicons name="information-circle-outline" size={14} color={Colors.text5} />
           <Text style={styles.affiliateText}>
-            BOUTIQ, marka linklerinden komisyon kazanabilir. Bu sana ekstra ücret yansımaz.
+            BUTİKA, marka linklerinden komisyon kazanabilir. Bu sana ekstra ücret yansımaz.
           </Text>
         </View>}
         <View style={{ height: 100 }} />

@@ -97,7 +97,7 @@ export default function OnboardingScreen() {
       >
         {/* Üst başlık */}
         <View style={styles.header}>
-          <Text style={styles.eyebrow}>BOUTIQ — KİŞİSEL AYAR</Text>
+          <Text style={styles.eyebrow}>BUTİKA — KİŞİSEL AYAR</Text>
           <Text style={styles.title}>Zevkini{'\n'}tanıyalım.</Text>
           <Text style={styles.subtitle}>
             En az {MIN_SELECTION} kategori seç — sana özel butikler ve kampanyalar gösterelim.

@@ -87,7 +87,7 @@ export default function LoginScreen() {
           <View style={styles.logoMark}>
             <View style={styles.logoMarkInner} />
           </View>
-          <Text style={styles.logoText}>BOUTIQ</Text>
+          <Text style={styles.logoText}>BUTİKA</Text>
         </View>
 
         {/* Hero başlık */}

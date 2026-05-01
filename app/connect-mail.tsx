@@ -16,7 +16,7 @@ import { useQueryClient } from '@tanstack/react-query';
 
 WebBrowser.maybeCompleteAuthSession();
 
-// Google Cloud Console → iOS Client ID (bundle: com.boutiq.app)
+// Google Cloud Console → iOS Client ID (bundle: com.butika.app)
 const IOS_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID ?? '';
 
 // ── Kargo takip no regex'leri ──────────────────────────────────────────────

@@ -34,7 +34,7 @@ const SLIDES = [
     id: '2',
     eyebrow: 'Kaydet',
     title: 'Gördün,\nBeğendin,\nKaydet.',
-    subtitle: 'Geçip gitmesin. Instagram\'da dikkatini çeken ürünü hemen BOUTIQ\'e ekle.',
+    subtitle: 'Geçip gitmesin. Instagram\'da dikkatini çeken ürünü hemen BUTİKA\'e ekle.',
     image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&h=1200&fit=crop',
     accent: Colors.gold3,
     gradient: [Colors.bg, '#0C0C0A', Colors.bg] as const,
@@ -125,7 +125,7 @@ export default function OnboardingScreen() {
       {/* Logo */}
       <View style={styles.logoContainer}>
         <LinearGradient colors={[Colors.rose3, Colors.gold3]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.logoDot} />
-        <Text style={styles.logoText}>BOUTIQ</Text>
+        <Text style={styles.logoText}>BUTİKA</Text>
       </View>
 
       {/* Slides */}
