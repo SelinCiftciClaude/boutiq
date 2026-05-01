@@ -132,7 +132,7 @@ export default function RootLayout() {
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <InterestsProvider>
-            <StatusBar style="light" backgroundColor={Colors.bg} />
+            <StatusBar style="dark" backgroundColor={Colors.bg} />
             <RouteGate />
           </InterestsProvider>
         </AuthProvider>

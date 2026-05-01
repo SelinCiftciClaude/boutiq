@@ -71,7 +71,7 @@ function CustomTabBar({ state, navigation }: any) {
 
   return (
     <View style={[styles.wrapper, { paddingBottom: Math.max(insets.bottom, 12) }]}>
-      <BlurView intensity={80} tint="dark" style={styles.blur}>
+      <BlurView intensity={80} tint="light" style={styles.blur}>
         {/* Üst hairline — altın */}
         <View style={styles.topLine} />
 
