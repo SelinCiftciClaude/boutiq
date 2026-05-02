@@ -116,7 +116,18 @@ export function useCategoryBrands(categorySlug: string, brandIds: string[]) {
   });
 }
 
-// Sonsuz ürün feed'i
+// Kategori ID'sini slug'dan çöz — kısa süreli cache
+const categoryIdCache = new Map<string, string | null>();
+async function resolveCategoryId(slug: string): Promise<string | null> {
+  if (slug === 'all') return null;
+  if (categoryIdCache.has(slug)) return categoryIdCache.get(slug)!;
+  const { data } = await supabase.from('master_categories').select('id').eq('slug', slug).maybeSingle();
+  const id = data?.id ?? null;
+  categoryIdCache.set(slug, id);
+  return id;
+}
+
+// Sonsuz ürün feed'i — arama varsa PostgreSQL RPC kullanır (name+category+tags)
 export function useDiscoverFeed(
   brandIds: string[],
   categorySlug: string,
@@ -126,21 +137,40 @@ export function useDiscoverFeed(
   return useInfiniteQuery({
     queryKey: ['discover-feed', brandIds, categorySlug, filters, search],
     queryFn: async ({ pageParam = 0 }) => {
-      // Kategori ID'sini çöz
-      let masterCategoryId: string | null = null;
-      if (categorySlug !== 'all') {
-        const { data: catRow } = await supabase
-          .from('master_categories')
-          .select('id')
-          .eq('slug', categorySlug)
-          .maybeSingle();
-        masterCategoryId = catRow?.id ?? null;
-        if (!masterCategoryId) return [];
+      const masterCategoryId = await resolveCategoryId(categorySlug);
+      if (categorySlug !== 'all' && !masterCategoryId) return [];
+
+      // Arama varsa → RPC (name + category + tags tüm alanlar)
+      if (search.trim()) {
+        const { data, error } = await supabase.rpc('search_products_feed', {
+          p_search:      search.trim(),
+          p_brand_ids:   brandIds.length > 0 ? brandIds : null,
+          p_category_id: masterCategoryId,
+          p_on_sale:     filters.onSale,
+          p_new_only:    filters.newOnly,
+          p_page:        pageParam,
+          p_page_size:   PAGE_SIZE,
+        });
+        if (error) return [];
+        return (data ?? []).map((p: any) => ({
+          id: p.id,
+          name: p.name,
+          imageUrl: p.image_url,
+          imageAspectRatio: p.image_aspect_ratio ?? 0.75,
+          price: p.price,
+          originalPrice: p.original_price ?? null,
+          isOnSale: p.is_on_sale ?? false,
+          isNew: p.is_new ?? false,
+          url: p.url,
+          affiliateUrl: p.affiliate_url || p.url,
+          brandId: p.brand_id,
+          brandName: p.brand_name ?? '',
+          brandLogoUrl: p.brand_logo_url ?? null,
+          masterCategorySlug: p.master_category_slug ?? null,
+        } as DiscoverProduct));
       }
 
-      const from = pageParam * PAGE_SIZE;
-      const to = from + PAGE_SIZE - 1;
-
+      // Arama yoksa → standart tablo sorgusu
       let query = supabase
         .from('products')
         .select(`
@@ -152,21 +182,13 @@ export function useDiscoverFeed(
         `)
         .eq('is_available', true)
         .order('created_at', { ascending: false })
-        .range(from, to);
+        .range(pageParam * PAGE_SIZE, (pageParam + 1) * PAGE_SIZE - 1);
 
-      if (brandIds.length > 0) {
-        query = query.in('brand_id', brandIds);
-      }
-      if (masterCategoryId) {
-        query = query.eq('master_category_id', masterCategoryId);
-      }
-      if (filters.onSale) query = query.eq('is_on_sale', true);
-      if (filters.newOnly) query = query.eq('is_new', true);
-      if (filters.maxPrice) query = query.lte('price', filters.maxPrice);
-      if (search.trim()) {
-        const s = search.trim().replace(/[%_]/g, '\\$&'); // SQL özel karakterleri kaçır
-        query = query.or(`name.ilike.%${s}%,category.ilike.%${s}%`);
-      }
+      if (brandIds.length > 0) query = query.in('brand_id', brandIds);
+      if (masterCategoryId)    query = query.eq('master_category_id', masterCategoryId);
+      if (filters.onSale)      query = query.eq('is_on_sale', true);
+      if (filters.newOnly)     query = query.eq('is_new', true);
+      if (filters.maxPrice)    query = query.lte('price', filters.maxPrice);
 
       const { data } = await query;
       return (data ?? []).map(p => ({
