@@ -366,36 +366,6 @@ export default function HomeScreen() {
         )}
 
         {feedTab === 'discover' && <>
-        {/* Kargo Durumu Widget */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Bugünün Kargoları</Text>
-            {allShipments.filter(s => s.status !== 'delivered').length > 0 && (
-              <Badge
-                label={`${allShipments.filter(s => s.status !== 'delivered').length} aktif`}
-                variant="gold"
-              />
-            )}
-          </View>
-          <Text style={sw.dateLabel}>{todayLabel()}</Text>
-
-          {allShipments.length === 0 ? (
-            <View style={sw.emptyWrap}>
-              <Ionicons name="bicycle-outline" size={28} color={Colors.text5} />
-              <Text style={sw.emptyText}>Bugün aktif kargon yok</Text>
-            </View>
-          ) : (
-            <FlatList
-              data={allShipments}
-              keyExtractor={s => s.id}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ gap: 10, paddingRight: 16 }}
-              renderItem={({ item }) => <ShipmentCard2 s={item} />}
-            />
-          )}
-        </View>
-
         {/* Bu Hafta Trend */}
         {trendingBrands.length > 0 && (
           <View style={styles.section}>

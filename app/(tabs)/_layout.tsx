@@ -14,6 +14,7 @@ import * as Haptics from 'expo-haptics';
 import { Colors } from '../../constants/Colors';
 import { Fonts } from '../../constants/Typography';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useShipmentSummary } from '@/hooks/useShipments';
 
 const { width } = Dimensions.get('window');
 
@@ -21,11 +22,11 @@ const TABS = [
   { name: 'index',     label: 'KEŞFET',    icon: 'compass-outline',       iconFilled: 'compass' },
   { name: 'saved',     label: 'FAVORİLER', icon: 'heart-outline',          iconFilled: 'heart' },
   { name: 'watchlist', label: 'TAKİP',     icon: 'notifications-outline',  iconFilled: 'notifications' },
-  { name: 'tracking',  label: 'SİPARİŞ',  icon: 'receipt-outline',        iconFilled: 'receipt' },
-  { name: 'profile',   label: 'PROFİL',   icon: 'person-outline',          iconFilled: 'person' },
+  { name: 'tracking',  label: 'KARGOLARIM', icon: 'cube-outline',           iconFilled: 'cube' },
+  { name: 'profile',   label: 'PROFİL',    icon: 'person-outline',          iconFilled: 'person' },
 ];
 
-const LABELS = ['KEŞFET', 'FAVORİLER', 'TAKİP', 'SİPARİŞ', 'PROFİL'];
+const LABELS = ['KEŞFET', 'FAVORİLER', 'TAKİP', 'KARGOLARIM', 'PROFİL'];
 
 const BAR_H   = 62;
 const BAR_MX  = 20;
@@ -33,6 +34,8 @@ const BAR_MX  = 20;
 function CustomTabBar({ state, navigation }: any) {
   const insets = useSafeAreaInsets();
   const TAB_W  = (width - BAR_MX * 2) / TABS.length;
+  const { data: summary } = useShipmentSummary();
+  const activeShipments = summary?.total_active ?? 0;
 
   const iconScales   = useRef(TABS.map((_, i) => new Animated.Value(i === 0 ? 1.1 : 1))).current;
   const iconOpacity  = useRef(TABS.map((_, i) => new Animated.Value(i === 0 ? 1 : 0.38))).current;
@@ -103,6 +106,7 @@ function CustomTabBar({ state, navigation }: any) {
                     transform: [{ scale: iconScales[index] }],
                     opacity: iconOpacity[index],
                     alignItems: 'center',
+                    position: 'relative',
                   }}
                 >
                   <Ionicons
@@ -110,6 +114,14 @@ function CustomTabBar({ state, navigation }: any) {
                     size={21}
                     color={isFocused ? Colors.rose3 : Colors.text3}
                   />
+                  {/* Badge: sadece tracking sekmesinde, aktif kargo varsa */}
+                  {tab.name === 'tracking' && activeShipments > 0 && (
+                    <View style={styles.badge}>
+                      <Text style={styles.badgeText}>
+                        {activeShipments > 9 ? '9+' : activeShipments}
+                      </Text>
+                    </View>
+                  )}
                 </Animated.View>
 
                 <Animated.Text
@@ -188,6 +200,26 @@ const styles = StyleSheet.create({
     height: 1.5,
     backgroundColor: Colors.rose3,
     borderRadius: 1,
+  },
+  badge: {
+    position: 'absolute',
+    top: -4,
+    right: -8,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: Colors.rose3,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+    borderWidth: 1.5,
+    borderColor: Colors.bg,
+  },
+  badgeText: {
+    fontFamily: Fonts.ui,
+    fontSize: 9,
+    color: '#fff',
+    lineHeight: 12,
   },
 });
 

@@ -1,354 +1,513 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  Modal, TextInput, ActivityIndicator, Image,
+  RefreshControl, ActivityIndicator, TextInput,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
-import { Colors } from '../../constants/Colors';
-import { Fonts } from '../../constants/Typography';
-import { useShipments } from '@/hooks/useShipments';
-import { useProfile } from '@/hooks/useProfile';
-import { Shipment } from '../../types';
+import { Colors } from '@/constants/Colors';
+import { Fonts } from '@/constants/Typography';
+import { ShipmentCard } from '@/components/ShipmentCard';
+import { AddManualShipmentSheet } from '@/components/AddManualShipmentSheet';
+import {
+  useShipments,
+  useShipmentSummary,
+} from '@/hooks/useShipments';
+import type { Shipment } from '@/services/shipmentService';
 
-// ─── Kargo durumu config ─────────────────────────────────────────────────
-const STATUS_CONFIG: Record<string, { label: string; color: string; icon: string; bg: string }> = {
-  ordered:          { label: 'Sipariş Alındı',   color: Colors.text3,   icon: 'bag-check-outline',        bg: Colors.surface3 },
-  processing:       { label: 'Hazırlanıyor',      color: Colors.gold3,   icon: 'cube-outline',             bg: Colors.glassGold },
-  shipped:          { label: 'Kargoya Verildi',   color: Colors.purple3, icon: 'arrow-up-circle-outline',  bg: Colors.purpleGlow },
-  in_transit:       { label: 'Yolda',             color: Colors.rose3,   icon: 'bicycle-outline',          bg: Colors.roseGlow },
-  out_for_delivery: { label: 'Dağıtımda',         color: Colors.gold3,   icon: 'navigate-circle-outline',  bg: Colors.glassGold },
-  delivered:        { label: 'Teslim Edildi',     color: Colors.success, icon: 'checkmark-circle',         bg: Colors.successGlow },
-  returned:         { label: 'İade',              color: Colors.error,   icon: 'return-down-back-outline', bg: 'rgba(239,68,68,0.12)' },
-};
+type Filter = 'all' | 'preparing' | 'in_transit' | 'delivered';
 
+const FILTER_CONFIG: Array<{
+  key: Filter;
+  label: string;
+  summaryKey: 'preparing' | 'in_transit' | 'delivered';
+  color: string;
+  bgPassive: string;
+  bgActive: string;
+}> = [
+  { key: 'preparing',  label: 'HAZIRLANIYOR', summaryKey: 'preparing',  color: '#FFF',   bgPassive: 'rgba(163,45,45,0.10)',  bgActive: '#A32D2D' },
+  { key: 'in_transit', label: 'YOLDA',        summaryKey: 'in_transit', color: '#FFF',   bgPassive: 'rgba(186,117,23,0.10)', bgActive: '#BA7517' },
+  { key: 'delivered',  label: 'TESLİM',       summaryKey: 'delivered',  color: '#FFF',   bgPassive: 'rgba(59,109,17,0.10)',  bgActive: '#3B6D11' },
+];
 
-const CARRIERS = ['Yurtiçi Kargo','MNG Kargo','PTT Kargo','Aras Kargo','Sürat Kargo','UPS','DHL','Diğer'];
+// ── Gruplandırma (aynı butikten 2+ kargo) ───────────────────────────────────
 
-// ─── Tarihe göre gruplama ────────────────────────────────────────────────
-function groupByDate(shipments: Shipment[]): { date: string; isoDate: string; items: Shipment[] }[] {
-  const map = new Map<string, { isoDate: string; items: Shipment[] }>();
+function groupByBrand(shipments: Shipment[]): Array<{ brand: string; items: Shipment[] }> {
+  const map = new Map<string, Shipment[]>();
   for (const s of shipments) {
-    const d = new Date(s.createdAt);
-    const key = d.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
-    if (!map.has(key)) map.set(key, { isoDate: s.createdAt, items: [] });
-    map.get(key)!.items.push(s);
+    const existing = map.get(s.brandName) ?? [];
+    existing.push(s);
+    map.set(s.brandName, existing);
   }
-  return Array.from(map.entries())
-    .map(([date, { isoDate, items }]) => ({ date, isoDate, items }))
-    .sort((a, b) => new Date(b.isoDate).getTime() - new Date(a.isoDate).getTime());
+  return Array.from(map.entries()).map(([brand, items]) => ({ brand, items }));
 }
 
-// ─── Tek sipariş kartı ───────────────────────────────────────────────────
-function ShipmentRow({ shipment }: { shipment: Shipment }) {
-  const cfg = STATUS_CONFIG[shipment.status] ?? STATUS_CONFIG.ordered;
+// ── Durum sıralaması ─────────────────────────────────────────────────────────
+
+function sortShipments(list: Shipment[]): Shipment[] {
+  const order: Record<string, number> = {
+    out_for_delivery: 0,
+    in_transit: 1,
+    shipped: 2,
+    processing: 3,
+    ordered: 4,
+    delivered: 5,
+    returned: 6,
+    failed: 7,
+  };
+  return [...list].sort((a, b) => (order[a.status] ?? 9) - (order[b.status] ?? 9));
+}
+
+// ── Ana ekran ─────────────────────────────────────────────────────────────────
+
+export default function TrackingScreen() {
+  const insets = useSafeAreaInsets();
+  const [filter, setFilter]       = useState<Filter>('all');
+  const [showSearch, setSearch]   = useState(false);
+  const [searchQ, setSearchQ]     = useState('');
+  const [showAdd, setShowAdd]     = useState(false);
+  const [refreshing, setRefresh]  = useState(false);
+
+  const { data: shipments = [], isLoading, refetch } = useShipments(filter);
+  const { data: summary } = useShipmentSummary();
+
+  const filtered = searchQ
+    ? shipments.filter(s =>
+        s.brandName.toLowerCase().includes(searchQ.toLowerCase()) ||
+        s.trackingNumber.includes(searchQ) ||
+        (s.products[0]?.name ?? '').toLowerCase().includes(searchQ.toLowerCase())
+      )
+    : shipments;
+
+  const sorted  = sortShipments(filtered);
+  const groups  = groupByBrand(sorted);
+  const recent  = sorted.filter(s => s.status !== 'delivered');
+  const delivered = sorted.filter(s => s.status === 'delivered');
+
+  const onRefresh = useCallback(async () => {
+    setRefresh(true);
+    await refetch();
+    setRefresh(false);
+  }, [refetch]);
+
+  const toggleFilter = (f: Filter) => {
+    Haptics.selectionAsync();
+    setFilter(prev => prev === f ? 'all' : f);
+  };
+
+  const activeLabel = sorted.length;
+  const brandCount  = new Set(sorted.map(s => s.brandName)).size;
 
   return (
-    <View style={rowStyles.card}>
-      <LinearGradient colors={[Colors.surface2, Colors.surface1]} style={StyleSheet.absoluteFill} />
+    <View style={[styles.container, { paddingTop: insets.top }]}>
 
-      {/* Üst: marka + detaylar */}
-      <View style={rowStyles.top}>
-        <View style={rowStyles.brandRow}>
-          {shipment.brandLogo ? (
-            <Image source={{ uri: shipment.brandLogo }} style={rowStyles.logo} />
-          ) : (
-            <View style={[rowStyles.logo, rowStyles.logoFallback]}>
-              <Ionicons name="storefront-outline" size={16} color={Colors.text4} />
-            </View>
+      {/* Header */}
+      <View style={styles.header}>
+        <View>
+          <Text style={styles.headerTitle}>Kargolarım</Text>
+          {activeLabel > 0 && (
+            <Text style={styles.headerSub}>
+              {summary?.total_active ?? 0} aktif sipariş · {brandCount} butikten
+            </Text>
           )}
-          <View>
-            <Text style={rowStyles.brandName}>{shipment.brandName}</Text>
-            <Text style={rowStyles.orderNum}>#{shipment.orderNumber}</Text>
-          </View>
         </View>
-        <TouchableOpacity
-          style={rowStyles.detailBtn}
-          onPress={() => {
-            Haptics.selectionAsync();
-            router.push(`/shipment/${shipment.id}` as any);
-          }}
+        <View style={styles.headerIcons}>
+          <TouchableOpacity
+            style={[styles.iconBtn, showSearch && styles.iconBtnActive]}
+            onPress={() => { Haptics.selectionAsync(); setSearch(s => !s); setSearchQ(''); }}
+          >
+            <Ionicons name="search-outline" size={18} color={showSearch ? Colors.rose3 : Colors.text2} />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Arama */}
+      {showSearch && (
+        <View style={styles.searchBar}>
+          <Ionicons name="search-outline" size={16} color={Colors.text4} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Butik adı, takip no veya ürün ara..."
+            placeholderTextColor={Colors.text5}
+            value={searchQ}
+            onChangeText={setSearchQ}
+            autoFocus
+            selectionColor={Colors.rose3}
+          />
+          {searchQ.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQ('')}>
+              <Ionicons name="close-circle" size={16} color={Colors.text4} />
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
+
+      {/* Durum sayaç filtre kutucukları */}
+      <View style={styles.counters}>
+        {FILTER_CONFIG.map(cfg => {
+          const count = summary?.[cfg.summaryKey] ?? 0;
+          const active = filter === cfg.key;
+          return (
+            <TouchableOpacity
+              key={cfg.key}
+              style={[
+                styles.counter,
+                { backgroundColor: active ? cfg.bgActive : cfg.bgPassive },
+                active && styles.counterActive,
+              ]}
+              onPress={() => toggleFilter(cfg.key)}
+              activeOpacity={0.8}
+            >
+              <Text style={[styles.counterNum, active && styles.counterNumActive]}>
+                {count}
+              </Text>
+              <Text style={[styles.counterLabel, active && styles.counterLabelActive]}>
+                {cfg.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
+      {/* Liste */}
+      {isLoading && !refreshing ? (
+        <View style={styles.center}>
+          <ActivityIndicator color={Colors.rose3} />
+        </View>
+      ) : sorted.length === 0 ? (
+        <EmptyState onAdd={() => setShowAdd(true)} hasFilter={filter !== 'all' || searchQ.length > 0} />
+      ) : (
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.list}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={Colors.rose3}
+              colors={[Colors.rose3]}
+            />
+          }
         >
-          <Text style={rowStyles.detailText}>Detaylar</Text>
-          <Ionicons name="chevron-forward" size={13} color={Colors.gold3} />
-        </TouchableOpacity>
-      </View>
-
-      {/* Orta: durum */}
-      <View style={[rowStyles.statusRow, { backgroundColor: cfg.bg }]}>
-        <Ionicons name={cfg.icon as any} size={15} color={cfg.color} />
-        <Text style={[rowStyles.statusText, { color: cfg.color }]}>{cfg.label}</Text>
-        {shipment.carrier ? (
-          <Text style={rowStyles.carrierText}> · {shipment.carrier}</Text>
-        ) : null}
-      </View>
-
-      {/* Alt: mini ürün fotoları */}
-      {shipment.products.length > 0 && (
-        <View style={rowStyles.photosRow}>
-          {shipment.products.slice(0, 4).map((p, i) => (
-            <View key={i} style={rowStyles.photoWrap}>
-              <Image source={{ uri: p.image }} style={rowStyles.photo} />
-              {i === 3 && shipment.products.length > 4 && (
-                <View style={rowStyles.moreOverlay}>
-                  <Text style={rowStyles.moreText}>+{shipment.products.length - 4}</Text>
-                </View>
+          {/* Aktif kargolar */}
+          {recent.length > 0 && (
+            <>
+              {filter === 'all' && recent.length > 0 && (
+                <Text style={styles.sectionLabel}>AKTİF ({recent.length})</Text>
               )}
-            </View>
-          ))}
-          <Text style={rowStyles.productCount}>
-            {shipment.products.length} ürün
-            {shipment.status === 'delivered' ? ' teslim edildi' : ''}
-          </Text>
-        </View>
+              {groups
+                .filter(g => g.items.some(s => s.status !== 'delivered'))
+                .map(group => (
+                  <BrandGroup key={group.brand} group={group} filter={filter} />
+                ))}
+            </>
+          )}
+
+          {/* Teslim edilenler (gri, ayrı bölüm) */}
+          {filter !== 'preparing' && filter !== 'in_transit' && delivered.length > 0 && (
+            <DeliveredSection shipments={delivered} />
+          )}
+
+          {/* Manuel ekle */}
+          <TouchableOpacity style={styles.addBtn} onPress={() => setShowAdd(true)} activeOpacity={0.85}>
+            <LinearGradient
+              colors={[Colors.rose2, Colors.rose3]}
+              start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+              style={StyleSheet.absoluteFill}
+            />
+            <Ionicons name="add-circle-outline" size={18} color="#fff" />
+            <Text style={styles.addBtnText}>Manuel sipariş ekle</Text>
+          </TouchableOpacity>
+
+          <View style={{ height: 100 }} />
+        </ScrollView>
+      )}
+
+      {/* Bottom sheet */}
+      <AddManualShipmentSheet visible={showAdd} onClose={() => setShowAdd(false)} />
+    </View>
+  );
+}
+
+// ── Alt bileşenler ────────────────────────────────────────────────────────────
+
+function BrandGroup({ group, filter }: { group: { brand: string; items: Shipment[] }; filter: Filter }) {
+  const [expanded, setExpanded] = useState(true);
+  const relevant = group.items.filter(s => {
+    if (filter === 'preparing')  return ['ordered','processing'].includes(s.status);
+    if (filter === 'in_transit') return ['shipped','in_transit','out_for_delivery'].includes(s.status);
+    if (filter === 'delivered')  return s.status === 'delivered';
+    return s.status !== 'delivered';
+  });
+
+  if (relevant.length === 0) return null;
+
+  if (relevant.length === 1) {
+    return <ShipmentCard key={relevant[0].id} shipment={relevant[0]} />;
+  }
+
+  return (
+    <View style={grp.wrap}>
+      <TouchableOpacity
+        style={grp.header}
+        onPress={() => { Haptics.selectionAsync(); setExpanded(e => !e); }}
+      >
+        <Text style={grp.brandName}>{group.brand}</Text>
+        <Text style={grp.count}>{relevant.length} kargo</Text>
+        <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={14} color={Colors.text4} />
+      </TouchableOpacity>
+      {expanded && relevant.map(s => <ShipmentCard key={s.id} shipment={s} />)}
+    </View>
+  );
+}
+
+function DeliveredSection({ shipments }: { shipments: Shipment[] }) {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <View style={styles.deliveredSection}>
+      <TouchableOpacity
+        style={styles.deliveredToggle}
+        onPress={() => { Haptics.selectionAsync(); setExpanded(e => !e); }}
+      >
+        <Ionicons name="checkmark-circle" size={16} color={Colors.success} />
+        <Text style={styles.deliveredLabel}>Teslim edildi ({shipments.length})</Text>
+        <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={14} color={Colors.text4} />
+      </TouchableOpacity>
+      {expanded && shipments.map(s => <ShipmentCard key={s.id} shipment={s} />)}
+    </View>
+  );
+}
+
+function EmptyState({ onAdd, hasFilter }: { onAdd: () => void; hasFilter: boolean }) {
+  return (
+    <View style={styles.empty}>
+      <Text style={styles.emptyIcon}>📦</Text>
+      <Text style={styles.emptyTitle}>
+        {hasFilter ? 'Bu filtrede kargo yok' : 'Henüz kargo takip etmiyorsun'}
+      </Text>
+      <Text style={styles.emptySub}>
+        {hasFilter
+          ? 'Filtreni kaldır ya da yeni sipariş ekle.'
+          : 'Şu an açık siparişin varsa manuel ekleyebilirsin.'}
+      </Text>
+      {!hasFilter && (
+        <TouchableOpacity style={styles.emptyBtn} onPress={onAdd} activeOpacity={0.88}>
+          <LinearGradient
+            colors={[Colors.rose2, Colors.rose3]}
+            start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+            style={StyleSheet.absoluteFill}
+          />
+          <Ionicons name="add-circle-outline" size={16} color="#fff" />
+          <Text style={styles.emptyBtnText}>Manuel sipariş ekle</Text>
+        </TouchableOpacity>
       )}
     </View>
   );
 }
 
-const rowStyles = StyleSheet.create({
-  card: {
-    borderRadius: 20, overflow: 'hidden',
-    borderWidth: 1, borderColor: Colors.border1,
-    padding: 16, gap: 12, marginBottom: 10,
-  },
-  top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  brandRow: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
-  logo: {
-    width: 40, height: 40, borderRadius: 12,
-    backgroundColor: Colors.surface3, borderWidth: 1, borderColor: Colors.border2,
-  },
-  logoFallback: { alignItems: 'center', justifyContent: 'center' },
-  brandName: { fontSize: 15, fontWeight: '700', color: Colors.text1, letterSpacing: -0.2 },
-  orderNum: { fontSize: 11, color: Colors.text4, marginTop: 1 },
-  detailBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 3,
-    paddingHorizontal: 10, paddingVertical: 6,
-    backgroundColor: Colors.glassGold, borderRadius: 10,
-    borderWidth: 1, borderColor: Colors.borderGold,
-  },
-  detailText: { fontSize: 12, fontWeight: '700', color: Colors.gold3 },
-  statusRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12,
-  },
-  statusText: { fontSize: 13, fontWeight: '700' },
-  carrierText: { fontSize: 12, color: Colors.text4, fontWeight: '500' },
-  photosRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  photoWrap: { position: 'relative' },
-  photo: {
-    width: 52, height: 52, borderRadius: 12,
-    backgroundColor: Colors.surface3,
-    borderWidth: 1, borderColor: Colors.border2,
-  },
-  moreOverlay: {
-    position: 'absolute', inset: 0,
-    backgroundColor: 'rgba(7,7,15,0.55)',
-    borderRadius: 12, alignItems: 'center', justifyContent: 'center',
-  },
-  moreText: { fontSize: 12, fontWeight: '800', color: '#fff' },
-  productCount: { fontSize: 12, color: Colors.text4, fontWeight: '500', flex: 1 },
-});
-
-// ─── Kargo Ekleme Modalı ─────────────────────────────────────────────────
-function AddShipmentModal({ visible, onClose, onAdd }: {
-  visible: boolean; onClose: () => void;
-  onAdd: (p: { brandName: string; orderNumber: string; trackingNumber?: string; carrier: string }) => Promise<void>;
-}) {
-  const [brandName, setBrandName] = useState('');
-  const [orderNumber, setOrderNumber] = useState('');
-  const [trackingNumber, setTrackingNumber] = useState('');
-  const [carrier, setCarrier] = useState('Yurtiçi Kargo');
-  const [loading, setLoading] = useState(false);
-
-  const reset = () => { setBrandName(''); setOrderNumber(''); setTrackingNumber(''); setCarrier('Yurtiçi Kargo'); };
-
-  const handleAdd = async () => {
-    if (!brandName.trim() || !orderNumber.trim()) return;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    setLoading(true);
-    try {
-      await onAdd({ brandName: brandName.trim(), orderNumber: orderNumber.trim(), trackingNumber: trackingNumber.trim() || undefined, carrier });
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      reset(); onClose();
-    } catch { /* modal açık kalır */ } finally { setLoading(false); }
-  };
-
-  return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={aStyles.overlay}>
-        <TouchableOpacity style={StyleSheet.absoluteFill} onPress={onClose} />
-        <View style={aStyles.sheet}>
-          <LinearGradient colors={[Colors.surface2, Colors.surface1]} style={StyleSheet.absoluteFill} />
-          <View style={aStyles.handle} />
-          <Text style={aStyles.title}>Kargo Ekle</Text>
-          <Text style={aStyles.subtitle}>Sipariş bilgilerini gir, biz takip edelim.</Text>
-          <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-            <Text style={aStyles.label}>Mağaza / Marka *</Text>
-            <View style={aStyles.inputRow}>
-              <TextInput style={aStyles.input} placeholder="ör. Noire Studio" placeholderTextColor={Colors.text5} value={brandName} onChangeText={setBrandName} selectionColor={Colors.gold3} />
-            </View>
-            <Text style={aStyles.label}>Sipariş Numarası *</Text>
-            <View style={aStyles.inputRow}>
-              <TextInput style={aStyles.input} placeholder="ör. ORD-2026-1234" placeholderTextColor={Colors.text5} value={orderNumber} onChangeText={setOrderNumber} selectionColor={Colors.gold3} autoCapitalize="characters" />
-            </View>
-            <Text style={aStyles.label}>Takip Numarası (opsiyonel)</Text>
-            <View style={aStyles.inputRow}>
-              <TextInput style={aStyles.input} placeholder="ör. YK123456789TR" placeholderTextColor={Colors.text5} value={trackingNumber} onChangeText={setTrackingNumber} selectionColor={Colors.gold3} autoCapitalize="characters" />
-            </View>
-            <Text style={aStyles.label}>Kargo Firması</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={aStyles.carrierScroll}>
-              {CARRIERS.map(c => {
-                const active = carrier === c;
-                return (
-                  <TouchableOpacity key={c} onPress={() => { Haptics.selectionAsync(); setCarrier(c); }} style={[aStyles.carrierChip, active && aStyles.carrierChipActive]}>
-                    {active && <LinearGradient colors={[Colors.gold2, Colors.gold4]} style={StyleSheet.absoluteFill} />}
-                    <Text style={[aStyles.carrierText, active && aStyles.carrierTextActive]}>{c}</Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-            <TouchableOpacity style={[aStyles.addBtn, (!brandName.trim() || !orderNumber.trim()) && aStyles.addBtnDisabled]} onPress={handleAdd} disabled={!brandName.trim() || !orderNumber.trim() || loading}>
-              <LinearGradient colors={[Colors.rose2, Colors.rose4]} style={StyleSheet.absoluteFill} />
-              {loading ? <ActivityIndicator color="#fff" /> : <Text style={aStyles.addBtnText}>Kargoyu Ekle</Text>}
-            </TouchableOpacity>
-            <TouchableOpacity onPress={onClose} style={aStyles.cancelBtn}>
-              <Text style={aStyles.cancelText}>İptal</Text>
-            </TouchableOpacity>
-            <View style={{ height: 20 }} />
-          </ScrollView>
-        </View>
-      </View>
-    </Modal>
-  );
-}
-
-const aStyles = StyleSheet.create({
-  overlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.65)' },
-  sheet: { borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, paddingBottom: 0, maxHeight: '90%', overflow: 'hidden', borderWidth: 1, borderBottomWidth: 0, borderColor: Colors.border2 },
-  handle: { width: 40, height: 4, backgroundColor: Colors.border3, borderRadius: 2, alignSelf: 'center', marginBottom: 24 },
-  title: { fontSize: 24, fontWeight: '800', color: Colors.text1, letterSpacing: -0.8, marginBottom: 6 },
-  subtitle: { fontSize: 14, color: Colors.text3, lineHeight: 20, marginBottom: 24 },
-  label: { fontSize: 12, fontWeight: '700', color: Colors.text4, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 8, marginTop: 4 },
-  inputRow: { backgroundColor: Colors.surface3, borderRadius: 14, borderWidth: 1, borderColor: Colors.border2, paddingHorizontal: 14, height: 50, justifyContent: 'center', marginBottom: 16 },
-  input: { fontSize: 15, color: Colors.text1 },
-  carrierScroll: { gap: 8, marginBottom: 24 },
-  carrierChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 50, backgroundColor: Colors.surface3, borderWidth: 1, borderColor: Colors.border2, overflow: 'hidden' },
-  carrierChipActive: { borderColor: Colors.gold3 },
-  carrierText: { fontSize: 13, fontWeight: '600', color: Colors.text3 },
-  carrierTextActive: { color: Colors.bg, fontWeight: '700' },
-  addBtn: { height: 54, borderRadius: 16, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', marginBottom: 12 },
-  addBtnDisabled: { opacity: 0.4 },
-  addBtnText: { fontSize: 16, fontWeight: '700', color: '#fff' },
-  cancelBtn: { alignItems: 'center', paddingVertical: 12 },
-  cancelText: { fontSize: 15, color: Colors.text4, fontWeight: '500' },
-});
-
-// ─── Ana ekran ────────────────────────────────────────────────────────────
-export default function TrackingScreen() {
-  const insets = useSafeAreaInsets();
-  const { data: shipments = [], add: addShipment } = useShipments();
-  const { data: profile } = useProfile();
-  const [showAddModal, setShowAddModal] = useState(false);
-
-  const mailConnected = !!(profile?.connectedAccounts as any)?.gmail?.connected;
-  const groups = groupByDate(shipments);
-
-  return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.bgGlow} />
-
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Kargo Takip</Text>
-      </View>
-
-      {/* Mail Bağla + Kargo Ekle butonları */}
-      <View style={styles.actionRow}>
-        <TouchableOpacity
-          onPress={() => router.push('/connect-mail' as any)}
-          style={[styles.mailBtn, mailConnected && styles.mailBtnConnected]}
-        >
-          <Ionicons name="mail" size={16} color={mailConnected ? Colors.success : Colors.gold3} />
-          <Text style={[styles.mailBtnText, mailConnected && { color: Colors.success }]}>
-            {mailConnected ? 'Mail Bağlı' : 'Mail Bağla'}
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.addBtn}
-          onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); setShowAddModal(true); }}
-        >
-          <LinearGradient colors={[Colors.rose2, Colors.rose4]} style={StyleSheet.absoluteFill} />
-          <Ionicons name="add" size={20} color="#fff" />
-        </TouchableOpacity>
-      </View>
-
-      {/* Tarihe göre gruplu liste */}
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        {groups.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyIcon}>📦</Text>
-            <Text style={styles.emptyTitle}>Henüz sipariş yok</Text>
-            <Text style={styles.emptySubtitle}>Kargo ekle veya mail bağla, siparişlerin otomatik gelsin.</Text>
-          </View>
-        ) : (
-          groups.map(group => (
-            <View key={group.date}>
-              <View style={styles.dateHeader}>
-                <View style={styles.dateLine} />
-                <View style={styles.datePill}>
-                  <Ionicons name="calendar-outline" size={11} color={Colors.gold3} />
-                  <Text style={styles.dateText}>{group.date}</Text>
-                </View>
-                <View style={styles.dateLine} />
-              </View>
-              {group.items.map(s => <ShipmentRow key={s.id} shipment={s} />)}
-            </View>
-          ))
-        )}
-        <View style={{ height: 100 }} />
-      </ScrollView>
-
-      <AddShipmentModal
-        visible={showAddModal}
-        onClose={() => setShowAddModal(false)}
-        onAdd={params => addShipment.mutateAsync(params)}
-      />
-    </View>
-  );
-}
+// ── Styles ────────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
-  bgGlow: { position: 'absolute', top: 200, right: -100, width: 300, height: 300, borderRadius: 150, backgroundColor: Colors.successGlow, opacity: 0.3 },
-  header: { paddingHorizontal: 20, paddingTop: 14, paddingBottom: 6 },
-  headerTitle: { fontFamily: Fonts.editorial, fontSize: 34, color: Colors.text1, letterSpacing: 0 },
-  actionRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 10,
-    paddingHorizontal: 20, paddingBottom: 16, paddingTop: 4,
-  },
-  mailBtn: {
-    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7,
-    paddingVertical: 11, borderRadius: 14,
-    backgroundColor: Colors.glassGold, borderWidth: 1, borderColor: Colors.borderGold,
-  },
-  mailBtnConnected: { backgroundColor: Colors.successGlow, borderColor: `${Colors.success}40` },
-  mailBtnText: { fontSize: 14, fontWeight: '700', color: Colors.gold3 },
-  addBtn: { width: 44, height: 44, borderRadius: 14, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
-  scrollContent: { paddingHorizontal: 16 },
 
-  // Tarih header
-  dateHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12, marginTop: 4 },
-  dateLine: { flex: 1, height: 1, backgroundColor: Colors.border2 },
-  datePill: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: Colors.surface2, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 5, borderWidth: 1, borderColor: Colors.borderGold },
-  dateText: { fontSize: 11, fontWeight: '700', color: Colors.gold3, letterSpacing: 0.3 },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 12,
+  },
+  headerTitle: {
+    fontFamily: Fonts.editorial,
+    fontSize: 34,
+    color: Colors.text1,
+  },
+  headerSub: {
+    fontFamily: Fonts.uiLight,
+    fontSize: 12,
+    color: Colors.text4,
+    marginTop: 1,
+  },
+  headerIcons: { flexDirection: 'row', gap: 8, marginTop: 6 },
+  iconBtn: {
+    width: 38, height: 38, borderRadius: 19,
+    backgroundColor: Colors.surface2,
+    alignItems: 'center', justifyContent: 'center',
+    borderWidth: 0.5, borderColor: Colors.border2,
+  },
+  iconBtnActive: {
+    backgroundColor: Colors.roseGlow,
+    borderColor: Colors.borderBurgund,
+  },
 
-  emptyState: { alignItems: 'center', paddingTop: 60, paddingHorizontal: 40, gap: 10 },
-  emptyIcon: { fontSize: 52, marginBottom: 8 },
-  emptyTitle: { fontSize: 20, fontWeight: '700', color: Colors.text2, textAlign: 'center', letterSpacing: -0.5 },
-  emptySubtitle: { fontSize: 14, color: Colors.text4, textAlign: 'center', lineHeight: 20 },
-  mailCtaSub: { fontSize: 12, color: Colors.text4 },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginHorizontal: 16,
+    marginBottom: 12,
+    backgroundColor: Colors.surface2,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: Colors.border2,
+    paddingHorizontal: 12,
+    height: 44,
+  },
+  searchInput: {
+    flex: 1,
+    fontFamily: Fonts.uiLight,
+    fontSize: 14,
+    color: Colors.text1,
+  },
+
+  // Sayaç filtreler
+  counters: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: 16,
+    marginBottom: 16,
+  },
+  counter: {
+    flex: 1,
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 3,
+  },
+  counterActive: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  counterNum: {
+    fontFamily: Fonts.ui,
+    fontSize: 24,
+    color: Colors.text1,
+    lineHeight: 28,
+  },
+  counterNumActive: { color: '#fff' },
+  counterLabel: {
+    fontFamily: Fonts.uiMedium,
+    fontSize: 8,
+    letterSpacing: 1,
+    color: Colors.text3,
+  },
+  counterLabelActive: { color: 'rgba(255,255,255,0.85)' },
+
+  list: { paddingHorizontal: 16 },
+  sectionLabel: {
+    fontFamily: Fonts.uiMedium,
+    fontSize: 9,
+    letterSpacing: 2,
+    color: Colors.text4,
+    marginBottom: 8,
+    marginTop: 4,
+  },
+
+  deliveredSection: {
+    marginTop: 8,
+    borderTopWidth: 0.5,
+    borderTopColor: Colors.border1,
+    paddingTop: 12,
+  },
+  deliveredToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
+  },
+  deliveredLabel: {
+    fontFamily: Fonts.uiMedium,
+    fontSize: 13,
+    color: Colors.success,
+    flex: 1,
+  },
+
+  addBtn: {
+    height: 52,
+    borderRadius: 12,
+    overflow: 'hidden',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 16,
+  },
+  addBtnText: {
+    fontFamily: Fonts.ui,
+    fontSize: 14,
+    letterSpacing: 0.3,
+    color: '#fff',
+  },
+
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+
+  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 40, gap: 12 },
+  emptyIcon: { fontSize: 56 },
+  emptyTitle: {
+    fontFamily: Fonts.displayBold,
+    fontSize: 18,
+    color: Colors.text2,
+    textAlign: 'center',
+  },
+  emptySub: {
+    fontFamily: Fonts.uiLight,
+    fontSize: 14,
+    color: Colors.text4,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  emptyBtn: {
+    height: 48,
+    borderRadius: 10,
+    overflow: 'hidden',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingHorizontal: 20,
+    marginTop: 8,
+  },
+  emptyBtnText: {
+    fontFamily: Fonts.uiMedium,
+    fontSize: 14,
+    color: '#fff',
+  },
+});
+
+const grp = StyleSheet.create({
+  wrap: {
+    borderRadius: 14,
+    overflow: 'hidden',
+    borderWidth: 0.5,
+    borderColor: Colors.border2,
+    marginBottom: 8,
+    backgroundColor: Colors.surface1,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderBottomWidth: 0.5,
+    borderBottomColor: Colors.border1,
+    gap: 8,
+  },
+  brandName: {
+    fontFamily: Fonts.uiMedium,
+    fontSize: 13,
+    color: Colors.rose3,
+    flex: 1,
+  },
+  count: {
+    fontFamily: Fonts.uiLight,
+    fontSize: 11,
+    color: Colors.text4,
+  },
 });

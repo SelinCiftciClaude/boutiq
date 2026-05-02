@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, Image,
+  View, Text, StyleSheet, ScrollView, TouchableOpacity,
+  Image, Alert, ActivityIndicator,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -8,278 +9,514 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import * as Clipboard from 'expo-clipboard';
+import * as Linking from 'expo-linking';
 import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Typography';
-import { useShipments } from '@/hooks/useShipments';
-import { Shipment } from '@/types';
+import { useShipment, useRefreshShipment, useDeleteShipment } from '@/hooks/useShipments';
+import { CARRIER_LIST } from '@/services/carriers';
+import { STATUS_CONFIG } from '@/components/ShipmentCard';
+import { formatDate, formatDateShort, timeAgo } from '@/utils/dateFormat';
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; icon: string; bg: string }> = {
-  ordered:          { label: 'Sipariş Alındı',   color: Colors.text3,   icon: 'bag-check-outline',        bg: Colors.surface3 },
-  processing:       { label: 'Hazırlanıyor',      color: Colors.gold3,   icon: 'cube-outline',             bg: Colors.glassGold },
-  shipped:          { label: 'Kargoya Verildi',   color: Colors.purple3, icon: 'arrow-up-circle-outline',  bg: Colors.purpleGlow },
-  in_transit:       { label: 'Yolda',             color: Colors.rose3,   icon: 'bicycle-outline',          bg: Colors.roseGlow },
-  out_for_delivery: { label: 'Dağıtımda',         color: Colors.gold3,   icon: 'navigate-circle-outline',  bg: Colors.glassGold },
-  delivered:        { label: 'Teslim Edildi',     color: Colors.success, icon: 'checkmark-circle-outline', bg: Colors.successGlow },
-  returned:         { label: 'İade Edildi',       color: Colors.error,   icon: 'return-down-back-outline', bg: 'rgba(239,68,68,0.12)' },
-};
+// ── Timeline adım konfigürasyonu ─────────────────────────────────────────────
+
+const TIMELINE_STEPS = ['ordered', 'processing', 'shipped', 'in_transit', 'out_for_delivery', 'delivered'];
+
+function stepIndex(status: string): number {
+  const idx = TIMELINE_STEPS.indexOf(status);
+  return idx === -1 ? 1 : idx;
+}
+
+// ── Ana ekran ─────────────────────────────────────────────────────────────────
 
 export default function ShipmentDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
-  const { data: shipments = [] } = useShipments();
-  const shipment = shipments.find(s => s.id === id) as Shipment | undefined;
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const [copied, setCopied] = useState(false);
+
+  const { data: shipment, isLoading } = useShipment(id ?? null);
+  const refresh = useRefreshShipment();
+  const deleteMutation = useDeleteShipment();
+
+  if (isLoading) {
+    return (
+      <View style={[styles.container, styles.center, { paddingTop: insets.top }]}>
+        <ActivityIndicator color={Colors.rose3} />
+      </View>
+    );
+  }
 
   if (!shipment) {
     return (
-      <View style={[styles.center, { paddingTop: insets.top }]}>
-        <Text style={styles.notFound}>Sipariş bulunamadı.</Text>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backLink}>
-          <Text style={styles.backLinkText}>Geri dön</Text>
+      <View style={[styles.container, styles.center, { paddingTop: insets.top }]}>
+        <Text style={styles.notFound}>Kargo bulunamadı</Text>
+        <TouchableOpacity onPress={() => router.back()}>
+          <Text style={styles.goBack}>Geri dön</Text>
         </TouchableOpacity>
       </View>
     );
   }
 
-  const cfg = STATUS_CONFIG[shipment.status] ?? STATUS_CONFIG.ordered;
-  const isDelivered = shipment.status === 'delivered';
+  const cfg = STATUS_CONFIG[shipment.status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.processing;
+  const currentStep = stepIndex(shipment.status);
+  const firstProduct = shipment.products?.[0];
+  const carrier = CARRIER_LIST.find(c => c.code === shipment.carrier);
 
   const copyTracking = async () => {
-    if (!shipment.trackingNumber) return;
     await Clipboard.setStringAsync(shipment.trackingNumber);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const openCarrierSite = () => {
+    if (!carrier) return;
+    Linking.openURL(carrier.trackingUrl(shipment.trackingNumber));
+  };
+
+  const handleRefresh = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    try {
+      await refresh.mutateAsync(shipment.id);
+    } catch (err: any) {
+      Alert.alert('Hata', err.message ?? 'Kargo bilgisi alınamadı');
+    }
+  };
+
+  const handleDelete = () => {
+    Alert.alert(
+      'Kargoyu sil',
+      `${shipment.brandName} kargosunu takip listesinden çıkarmak istediğine emin misin?`,
+      [
+        { text: 'İptal', style: 'cancel' },
+        {
+          text: 'Sil',
+          style: 'destructive',
+          onPress: async () => {
+            await deleteMutation.mutateAsync(shipment.id);
+            router.back();
+          },
+        },
+      ]
+    );
   };
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="chevron-back" size={22} color={Colors.text1} />
+        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+          <Ionicons name="chevron-back" size={22} color={Colors.text2} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Sipariş Detayı</Text>
-        <View style={{ width: 40 }} />
+        <Text style={styles.headerTitle} numberOfLines={1}>{shipment.brandName}</Text>
+        <View style={{ width: 38 }} />
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
 
-        {/* Marka + sipariş no */}
-        <View style={styles.brandCard}>
-          <LinearGradient colors={[Colors.surface2, Colors.surface1]} style={StyleSheet.absoluteFill} />
-          <Image source={{ uri: shipment.brandLogo }} style={styles.brandLogo} />
-          <View style={styles.brandInfo}>
-            <Text style={styles.brandName}>{shipment.brandName}</Text>
-            <Text style={styles.orderNum}>Sipariş #{shipment.orderNumber}</Text>
-          </View>
-          <View style={[styles.statusBadge, { backgroundColor: cfg.bg }]}>
-            <Ionicons name={cfg.icon as any} size={14} color={cfg.color} />
-            <Text style={[styles.statusText, { color: cfg.color }]}>{cfg.label}</Text>
-          </View>
-        </View>
-
-        {/* Ürünler */}
-        {shipment.products.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Ürünler ({shipment.products.length})</Text>
-            {shipment.products.map((p, i) => (
-              <View key={i} style={styles.productRow}>
-                <Image source={{ uri: p.image }} style={styles.productImg} />
-                <View style={styles.productInfo}>
-                  <Text style={styles.productName} numberOfLines={2}>{p.name}</Text>
-                  <Text style={styles.productQty}>{p.quantity} adet</Text>
-                </View>
-              </View>
-            ))}
-          </View>
-        )}
-
-        {/* Kargo bilgileri */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Kargo Bilgileri</Text>
-          <View style={styles.infoCard}>
-            <LinearGradient colors={[Colors.surface2, Colors.surface1]} style={StyleSheet.absoluteFill} />
-
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Kargo Firması</Text>
-              <Text style={styles.infoValue}>{shipment.carrier || '—'}</Text>
+        {/* Ürün kart */}
+        <View style={styles.productCard}>
+          <LinearGradient colors={[Colors.surface1, Colors.bg]} style={StyleSheet.absoluteFill} />
+          {firstProduct?.image || shipment.brandLogo ? (
+            <Image
+              source={{ uri: firstProduct?.image || shipment.brandLogo }}
+              style={styles.productThumb}
+              resizeMode="cover"
+            />
+          ) : (
+            <View style={[styles.productThumb, styles.thumbPlaceholder]}>
+              <Ionicons name="cube-outline" size={32} color={Colors.text4} />
             </View>
-
-            {shipment.trackingNumber ? (
-              <TouchableOpacity style={styles.infoRow} onPress={copyTracking} activeOpacity={0.7}>
-                <Text style={styles.infoLabel}>Takip Numarası</Text>
-                <View style={styles.trackingRow}>
-                  <Text style={styles.trackingNum}>{shipment.trackingNumber}</Text>
-                  <Ionicons name="copy-outline" size={14} color={Colors.gold3} />
-                </View>
-              </TouchableOpacity>
-            ) : (
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Takip Numarası</Text>
-                <Text style={styles.infoValue}>—</Text>
-              </View>
+          )}
+          <View style={styles.productInfo}>
+            <Text style={styles.productBrand}>{shipment.brandName}</Text>
+            {firstProduct?.name ? (
+              <Text style={styles.productName} numberOfLines={2}>{firstProduct.name}</Text>
+            ) : null}
+            {shipment.totalAmount > 0 && (
+              <Text style={styles.productPrice}>₺{shipment.totalAmount.toLocaleString('tr-TR')}</Text>
             )}
-
-            {shipment.estimatedDelivery ? (
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Tahmini Teslimat</Text>
-                <Text style={styles.infoValue}>{shipment.estimatedDelivery}</Text>
-              </View>
-            ) : null}
-
-            {shipment.lastLocation ? (
-              <View style={[styles.infoRow, { borderBottomWidth: 0 }]}>
-                <Text style={styles.infoLabel}>Son Konum</Text>
-                <Text style={styles.infoValue}>{shipment.lastLocation}</Text>
-              </View>
-            ) : null}
+            <Text style={styles.orderDate}>Sipariş: {formatDateShort(shipment.createdAt)}</Text>
           </View>
         </View>
 
-        {/* Toplam tutar */}
-        {shipment.totalAmount > 0 && (
-          <View style={styles.totalCard}>
-            <LinearGradient colors={[Colors.glassGold, Colors.surface2]} style={StyleSheet.absoluteFill} />
-            <Text style={styles.totalLabel}>Toplam Tutar</Text>
-            <Text style={styles.totalAmount}>
-              {shipment.currency === 'TL' ? '₺' : shipment.currency}
-              {shipment.totalAmount.toLocaleString('tr-TR')}
-            </Text>
+        {/* Durum banner */}
+        <View style={[styles.statusBanner, { backgroundColor: cfg.bg }]}>
+          <View style={styles.statusLeft}>
+            <Text style={styles.statusEmoji}>{cfg.emoji}</Text>
+            <View>
+              <Text style={[styles.statusLabel, { color: cfg.color }]}>{cfg.label}</Text>
+              {shipment.lastLocation ? (
+                <Text style={styles.statusLocation}>{shipment.lastLocation}</Text>
+              ) : null}
+            </View>
           </View>
-        )}
+          {shipment.estimatedDelivery ? (
+            <View style={styles.etaBadge}>
+              <Text style={styles.etaLabel}>Tahmini</Text>
+              <Text style={[styles.etaDate, { color: cfg.color }]}>{shipment.estimatedDelivery}</Text>
+            </View>
+          ) : null}
+        </View>
 
-        {/* Timeline */}
-        {shipment.events.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Kargo Geçmişi</Text>
-            {shipment.events.map((event, i) => {
-              const isFirst = i === 0;
-              const isLast = i === shipment.events.length - 1;
-              const evtCfg = STATUS_CONFIG[event.status] ?? STATUS_CONFIG.ordered;
+        {/* Timeline — kargo adımları */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>TİMELINE</Text>
+          <View style={styles.timeline}>
+            {TIMELINE_STEPS.map((step, i) => {
+              const done = i <= currentStep && shipment.status !== 'returned';
+              const current = i === currentStep;
+              const stepCfg = STATUS_CONFIG[step as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.processing;
+
+              // Bu adıma ait gerçek event'i bul
+              const event = shipment.events?.find(e => e.status === step);
+
               return (
-                <View key={event.id} style={styles.timelineRow}>
-                  {/* Sol: çizgi + nokta */}
-                  <View style={styles.timelineLeft}>
-                    {!isFirst && <View style={styles.timelineLineTop} />}
-                    <View style={[styles.timelineDot, isFirst && { backgroundColor: evtCfg.color, borderColor: evtCfg.color }]}>
-                      {isFirst && <Ionicons name={evtCfg.icon as any} size={10} color="#fff" />}
-                    </View>
-                    {!isLast && <View style={styles.timelineLineBottom} />}
+                <View key={step} style={styles.timelineRow}>
+                  {/* Dikey çizgi */}
+                  {i < TIMELINE_STEPS.length - 1 && (
+                    <View style={[styles.timelineLine, done && i < currentStep && { backgroundColor: cfg.color }]} />
+                  )}
+
+                  {/* Nokta */}
+                  <View style={[
+                    styles.timelineDot,
+                    done && { backgroundColor: cfg.color, borderColor: cfg.color },
+                    current && styles.timelineDotCurrent,
+                  ]}>
+                    {done && !current && (
+                      <Ionicons name="checkmark" size={10} color="#fff" />
+                    )}
+                    {current && (
+                      <View style={[styles.timelineDotInner, { backgroundColor: cfg.color }]} />
+                    )}
                   </View>
-                  {/* Sağ: bilgi */}
+
+                  {/* İçerik */}
                   <View style={styles.timelineContent}>
-                    <Text style={[styles.timelineDesc, isFirst && { color: Colors.text1, fontWeight: '700' }]}>
-                      {event.description}
+                    <Text style={[
+                      styles.timelineLabel,
+                      done && { color: Colors.text1, fontFamily: Fonts.uiMedium },
+                      current && { color: cfg.color },
+                    ]}>
+                      {current && '→ '}{stepCfg.label.replace(/📦|🚚|🏃|✓|↩️|⚠️|📋/g, '').trim()}
                     </Text>
-                    {event.location ? (
-                      <Text style={styles.timelineLoc}>{event.location}</Text>
-                    ) : null}
-                    <Text style={styles.timelineDate}>
-                      {new Date(event.timestamp).toLocaleString('tr-TR', {
-                        day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
-                      })}
-                    </Text>
+                    {event && (
+                      <>
+                        {event.location ? (
+                          <Text style={styles.timelineLocation}>{event.location}</Text>
+                        ) : null}
+                        <Text style={styles.timelineTime}>{formatDate(event.timestamp)}</Text>
+                      </>
+                    )}
                   </View>
                 </View>
               );
             })}
           </View>
+        </View>
+
+        {/* Kargo olayları (detaylı log varsa) */}
+        {shipment.events && shipment.events.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>KARGO GEÇMİŞİ</Text>
+            <View style={styles.eventsCard}>
+              {shipment.events.map((ev, i) => (
+                <View key={ev.id ?? i} style={[styles.eventRow, i > 0 && styles.eventRowBorder]}>
+                  <View style={[styles.eventDot, { backgroundColor: STATUS_CONFIG[ev.status as keyof typeof STATUS_CONFIG]?.color ?? Colors.text4 }]} />
+                  <View style={styles.eventInfo}>
+                    <Text style={styles.eventDesc}>{ev.description}</Text>
+                    {ev.location ? <Text style={styles.eventLoc}>{ev.location}</Text> : null}
+                    <Text style={styles.eventTime}>{formatDate(ev.timestamp)}</Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+          </View>
         )}
 
-        <View style={{ height: 80 }} />
+        {/* Kargo bilgileri */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>KARGO BİLGİLERİ</Text>
+          <View style={styles.infoCard}>
+            <InfoRow label="Kargo firması" value={carrier?.name ?? shipment.carrier} />
+            <InfoRow label="Sipariş no" value={shipment.orderNumber} />
+            <View style={styles.infoRowFull}>
+              <Text style={styles.infoLabel}>Takip numarası</Text>
+              <View style={styles.trackingRow}>
+                <Text style={styles.infoValue} selectable>{shipment.trackingNumber}</Text>
+                <TouchableOpacity onPress={copyTracking} style={styles.copyBtn}>
+                  <Ionicons
+                    name={copied ? 'checkmark' : 'copy-outline'}
+                    size={14}
+                    color={copied ? Colors.success : Colors.rose3}
+                  />
+                  <Text style={[styles.copyText, copied && { color: Colors.success }]}>
+                    {copied ? 'Kopyalandı' : 'Kopyala'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+            {shipment.lastCheckedAt && (
+              <InfoRow label="Son güncelleme" value={timeAgo(shipment.lastCheckedAt)} />
+            )}
+          </View>
+
+          {carrier && (
+            <TouchableOpacity style={styles.openCarrierBtn} onPress={openCarrierSite}>
+              <Ionicons name="open-outline" size={14} color={Colors.rose3} />
+              <Text style={styles.openCarrierText}>{carrier.name} sitesinde aç →</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* Eylemler */}
+        <View style={styles.actions}>
+          <TouchableOpacity
+            style={[styles.actionBtn, styles.actionBtnPrimary]}
+            onPress={handleRefresh}
+            disabled={refresh.isPending}
+          >
+            {refresh.isPending
+              ? <ActivityIndicator size="small" color={Colors.rose3} />
+              : <Ionicons name="refresh-outline" size={16} color={Colors.rose3} />}
+            <Text style={styles.actionBtnText}>Yenile</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.actionBtn, styles.actionBtnDanger]}
+            onPress={handleDelete}
+          >
+            <Ionicons name="trash-outline" size={16} color={Colors.error} />
+            <Text style={[styles.actionBtnText, { color: Colors.error }]}>Sil</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={{ height: 100 }} />
       </ScrollView>
+    </View>
+  );
+}
+
+function InfoRow({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={styles.infoRow}>
+      <Text style={styles.infoLabel}>{label}</Text>
+      <Text style={styles.infoValue}>{value}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
-  notFound: { fontSize: 16, color: Colors.text3 },
-  backLink: { paddingVertical: 8 },
-  backLinkText: { fontSize: 15, color: Colors.gold3, fontWeight: '600' },
+  center: { alignItems: 'center', justifyContent: 'center' },
+  scroll: { paddingHorizontal: 16 },
 
   header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 16, paddingVertical: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
   backBtn: {
-    width: 40, height: 40, borderRadius: 20,
-    backgroundColor: Colors.surface2, alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1, borderColor: Colors.border2,
-  },
-  headerTitle: { fontSize: 17, fontWeight: '700', color: Colors.text1 },
-
-  scroll: { paddingHorizontal: 16, paddingTop: 8 },
-
-  brandCard: {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    borderRadius: 20, padding: 16, overflow: 'hidden',
-    borderWidth: 1, borderColor: Colors.border1, marginBottom: 20,
-  },
-  brandLogo: {
-    width: 48, height: 48, borderRadius: 14,
-    backgroundColor: Colors.surface3, borderWidth: 1, borderColor: Colors.border2,
-  },
-  brandInfo: { flex: 1 },
-  brandName: { fontSize: 16, fontWeight: '800', color: Colors.text1, letterSpacing: -0.3 },
-  orderNum: { fontSize: 12, color: Colors.text4, marginTop: 2 },
-  statusBadge: {
-    flexDirection: 'row', alignItems: 'center', gap: 5,
-    paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10,
-  },
-  statusText: { fontSize: 11, fontWeight: '700' },
-
-  section: { marginBottom: 20 },
-  sectionTitle: {
-    fontSize: 13, fontWeight: '700', color: Colors.text4,
-    textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 12,
-  },
-
-  productRow: {
-    flexDirection: 'row', gap: 12, alignItems: 'center',
-    backgroundColor: Colors.surface2, borderRadius: 16,
-    padding: 12, borderWidth: 1, borderColor: Colors.border1, marginBottom: 8,
-  },
-  productImg: {
-    width: 60, height: 60, borderRadius: 12,
-    backgroundColor: Colors.surface3, borderWidth: 1, borderColor: Colors.border2,
-  },
-  productInfo: { flex: 1 },
-  productName: { fontSize: 14, fontWeight: '600', color: Colors.text1, lineHeight: 19 },
-  productQty: { fontSize: 12, color: Colors.text4, marginTop: 4 },
-
-  infoCard: {
-    borderRadius: 18, overflow: 'hidden',
-    borderWidth: 1, borderColor: Colors.border1,
-  },
-  infoRow: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: 16, paddingVertical: 14,
-    borderBottomWidth: 1, borderBottomColor: Colors.border1,
-  },
-  infoLabel: { fontSize: 13, color: Colors.text4, fontWeight: '500' },
-  infoValue: { fontSize: 13, color: Colors.text1, fontWeight: '600', textAlign: 'right', flex: 1, marginLeft: 16 },
-  trackingRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  trackingNum: { fontSize: 13, color: Colors.gold3, fontWeight: '700' },
-
-  totalCard: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    borderRadius: 18, padding: 18, overflow: 'hidden',
-    borderWidth: 1, borderColor: Colors.borderGold, marginBottom: 20,
-  },
-  totalLabel: { fontSize: 14, fontWeight: '600', color: Colors.text3 },
-  totalAmount: { fontSize: 22, fontWeight: '800', color: Colors.gold3, letterSpacing: -0.5 },
-
-  timelineRow: { flexDirection: 'row', gap: 14, minHeight: 60 },
-  timelineLeft: { alignItems: 'center', width: 20 },
-  timelineLineTop: { width: 2, height: 12, backgroundColor: Colors.border2 },
-  timelineLineBottom: { width: 2, flex: 1, backgroundColor: Colors.border2 },
-  timelineDot: {
-    width: 20, height: 20, borderRadius: 10,
-    backgroundColor: Colors.surface3, borderWidth: 2, borderColor: Colors.border2,
+    width: 38, height: 38, borderRadius: 19,
+    backgroundColor: Colors.surface2,
     alignItems: 'center', justifyContent: 'center',
+    borderWidth: 0.5, borderColor: Colors.border2,
+  },
+  headerTitle: {
+    fontFamily: Fonts.uiMedium,
+    fontSize: 16,
+    color: Colors.text1,
+    flex: 1,
+    textAlign: 'center',
+  },
+
+  productCard: {
+    flexDirection: 'row',
+    gap: 14,
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 0.5,
+    borderColor: Colors.border2,
+    overflow: 'hidden',
+    marginBottom: 12,
+  },
+  productThumb: {
+    width: 80, height: 80,
+    borderRadius: 12,
+    backgroundColor: Colors.surface3,
+  },
+  thumbPlaceholder: { alignItems: 'center', justifyContent: 'center' },
+  productInfo: { flex: 1, gap: 3, justifyContent: 'center' },
+  productBrand: {
+    fontFamily: Fonts.uiMedium, fontSize: 12, color: Colors.rose3,
+  },
+  productName: {
+    fontFamily: Fonts.uiMedium, fontSize: 15, color: Colors.text1, lineHeight: 20,
+  },
+  productPrice: {
+    fontFamily: Fonts.ui, fontSize: 14, color: Colors.gold3,
+  },
+  orderDate: {
+    fontFamily: Fonts.uiLight, fontSize: 11, color: Colors.text4,
+  },
+
+  statusBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 16,
+    borderWidth: 0.5,
+    borderColor: Colors.border2,
+  },
+  statusLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  statusEmoji: { fontSize: 22 },
+  statusLabel: { fontFamily: Fonts.ui, fontSize: 13, letterSpacing: 0.5 },
+  statusLocation: {
+    fontFamily: Fonts.uiLight, fontSize: 12, color: Colors.text3, marginTop: 2,
+  },
+  etaBadge: { alignItems: 'flex-end' },
+  etaLabel: { fontFamily: Fonts.uiLight, fontSize: 10, color: Colors.text4 },
+  etaDate: { fontFamily: Fonts.uiMedium, fontSize: 13 },
+
+  section: { marginBottom: 16 },
+  sectionTitle: {
+    fontFamily: Fonts.uiMedium, fontSize: 9,
+    letterSpacing: 2, color: Colors.text4,
+    textTransform: 'uppercase', marginBottom: 10,
+  },
+
+  // Timeline
+  timeline: { paddingLeft: 8 },
+  timelineRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    minHeight: 44,
+    position: 'relative',
+  },
+  timelineLine: {
+    position: 'absolute',
+    left: 11, top: 20, bottom: 0,
+    width: 1.5,
+    backgroundColor: Colors.border2,
+    zIndex: 0,
+  },
+  timelineDot: {
+    width: 22, height: 22, borderRadius: 11,
+    borderWidth: 1.5,
+    borderColor: Colors.border3,
+    backgroundColor: Colors.surface3,
+    alignItems: 'center', justifyContent: 'center',
+    zIndex: 1, marginTop: 2,
+  },
+  timelineDotCurrent: {
+    width: 22, height: 22,
+    borderWidth: 2,
+    borderColor: 'transparent',
+    backgroundColor: Colors.surface1,
+  },
+  timelineDotInner: {
+    width: 10, height: 10, borderRadius: 5,
   },
   timelineContent: { flex: 1, paddingBottom: 16 },
-  timelineDesc: { fontSize: 14, color: Colors.text3, fontWeight: '500', lineHeight: 19 },
-  timelineLoc: { fontSize: 12, color: Colors.text4, marginTop: 2 },
-  timelineDate: { fontSize: 11, color: Colors.text5, marginTop: 4 },
+  timelineLabel: {
+    fontFamily: Fonts.uiLight, fontSize: 13, color: Colors.text4, lineHeight: 18,
+  },
+  timelineLocation: {
+    fontFamily: Fonts.uiLight, fontSize: 11, color: Colors.text4, marginTop: 1,
+  },
+  timelineTime: {
+    fontFamily: Fonts.uiLight, fontSize: 11, color: Colors.text5, marginTop: 2,
+  },
+
+  // Events
+  eventsCard: {
+    backgroundColor: Colors.surface2,
+    borderRadius: 12,
+    overflow: 'hidden',
+    borderWidth: 0.5,
+    borderColor: Colors.border2,
+  },
+  eventRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    padding: 12,
+  },
+  eventRowBorder: { borderTopWidth: 0.5, borderTopColor: Colors.border1 },
+  eventDot: {
+    width: 8, height: 8, borderRadius: 4, marginTop: 4,
+  },
+  eventInfo: { flex: 1 },
+  eventDesc: { fontFamily: Fonts.uiMedium, fontSize: 13, color: Colors.text1 },
+  eventLoc: { fontFamily: Fonts.uiLight, fontSize: 11, color: Colors.text3, marginTop: 1 },
+  eventTime: { fontFamily: Fonts.uiLight, fontSize: 10, color: Colors.text5, marginTop: 2 },
+
+  // Info card
+  infoCard: {
+    backgroundColor: Colors.surface2,
+    borderRadius: 12,
+    overflow: 'hidden',
+    borderWidth: 0.5,
+    borderColor: Colors.border2,
+    marginBottom: 8,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 12,
+    borderBottomWidth: 0.5,
+    borderBottomColor: Colors.border1,
+  },
+  infoRowFull: { padding: 12 },
+  infoLabel: { fontFamily: Fonts.uiLight, fontSize: 12, color: Colors.text4 },
+  infoValue: { fontFamily: Fonts.uiMedium, fontSize: 13, color: Colors.text1 },
+  trackingRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 4 },
+  copyBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  copyText: { fontFamily: Fonts.uiMedium, fontSize: 12, color: Colors.rose3 },
+  openCarrierBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 8,
+  },
+  openCarrierText: {
+    fontFamily: Fonts.uiMedium, fontSize: 13, color: Colors.rose3,
+  },
+
+  // Actions
+  actions: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 8,
+  },
+  actionBtn: {
+    flex: 1,
+    height: 46,
+    borderRadius: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    borderWidth: 0.5,
+  },
+  actionBtnPrimary: {
+    backgroundColor: Colors.roseGlow,
+    borderColor: Colors.borderBurgund,
+  },
+  actionBtnDanger: {
+    backgroundColor: Colors.error + '10',
+    borderColor: Colors.error + '40',
+  },
+  actionBtnText: {
+    fontFamily: Fonts.uiMedium, fontSize: 13, color: Colors.rose3,
+  },
+
+  notFound: { fontFamily: Fonts.uiMedium, fontSize: 16, color: Colors.text3 },
+  goBack: { fontFamily: Fonts.uiMedium, fontSize: 14, color: Colors.rose3, marginTop: 8 },
 });
