@@ -152,22 +152,24 @@ export function useDiscoverFeed(
           p_page_size:   PAGE_SIZE,
         });
         if (error) return [];
-        return (data ?? []).map((p: any) => ({
-          id: p.id,
-          name: p.name,
-          imageUrl: p.image_url,
-          imageAspectRatio: p.image_aspect_ratio ?? 0.75,
-          price: p.price,
-          originalPrice: p.original_price ?? null,
-          isOnSale: p.is_on_sale ?? false,
-          isNew: p.is_new ?? false,
-          url: p.url,
-          affiliateUrl: p.affiliate_url || p.url,
-          brandId: p.brand_id,
-          brandName: p.brand_name ?? '',
-          brandLogoUrl: p.brand_logo_url ?? null,
-          masterCategorySlug: p.master_category_slug ?? null,
-        } as DiscoverProduct));
+        return (data ?? [])
+          .filter((p: any) => p.image_url && p.price > 0)
+          .map((p: any) => ({
+            id: p.id,
+            name: p.name,
+            imageUrl: p.image_url,
+            imageAspectRatio: p.image_aspect_ratio ?? 0.75,
+            price: p.price,
+            originalPrice: p.original_price ?? null,
+            isOnSale: p.is_on_sale ?? false,
+            isNew: p.is_new ?? false,
+            url: p.url,
+            affiliateUrl: p.affiliate_url || p.url,
+            brandId: p.brand_id,
+            brandName: p.brand_name || p.brand_id || '—',
+            brandLogoUrl: p.brand_logo_url ?? null,
+            masterCategorySlug: p.master_category_slug ?? null,
+          } as DiscoverProduct));
       }
 
       // Arama yoksa → standart tablo sorgusu
@@ -191,22 +193,24 @@ export function useDiscoverFeed(
       if (filters.maxPrice)    query = query.lte('price', filters.maxPrice);
 
       const { data } = await query;
-      return (data ?? []).map(p => ({
-        id: p.id,
-        name: p.name,
-        imageUrl: p.image_url,
-        imageAspectRatio: p.image_aspect_ratio ?? 0.75,
-        price: p.price,
-        originalPrice: p.original_price ?? null,
-        isOnSale: p.is_on_sale ?? false,
-        isNew: p.is_new ?? false,
-        url: p.url,
-        affiliateUrl: p.affiliate_url || p.url,
-        brandId: p.brand_id,
-        brandName: (p as any).brands?.name ?? '',
-        brandLogoUrl: (p as any).brands?.logo_url ?? null,
-        masterCategorySlug: (p as any).master_categories?.slug ?? null,
-      } as DiscoverProduct));
+      return (data ?? [])
+        .filter(p => p.image_url && p.price > 0)
+        .map(p => ({
+          id: p.id,
+          name: p.name,
+          imageUrl: p.image_url,
+          imageAspectRatio: p.image_aspect_ratio ?? 0.75,
+          price: p.price,
+          originalPrice: p.original_price ?? null,
+          isOnSale: p.is_on_sale ?? false,
+          isNew: p.is_new ?? false,
+          url: p.url,
+          affiliateUrl: p.affiliate_url || p.url,
+          brandId: p.brand_id,
+          brandName: (p as any).brands?.name || '—',
+          brandLogoUrl: (p as any).brands?.logo_url ?? null,
+          masterCategorySlug: (p as any).master_categories?.slug ?? null,
+        } as DiscoverProduct));
     },
     initialPageParam: 0,
     getNextPageParam: (lastPage, allPages) =>

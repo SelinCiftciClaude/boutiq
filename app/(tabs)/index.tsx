@@ -47,7 +47,7 @@ const SCREEN_W = Dimensions.get('window').width;
 const GRID_PADDING = 12;
 const CARD_GAP = 8;
 const cardWidth = (SCREEN_W - GRID_PADDING * 2 - CARD_GAP) / 2;
-const INFO_HEIGHT = 72;
+const INFO_HEIGHT = 82; // brand(16) + name(32) + price(18) + padding(16) = 82
 
 // ── Affiliate URL helper ──────────────────────────────────────────────────────
 function buildAffiliateUrl(url: string): string {
@@ -194,10 +194,10 @@ const ProductCard = React.memo(function ProductCard({
         </TouchableOpacity>
       </View>
 
-      {/* Info */}
-      <View style={[pc.info, { height: INFO_HEIGHT }]}>
+      {/* Info — marka adı her zaman görünür */}
+      <View style={pc.info}>
         <Text style={pc.brand} numberOfLines={1}>
-          {product.brandName}
+          {product.brandName || '—'}
         </Text>
         <Text style={pc.name} numberOfLines={2}>
           {product.name}
@@ -1037,14 +1037,16 @@ const pc = StyleSheet.create({
   },
   info: {
     backgroundColor: Colors.surface1,
-    padding: 8,
+    paddingHorizontal: 8,
+    paddingTop: 7,
+    paddingBottom: 8,
+    minHeight: INFO_HEIGHT,
   },
   brand: {
-    fontFamily: Fonts.uiMedium,
-    fontSize: 10,
+    fontFamily: Fonts.ui,
+    fontSize: 11,
     color: Colors.rose3,
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
+    letterSpacing: 0.3,
     marginBottom: 2,
   },
   name: {
