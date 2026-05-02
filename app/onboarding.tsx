@@ -179,9 +179,9 @@ const sf = StyleSheet.create({
 function Confetti() {
   const particles = useRef(
     Array.from({ length: 18 }, (_, i) => ({
-      x: useRef(new Animated.Value(0)).current,
-      y: useRef(new Animated.Value(0)).current,
-      op: useRef(new Animated.Value(0)).current,
+      x: new Animated.Value(0),
+      y: new Animated.Value(0),
+      op: new Animated.Value(0),
       color: [Colors.rose3, Colors.gold3, Colors.teal2, '#F4A261'][i % 4],
       size: 6 + (i % 4) * 2,
       startX: (Math.random() - 0.5) * width * 0.8,
@@ -380,7 +380,7 @@ export default function OnboardingScreen() {
 
   // Adım 5 konfeti
   useEffect(() => {
-    if (step === 5) {
+    if (step === 4) {
       setShowConfetti(true);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
