@@ -121,9 +121,10 @@ export function useDiscoverFeed(
   brandIds: string[],
   categorySlug: string,
   filters: DiscoverFilters,
+  search: string = '',
 ) {
   return useInfiniteQuery({
-    queryKey: ['discover-feed', brandIds, categorySlug, filters],
+    queryKey: ['discover-feed', brandIds, categorySlug, filters, search],
     queryFn: async ({ pageParam = 0 }) => {
       // Kategori ID'sini çöz
       let masterCategoryId: string | null = null;
@@ -162,6 +163,7 @@ export function useDiscoverFeed(
       if (filters.onSale) query = query.eq('is_on_sale', true);
       if (filters.newOnly) query = query.eq('is_new', true);
       if (filters.maxPrice) query = query.lte('price', filters.maxPrice);
+      if (search.trim()) query = query.ilike('name', `%${search.trim()}%`);
 
       const { data } = await query;
       return (data ?? []).map(p => ({

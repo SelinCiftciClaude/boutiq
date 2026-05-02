@@ -18,6 +18,7 @@ import {
   RefreshControl,
   ActivityIndicator,
   Switch,
+  TextInput,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -676,6 +677,8 @@ export default function DiscoverScreen() {
   const insets = useSafeAreaInsets();
   const [activeCategory, setActiveCategory] = useState('all');
   const [brandFilter, setBrandFilter] = useState<string[]>([]);
+  const [searchText, setSearchText] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [showFilter, setShowFilter] = useState(false);
   const [filters, setFilters] = useState<DiscoverFilters>({
     onSale: false,
@@ -700,6 +703,12 @@ export default function DiscoverScreen() {
     [brandFilter, brandIds],
   );
 
+  // 350ms debounce — her tuşa basmada query tetikleme
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(searchText), 350);
+    return () => clearTimeout(t);
+  }, [searchText]);
+
   const {
     data: feedPages,
     fetchNextPage,
@@ -708,7 +717,7 @@ export default function DiscoverScreen() {
     isLoading,
     refetch,
     isRefetching,
-  } = useDiscoverFeed(effectiveBrandIds, activeCategory, filters);
+  } = useDiscoverFeed(effectiveBrandIds, activeCategory, filters, debouncedSearch);
 
   const allProducts = useMemo(
     () => (feedPages?.pages ?? []).flat() as DiscoverProduct[],
@@ -736,7 +745,9 @@ export default function DiscoverScreen() {
   const handleCategorySelect = useCallback((slug: string) => {
     Haptics.selectionAsync();
     setActiveCategory(slug);
-    setBrandFilter([]); // kategori değişince butik filtresi sıfırla
+    setBrandFilter([]);
+    setSearchText('');
+    setDebouncedSearch('');
   }, []);
 
   const handleApplyFilters = useCallback((f: DiscoverFilters) => {
@@ -816,6 +827,30 @@ export default function DiscoverScreen() {
               onClear={() => setBrandFilter([])}
             />
           )}
+          {/* Kategori içi arama */}
+          <View style={s.searchBarWrap}>
+            <Ionicons name="search-outline" size={16} color={Colors.text4} style={s.searchIcon} />
+            <TextInput
+              style={s.searchInput}
+              placeholder={activeCategory === 'all' ? 'Ürün ara...' : 'Bu kategoride ara...'}
+              placeholderTextColor={Colors.text4}
+              value={searchText}
+              onChangeText={setSearchText}
+              returnKeyType="search"
+              autoCorrect={false}
+              autoCapitalize="none"
+              clearButtonMode="never"
+            />
+            {searchText.length > 0 && (
+              <TouchableOpacity
+                onPress={() => { setSearchText(''); setDebouncedSearch(''); }}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                style={s.searchClear}
+              >
+                <Ionicons name="close-circle" size={16} color={Colors.text4} />
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
 
         {/* Grid / empty / skeleton */}
@@ -846,6 +881,31 @@ const s = StyleSheet.create({
   },
   scroll: {
     flex: 1,
+  },
+  searchBarWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 12,
+    marginVertical: 8,
+    backgroundColor: Colors.surface2,
+    borderRadius: 10,
+    borderWidth: 0.5,
+    borderColor: Colors.border2,
+    height: 38,
+    paddingRight: 8,
+  },
+  searchIcon: {
+    paddingHorizontal: 10,
+  },
+  searchInput: {
+    flex: 1,
+    fontFamily: Fonts.uiLight,
+    fontSize: 14,
+    color: Colors.text1,
+    height: '100%',
+  },
+  searchClear: {
+    padding: 4,
   },
   loadingMore: {
     paddingVertical: 20,
