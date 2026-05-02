@@ -1,27 +1,16 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from './AuthContext';
+import { supabase } from '@/services/supabase';
 
-const KEY = (userId: string) => `boutiq_interests_v2_${userId}`;
-
-// Onboarding interest ID → brand category mapping
-export const INTEREST_TO_CATEGORY: Record<string, string> = {
-  giyim: 'giyim',
-  ayakkabi: 'ayakkabı',
-  canta: 'çanta',
-  taki: 'takı',
-  kozmetik: 'güzellik',
-  spor: 'spor',
-  ev: 'ev',
-  aksesuar: 'aksesuar',
-  vintage: 'vintage',
-};
+const STORAGE_KEY = (userId: string) => `boutiq_onboarding_v3_${userId}`;
 
 type Value = {
   hasInterests: boolean;
   checked: boolean;
   interests: string[];
-  markDone: (interests: string[]) => Promise<void>;
+  stylePreferences: string[];
+  markDone: (categories: string[], styles: string[]) => Promise<void>;
   clearInterests: () => Promise<void>;
 };
 
@@ -29,6 +18,7 @@ const InterestsContext = createContext<Value>({
   hasInterests: false,
   checked: false,
   interests: [],
+  stylePreferences: [],
   markDone: async () => {},
   clearInterests: async () => {},
 });
@@ -37,11 +27,9 @@ export function InterestsProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const [hasInterests, setHasInterests] = useState(false);
   const [interests, setInterests] = useState<string[]>([]);
-  // Hangi userId için kontrol yapıldığını takip et.
-  // checked = (checkedForUserId === user?.id ?? null)
+  const [stylePreferences, setStylePreferences] = useState<string[]>([]);
   const [checkedForUserId, setCheckedForUserId] = useState<string | null>(undefined as any);
 
-  // checked: sadece MEVCUT kullanıcı için AsyncStorage okunmuşsa true
   const currentUserId = user?.id ?? null;
   const checked = checkedForUserId === currentUserId;
 
@@ -49,39 +37,68 @@ export function InterestsProvider({ children }: { children: React.ReactNode }) {
     if (!user) {
       setHasInterests(false);
       setInterests([]);
-      setCheckedForUserId(null); // null user için okuma tamamlandı
+      setStylePreferences([]);
+      setCheckedForUserId(null);
       return;
     }
-    // Kullanıcı değişti — yeni kullanıcı için henüz okumadık
-    // checked false olarak kalacak (checkedForUserId !== user.id)
-    AsyncStorage.getItem(KEY(user.id)).then(val => {
+    AsyncStorage.getItem(STORAGE_KEY(user.id)).then(val => {
       if (val !== null) {
-        try { setInterests(JSON.parse(val)); } catch { setInterests([]); }
+        try {
+          const parsed = JSON.parse(val);
+          // Yeni format: { categories, styles } — eski format: string[]
+          if (Array.isArray(parsed)) {
+            setInterests(parsed);
+            setStylePreferences([]);
+          } else {
+            setInterests(parsed.categories ?? []);
+            setStylePreferences(parsed.styles ?? []);
+          }
+        } catch {
+          setInterests([]);
+          setStylePreferences([]);
+        }
         setHasInterests(true);
       } else {
         setHasInterests(false);
         setInterests([]);
+        setStylePreferences([]);
       }
-      setCheckedForUserId(user.id); // bu kullanıcı için kontrol tamamlandı
+      setCheckedForUserId(user.id);
     });
   }, [user?.id]);
 
-  const markDone = useCallback(async (selected: string[]) => {
+  const markDone = useCallback(async (categories: string[], styles: string[]) => {
     if (!user) return;
-    await AsyncStorage.setItem(KEY(user.id), JSON.stringify(selected));
-    setInterests(selected);
+    const payload = { categories, styles };
+    await AsyncStorage.setItem(STORAGE_KEY(user.id), JSON.stringify(payload));
+    setInterests(categories);
+    setStylePreferences(styles);
     setHasInterests(true);
+
+    await supabase
+      .from('profiles')
+      .update({
+        style_preferences: styles,
+        onboarding_completed: true,
+      })
+      .eq('id', user.id);
   }, [user?.id]);
 
   const clearInterests = useCallback(async () => {
     if (!user) return;
-    await AsyncStorage.removeItem(KEY(user.id));
+    await AsyncStorage.removeItem(STORAGE_KEY(user.id));
     setInterests([]);
+    setStylePreferences([]);
     setHasInterests(false);
+
+    await supabase
+      .from('profiles')
+      .update({ onboarding_completed: false, onboarding_step: 0 })
+      .eq('id', user.id);
   }, [user?.id]);
 
   return (
-    <InterestsContext.Provider value={{ hasInterests, checked, interests, markDone, clearInterests }}>
+    <InterestsContext.Provider value={{ hasInterests, checked, interests, stylePreferences, markDone, clearInterests }}>
       {children}
     </InterestsContext.Provider>
   );

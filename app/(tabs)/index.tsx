@@ -29,7 +29,7 @@ import { useSavedBrands } from '@/hooks/useSavedBrands';
 import { useProducts } from '@/hooks/useProducts';
 import { useCampaigns } from '@/hooks/useCampaigns';
 import { useShipments } from '@/hooks/useShipments';
-import { useInterests, INTEREST_TO_CATEGORY } from '@/context/InterestsContext';
+import { useInterests } from '@/context/InterestsContext';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useAuth } from '@/context/AuthContext';
 import { useTrending } from '@/hooks/useTrending';
@@ -221,9 +221,7 @@ export default function HomeScreen() {
   const trendingBrands = trendingBrandsQ.data ?? [];
 
   // İlgi alanlarına göre sıralama: seçilen kategoriler önce
-  const interestCategories = interests
-    .map(id => INTEREST_TO_CATEGORY[id])
-    .filter(Boolean);
+  const interestCategories = interests.filter(Boolean);
 
   const sortedBrands = [...brands].sort((a, b) => {
     const aIdx = interestCategories.indexOf(a.category);
@@ -246,7 +244,7 @@ export default function HomeScreen() {
 
   // "Senin İçin" feed: interest + saved brand kategorilerinden ürünler
   const savedBrandCategories = savedBrands.data?.map(b => b.category) ?? [];
-  const interestCats = interests.map(id => INTEREST_TO_CATEGORY[id]).filter(Boolean);
+  const interestCats = interests.filter(Boolean);
   const forYouCategories = [...new Set([...interestCats, ...savedBrandCategories])];
 
   const forYouBrands = forYouCategories.length > 0
@@ -369,23 +367,24 @@ export default function HomeScreen() {
 
         {feedTab === 'discover' && <>
         {/* Kargo Durumu Widget */}
-        {allShipments.length > 0 && (
-          <View style={styles.section}>
-            {/* Bölüm başlığı */}
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Bugünün Kargoları</Text>
-              {allShipments.filter(s => s.status !== 'delivered').length > 0 && (
-                <Badge
-                  label={`${allShipments.filter(s => s.status !== 'delivered').length} aktif`}
-                  variant="gold"
-                />
-              )}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Bugünün Kargoları</Text>
+            {allShipments.filter(s => s.status !== 'delivered').length > 0 && (
+              <Badge
+                label={`${allShipments.filter(s => s.status !== 'delivered').length} aktif`}
+                variant="gold"
+              />
+            )}
+          </View>
+          <Text style={sw.dateLabel}>{todayLabel()}</Text>
+
+          {allShipments.length === 0 ? (
+            <View style={sw.emptyWrap}>
+              <Ionicons name="bicycle-outline" size={28} color={Colors.text5} />
+              <Text style={sw.emptyText}>Bugün aktif kargon yok</Text>
             </View>
-
-            {/* Tarih */}
-            <Text style={sw.dateLabel}>{todayLabel()}</Text>
-
-            {/* Yatay kayan kartlar */}
+          ) : (
             <FlatList
               data={allShipments}
               keyExtractor={s => s.id}
@@ -394,8 +393,8 @@ export default function HomeScreen() {
               contentContainerStyle={{ gap: 10, paddingRight: 16 }}
               renderItem={({ item }) => <ShipmentCard2 s={item} />}
             />
-          </View>
-        )}
+          )}
+        </View>
 
         {/* Bu Hafta Trend */}
         {trendingBrands.length > 0 && (
@@ -711,6 +710,22 @@ const styles = StyleSheet.create({
 // Kargo widget stilleri
 const CARD_W = 164;
 const sw = StyleSheet.create({
+  emptyWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 16,
+    paddingHorizontal: 14,
+    backgroundColor: Colors.surface2,
+    borderRadius: 12,
+    borderWidth: 0.5,
+    borderColor: Colors.border2,
+  },
+  emptyText: {
+    fontFamily: Fonts.uiLight,
+    fontSize: 14,
+    color: Colors.text4,
+  },
   dateLabel: {
     fontFamily: Fonts.uiMedium,
     fontSize: 12,
