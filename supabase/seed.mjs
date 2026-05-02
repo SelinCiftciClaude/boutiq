@@ -407,10 +407,38 @@ async function seedShipments(userId) {
   console.log('✓  Seeded 2 shipments (Selma Çilek — dağıtımda, HOF Silk — teslim edildi)');
 }
 
+async function seedUserBrands(userId) {
+  // Demo kullanıcının koleksiyonu — kategori çeşitliliği için
+  const pairs = [
+    { brandId: 'bbbbbbbb-0001-0001-0001-000000000001' }, // Selma Çilek — giyim
+    { brandId: 'bbbbbbbb-0001-0001-0001-000000000003' }, // Hof Silk — giyim
+    { brandId: 'bbbbbbbb-0001-0001-0001-000000000006' }, // Sinem Kıvanç — giyim
+    { brandId: 'bbbbbbbb-0001-0001-0001-000000000008' }, // Love on Friday — giyim
+    { brandId: 'bbbbbbbb-0001-0001-0001-000000000009' }, // MyLouye — çanta
+    { brandId: 'bbbbbbbb-0001-0001-0001-000000000010' }, // Manuel Atelier — çanta
+    { brandId: 'bbbbbbbb-0001-0001-0001-000000000015' }, // Atelier Rebul — güzellik
+    { brandId: 'bbbbbbbb-0001-0001-0001-000000000016' }, // The Purest Solutions — güzellik
+    { brandId: 'bbbbbbbb-0001-0001-0001-000000000013' }, // VavRattan — ev
+  ];
+
+  const rows = pairs.map(p => ({
+    user_id: userId,
+    brand_id: p.brandId,
+    is_favorite: true,
+  }));
+
+  const { error } = await supabase
+    .from('user_brands')
+    .upsert(rows, { onConflict: 'user_id,brand_id' });
+  if (error) throw error;
+  console.log(`✓  Demo user has ${rows.length} saved brands`);
+}
+
 async function main() {
   console.log(`\n🌱  Seeding local Supabase at ${SUPABASE_URL}\n`);
   const userId = await ensureDemoUser();
   await seedBrands();
+  await seedUserBrands(userId);
   await seedShipments(userId);
   console.log(`\n✅  Done. Login: ${DEMO_EMAIL} / ${DEMO_PASSWORD}\n`);
 }

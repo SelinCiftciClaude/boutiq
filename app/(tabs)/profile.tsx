@@ -360,43 +360,56 @@ export default function ProfileScreen() {
                 <Text style={styles.emptyIcon}>📌</Text>
                 <Text style={styles.emptyTitle}>Henüz butik eklemedin</Text>
                 <Text style={styles.emptySubtitle}>
-                  Keşfet ekranındaki butik kartlarındaki{' '}
-                  <Text style={{ color: Colors.gold3 }}>+</Text> butonuna basarak
-                  koleksiyonunu oluşturmaya başla.
+                  Butikler sekmesinden beğendiğin markaları koleksiyonuna ekle.
                 </Text>
               </View>
             ) : (
               categoryGroups.map(({ category, brands }) => (
                 <View key={category} style={styles.categorySection}>
-                  {/* Category header */}
+                  {/* Kategori başlığı */}
                   <View style={styles.categoryHeader}>
+                    <View style={styles.categoryStripe} />
                     <Text style={styles.categoryTitle}>
                       {CATEGORY_LABELS[category] ?? category}
                     </Text>
-                    <Text style={styles.categoryCount}>{brands.length} butik</Text>
+                    <Text style={styles.categoryCount}>{brands.length}</Text>
                   </View>
 
-                  {/* Pinterest-style 2-col masonry */}
-                  <View style={styles.masonryRow}>
-                    <View style={styles.masonryCol}>
-                      {brands.filter((_, i) => i % 2 === 0).map((s) => (
-                        <BrandMiniCard
-                          key={s.brand.id}
-                          saved={s}
-                          onPress={() => setEditSheet(s)}
+                  {/* Yatay kayan marka kartları */}
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.brandScroll}
+                  >
+                    {brands.map((s) => (
+                      <TouchableOpacity
+                        key={s.brand.id}
+                        style={styles.brandCard}
+                        onPress={() => router.push(`/brand/${s.brand.id}` as any)}
+                        onLongPress={() => setEditSheet(s)}
+                        activeOpacity={0.85}
+                      >
+                        <Image
+                          source={{ uri: s.brand.coverImage }}
+                          style={styles.brandCardCover}
+                          resizeMode="cover"
                         />
-                      ))}
-                    </View>
-                    <View style={[styles.masonryCol, styles.masonryColOffset]}>
-                      {brands.filter((_, i) => i % 2 === 1).map((s) => (
-                        <BrandMiniCard
-                          key={s.brand.id}
-                          saved={s}
-                          onPress={() => setEditSheet(s)}
+                        <LinearGradient
+                          colors={['transparent', 'rgba(28,14,8,0.82)']}
+                          style={StyleSheet.absoluteFill}
                         />
-                      ))}
-                    </View>
-                  </View>
+                        <View style={styles.brandCardInfo}>
+                          <Image source={{ uri: s.brand.logo }} style={styles.brandCardLogo} />
+                          <Text style={styles.brandCardName} numberOfLines={1}>{s.brand.name}</Text>
+                        </View>
+                        {s.brand.isVerified && (
+                          <View style={styles.verifiedBadge}>
+                            <Ionicons name="checkmark" size={8} color="#fff" />
+                          </View>
+                        )}
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
                 </View>
               ))
             )}
@@ -551,10 +564,52 @@ const styles = StyleSheet.create({
   categorySection: { marginBottom: 24 },
   categoryHeader: {
     flexDirection: 'row', alignItems: 'center',
-    justifyContent: 'space-between', marginBottom: 12,
+    gap: 8, marginBottom: 10, paddingHorizontal: 4,
   },
-  categoryTitle: { fontSize: 18, fontWeight: '800', color: Colors.text1, letterSpacing: -0.5 },
-  categoryCount: { fontSize: 12, color: Colors.text4, fontWeight: '500' },
+  categoryStripe: {
+    width: 3, height: 18, borderRadius: 2,
+    backgroundColor: Colors.rose3,
+  },
+  categoryTitle: {
+    fontFamily: Fonts.editorial, fontSize: 22, color: Colors.text1, flex: 1,
+  },
+  categoryCount: {
+    fontFamily: Fonts.uiMedium, fontSize: 11,
+    color: Colors.text4, letterSpacing: 0.5,
+  },
+
+  // Yatay butik kartları
+  brandScroll: { gap: 10, paddingHorizontal: 4 },
+  brandCard: {
+    width: 130, height: 170,
+    borderRadius: 14, overflow: 'hidden',
+    borderWidth: 0.5, borderColor: Colors.border2,
+    position: 'relative',
+  },
+  brandCardCover: {
+    width: '100%', height: '100%',
+    backgroundColor: Colors.surface3,
+  },
+  brandCardInfo: {
+    position: 'absolute', bottom: 0, left: 0, right: 0,
+    padding: 10, gap: 4,
+  },
+  brandCardLogo: {
+    width: 26, height: 26, borderRadius: 13,
+    borderWidth: 1.5, borderColor: Colors.borderGold,
+    backgroundColor: Colors.surface3,
+  },
+  brandCardName: {
+    fontFamily: Fonts.uiMedium, fontSize: 12,
+    color: '#fff', letterSpacing: -0.1,
+  },
+  verifiedBadge: {
+    position: 'absolute', top: 8, right: 8,
+    width: 16, height: 16, borderRadius: 8,
+    backgroundColor: Colors.gold3,
+    alignItems: 'center', justifyContent: 'center',
+    borderWidth: 1, borderColor: '#fff',
+  },
   masonryRow: { flexDirection: 'row', gap: 10 },
   masonryCol: { flex: 1 },
   masonryColOffset: { marginTop: 30 },
