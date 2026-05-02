@@ -66,24 +66,25 @@ export default function LoginScreen() {
         style={StyleSheet.absoluteFill}
       />
 
-      {/* Tente şerit doku — üst kısım */}
-      <View style={styles.tenteStripes}>
-        {[...Array(8)].map((_, i) => (
-          <View key={i} style={[styles.tenteStripe, { backgroundColor: i % 2 === 0 ? Colors.stripeWarm : Colors.stripeCool }]} />
-        ))}
-      </View>
-      {/* Tente alt kenarı — burgund çizgi */}
-      <View style={styles.tenteEdge} />
-
       <ScrollView
         contentContainerStyle={styles.scroll}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {/* Logo — Playfair + burgund */}
-        <View style={styles.topBar}>
-          <Text style={styles.logoText}>BUTİKA</Text>
-          <Text style={styles.logoTagline}>bağımsız modanın çatısı</Text>
+        {/* Tente şerit doku — ScrollView içinde, içerikle birlikte kayar */}
+        <View style={styles.tenteBlock}>
+          <View style={styles.tenteStripes}>
+            {[...Array(8)].map((_, i) => (
+              <View key={i} style={[styles.tenteStripe, { backgroundColor: i % 2 === 0 ? Colors.stripeWarm : Colors.stripeCool }]} />
+            ))}
+          </View>
+          <View style={styles.tenteEdge} />
+
+          {/* Logo — tente üzerinde */}
+          <View style={styles.topBar}>
+            <Text style={styles.logoText}>BUTİKA</Text>
+            <Text style={styles.logoTagline}>tüm bağımsız butikler tek çatı altında</Text>
+          </View>
         </View>
 
         {/* Hero başlık */}
@@ -232,36 +233,34 @@ const styles = StyleSheet.create({
     paddingBottom: 48,
   },
 
-  // Tente şerit dokusu — üst kısım
+  // Tente bloğu — scroll ile birlikte hareket eder
+  tenteBlock: {
+    marginHorizontal: -28,  // scroll padding'i iptal et, tam genişlik
+    position: 'relative',
+    marginBottom: 32,
+  },
   tenteStripes: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 120,
+    height: 110,
     flexDirection: 'row',
     overflow: 'hidden',
   },
   tenteStripe: {
     flex: 1,
     height: '100%',
-    opacity: 0.55,
+    opacity: 0.6,
   },
   tenteEdge: {
-    position: 'absolute',
-    top: 120,
-    left: 0,
-    right: 0,
     height: 3,
     backgroundColor: Colors.rose3,
-    opacity: 0.7,
   },
 
-  // Top bar
+  // Top bar — tente içinde logo
   topBar: {
-    marginTop: 100,
-    marginBottom: 0,
-    gap: 4,
+    position: 'absolute',
+    bottom: 12,
+    left: 28,
+    right: 28,
+    gap: 3,
   },
   logoText: {
     fontFamily: Fonts.display,
