@@ -13,11 +13,15 @@ import { Fonts } from '@/constants/Typography';
 import { useNotifications } from '@/hooks/useNotifications';
 
 const TYPE_CONFIG: Record<string, { icon: string; color: string; bg: string }> = {
-  campaign:    { icon: 'megaphone',     color: Colors.gold3,    bg: Colors.glassGold },
-  shipment:    { icon: 'bicycle',       color: Colors.success,  bg: Colors.successGlow },
-  newArrival:  { icon: 'sparkles',      color: Colors.purple3,  bg: Colors.purpleGlow },
-  priceDrop:   { icon: 'trending-down', color: Colors.rose3,    bg: Colors.roseGlow },
-  system:      { icon: 'information-circle', color: Colors.info, bg: 'rgba(59,130,246,0.12)' },
+  campaign:       { icon: 'megaphone',          color: Colors.gold3,    bg: Colors.glassGold },
+  shipment:       { icon: 'bicycle',            color: Colors.success,  bg: Colors.successGlow },
+  newArrival:     { icon: 'sparkles',           color: Colors.purple3,  bg: Colors.purpleGlow },
+  priceDrop:      { icon: 'trending-down',      color: Colors.rose3,    bg: Colors.roseGlow },
+  price_drop:     { icon: 'trending-down',      color: Colors.rose3,    bg: Colors.roseGlow },
+  target_reached: { icon: 'flag-outline',       color: Colors.success,  bg: Colors.successGlow },
+  low_stock:      { icon: 'warning-outline',    color: '#E07800',       bg: '#FFF3E0' },
+  back_in_stock:  { icon: 'refresh-circle-outline', color: Colors.teal2, bg: Colors.tealGlow },
+  system:         { icon: 'information-circle', color: Colors.info,     bg: 'rgba(59,130,246,0.12)' },
 };
 
 function timeAgo(dateStr: string) {

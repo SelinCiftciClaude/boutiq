@@ -17,6 +17,8 @@ import { Fonts } from '../constants/Typography';
 import { Product } from '../types';
 import { Badge } from './ui/Badge';
 import { useSavedProducts } from '@/hooks/useSavedProducts';
+import { useProductWatch } from '@/hooks/useProductWatch';
+import { PriceWatchSheet } from './PriceWatchSheet';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 48) / 2;
@@ -29,7 +31,9 @@ interface ProductCardProps {
 
 export function ProductCard({ product, onUnsave, tall = false }: ProductCardProps) {
   const { add, remove, isSaved } = useSavedProducts();
+  const { watched } = useProductWatch(product.id);
   const [imgError, setImgError] = useState(false);
+  const [watchSheetOpen, setWatchSheetOpen] = useState(false);
 
   const saved = isSaved(product.id);
 
@@ -101,21 +105,37 @@ export function ProductCard({ product, onUnsave, tall = false }: ProductCardProp
         <View style={styles.brandRow}>
           <Image source={{ uri: product.brandLogo }} style={styles.brandLogo} />
           <Text style={styles.brandName} numberOfLines={1}>{product.brandName}</Text>
+          {/* Çan — takip butonu */}
+          <TouchableOpacity
+            onPress={(e) => { e.stopPropagation?.(); setWatchSheetOpen(true); }}
+            style={styles.bellBtn}
+            hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+          >
+            <Ionicons
+              name={watched ? 'notifications' : 'notifications-outline'}
+              size={14}
+              color={watched ? Colors.rose3 : Colors.text4}
+            />
+          </TouchableOpacity>
         </View>
 
         <Text style={styles.productName} numberOfLines={2}>{product.name}</Text>
 
         <View style={styles.priceRow}>
-          <Text style={styles.price}>
-            ₺{product.price.toLocaleString('tr-TR')}
-          </Text>
+          <Text style={styles.price}>₺{product.price.toLocaleString('tr-TR')}</Text>
           {product.originalPrice && (
-            <Text style={styles.originalPrice}>
-              ₺{product.originalPrice.toLocaleString('tr-TR')}
-            </Text>
+            <Text style={styles.originalPrice}>₺{product.originalPrice.toLocaleString('tr-TR')}</Text>
           )}
         </View>
       </View>
+
+      <PriceWatchSheet
+        visible={watchSheetOpen}
+        productId={product.id}
+        productName={product.name}
+        currentPrice={product.price}
+        onClose={() => setWatchSheetOpen(false)}
+      />
     </TouchableOpacity>
   );
 }
@@ -193,6 +213,12 @@ const styles = StyleSheet.create({
     color: Colors.text4,
     letterSpacing: 0.5,
     flex: 1,
+  },
+  bellBtn: {
+    width: 22,
+    height: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   productName: {
     fontFamily: Fonts.uiMedium,

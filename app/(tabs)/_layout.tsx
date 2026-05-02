@@ -18,14 +18,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 const { width } = Dimensions.get('window');
 
 const TABS = [
-  { name: 'index',    label: 'KEŞFET',          icon: 'compass-outline',    iconFilled: 'compass' },
-  { name: 'saved',    label: 'KOLEKSİYON',      icon: 'heart-outline',       iconFilled: 'heart' },
-  { name: 'brands',   label: 'BUTİKLER',        icon: 'storefront-outline',  iconFilled: 'storefront' },
-  { name: 'tracking', label: 'GEÇMİŞ SİPARİŞ', icon: 'receipt-outline',     iconFilled: 'receipt' },
-  { name: 'profile',  label: 'PROFİL',           icon: 'person-outline',      iconFilled: 'person' },
+  { name: 'index',     label: 'KEŞFET',    icon: 'compass-outline',       iconFilled: 'compass' },
+  { name: 'saved',     label: 'FAVORİLER', icon: 'heart-outline',          iconFilled: 'heart' },
+  { name: 'watchlist', label: 'TAKİP',     icon: 'notifications-outline',  iconFilled: 'notifications' },
+  { name: 'tracking',  label: 'SİPARİŞ',  icon: 'receipt-outline',        iconFilled: 'receipt' },
+  { name: 'profile',   label: 'PROFİL',   icon: 'person-outline',          iconFilled: 'person' },
 ];
 
-const LABELS = ['KEŞFET', 'KOLEKSİYON', 'BUTİKLER', 'GEÇMİŞ SİPARİŞ', 'PROFİL'];
+const LABELS = ['KEŞFET', 'FAVORİLER', 'TAKİP', 'SİPARİŞ', 'PROFİL'];
 
 const BAR_H   = 62;
 const BAR_MX  = 20;
@@ -199,7 +199,7 @@ export default function TabLayout() {
     >
       <Tabs.Screen name="index" />
       <Tabs.Screen name="saved" />
-      <Tabs.Screen name="brands" />
+      <Tabs.Screen name="watchlist" />
       <Tabs.Screen name="tracking" />
       <Tabs.Screen name="profile" />
     </Tabs>
