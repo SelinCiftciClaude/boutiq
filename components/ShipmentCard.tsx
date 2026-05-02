@@ -15,7 +15,7 @@ import { Fonts } from '../constants/Typography';
 import { Shipment, ShipmentStatus } from '../types';
 
 const STATUS_CONFIG: Record<ShipmentStatus, { label: string; color: string; icon: string; step: number }> = {
-  ordered: { label: 'Sipariş Alındı', color: Colors.purple3, icon: 'checkmark-circle', step: 1 },
+  ordered: { label: 'Henüz Kargoya Verilmedi', color: Colors.purple3, icon: 'checkmark-circle', step: 1 },
   processing: { label: 'Hazırlanıyor', color: Colors.gold3, icon: 'cube', step: 2 },
   shipped: { label: 'Kargoya Verildi', color: Colors.gold3, icon: 'archive', step: 3 },
   in_transit: { label: 'Yolda', color: Colors.info, icon: 'git-branch', step: 4 },

@@ -18,14 +18,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 const { width } = Dimensions.get('window');
 
 const TABS = [
-  { name: 'index',    label: 'KEŞFETz',   icon: 'compass-outline',    iconFilled: 'compass' },
-  { name: 'saved',    label: 'KOLEKSİYON', icon: 'heart-outline',       iconFilled: 'heart' },
-  { name: 'brands',   label: 'BUTİKLER',   icon: 'storefront-outline',  iconFilled: 'storefront' },
-  { name: 'tracking', label: 'KARGO',       icon: 'bicycle-outline',     iconFilled: 'bicycle' },
-  { name: 'profile',  label: 'PROFİL',      icon: 'person-outline',      iconFilled: 'person' },
+  { name: 'index',    label: 'KEŞFET',          icon: 'compass-outline',    iconFilled: 'compass' },
+  { name: 'saved',    label: 'KOLEKSİYON',      icon: 'heart-outline',       iconFilled: 'heart' },
+  { name: 'brands',   label: 'BUTİKLER',        icon: 'storefront-outline',  iconFilled: 'storefront' },
+  { name: 'tracking', label: 'GEÇMİŞ SİPARİŞ', icon: 'receipt-outline',     iconFilled: 'receipt' },
+  { name: 'profile',  label: 'PROFİL',           icon: 'person-outline',      iconFilled: 'person' },
 ];
 
-const LABELS = ['KEŞFET', 'KOLEKSİYON', 'BUTİKLER', 'KARGO', 'PROFİL'];
+const LABELS = ['KEŞFET', 'KOLEKSİYON', 'BUTİKLER', 'GEÇMİŞ SİPARİŞ', 'PROFİL'];
 
 const BAR_H   = 62;
 const BAR_MX  = 20;
@@ -55,7 +55,7 @@ function CustomTabBar({ state, navigation }: any) {
           useNativeDriver: true,
         }),
         Animated.timing(labelOpacity[i], {
-          toValue: active ? 1 : 0,
+          toValue: active ? 1 : 0.55,
           duration: 180,
           useNativeDriver: true,
         }),
@@ -177,6 +177,9 @@ const styles = StyleSheet.create({
     letterSpacing: 1.2,
     color: Colors.rose3,
     textTransform: 'uppercase',
+    textShadowColor: 'rgba(107,21,32,0.25)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   dot: {
     position: 'absolute',

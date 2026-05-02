@@ -110,7 +110,7 @@ const STATUS_PROGRESS: Record<ShipmentStatus, number> = {
 };
 
 const STATUS_LABEL: Record<ShipmentStatus, string> = {
-  ordered: 'Sipariş alındı', processing: 'Hazırlanıyor', shipped: 'Kargoya verildi',
+  ordered: 'Henüz kargoya verilmedi', processing: 'Hazırlanıyor', shipped: 'Kargoya verildi',
   in_transit: 'Yolda', out_for_delivery: 'Dağıtımda', delivered: 'Teslim edildi', returned: 'İade',
 };
 

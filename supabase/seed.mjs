@@ -358,10 +358,10 @@ async function seedShipments(userId) {
       order_number: 'ARC-2026-04891',
       tracking_number: 'YK123456789TR',
       carrier: 'Yurtiçi Kargo',
-      status: 'out_for_delivery',
-      status_label: 'Dağıtımda',
-      estimated_delivery: 'Bugün, 18:00 - 21:00',
-      last_location: 'İstanbul, Beşiktaş Şubesi',
+      status: 'ordered',
+      status_label: 'Henüz kargoya verilmedi',
+      estimated_delivery: 'Tahmini 3-5 iş günü',
+      last_location: 'Sipariş hazırlanıyor',
       products: [
         {
           name: 'Mini Saddle Bag — Konyak',
