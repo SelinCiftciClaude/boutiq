@@ -163,7 +163,10 @@ export function useDiscoverFeed(
       if (filters.onSale) query = query.eq('is_on_sale', true);
       if (filters.newOnly) query = query.eq('is_new', true);
       if (filters.maxPrice) query = query.lte('price', filters.maxPrice);
-      if (search.trim()) query = query.ilike('name', `%${search.trim()}%`);
+      if (search.trim()) {
+        const s = search.trim().replace(/[%_]/g, '\\$&'); // SQL özel karakterleri kaçır
+        query = query.or(`name.ilike.%${s}%,category.ilike.%${s}%`);
+      }
 
       const { data } = await query;
       return (data ?? []).map(p => ({
