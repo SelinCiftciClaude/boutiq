@@ -309,10 +309,109 @@ async function seedBrands() {
   console.log(`✓  Seeded ${rows.length} brands`);
 }
 
+async function seedShipments(userId) {
+  const now   = new Date();
+  const today = now.toISOString().slice(0, 10);
+
+  // Takvim yardımcıları
+  const daysAgo  = (n) => new Date(now - n * 86400000).toISOString();
+  const hoursAgo = (n) => new Date(now - n * 3600000).toISOString();
+
+  const shipments = [
+    // ── 1. Selma Çilek — DAĞITIMDA ──────────────────────────────────────────
+    {
+      id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+      user_id: userId,
+      brand_name: 'Selma Çilek',
+      brand_logo: 'https://images.unsplash.com/photo-1523381294911-8d3cead13475?w=80&h=80&fit=crop',
+      order_number: 'SC-2026-08421',
+      tracking_number: '00123456789',
+      carrier: 'yurtici',
+      status: 'out_for_delivery',
+      status_label: 'Dağıtımda',
+      estimated_delivery: `Bugün, ${now.getHours() < 15 ? '14:00 - 18:00' : '18:00 - 21:00'}`,
+      last_location: 'İstanbul, Kadıköy Şubesi',
+      products: [
+        {
+          name: 'Keten Beyaz Gömlek',
+          image: 'https://images.unsplash.com/photo-1564859228273-274232fdb516?w=200&h=250&fit=crop',
+          quantity: 1,
+        },
+      ],
+      total_amount: 1890,
+      currency: 'TL',
+      source: 'manual',
+      is_archived: false,
+      created_at: daysAgo(3),
+      updated_at: hoursAgo(2),
+    },
+    // ── 2. HOF Silk — BUGÜN TESLİM EDİLDİ ──────────────────────────────────
+    {
+      id: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+      user_id: userId,
+      brand_name: 'HOF Silk',
+      brand_logo: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=80&h=80&fit=crop',
+      order_number: 'HOF-2026-03147',
+      tracking_number: '00987654321',
+      carrier: 'aras',
+      status: 'delivered',
+      status_label: 'Teslim Edildi',
+      estimated_delivery: `Bugün teslim edildi`,
+      last_location: 'Teslim edildi',
+      products: [
+        {
+          name: 'İpek Saten Bluz — Krem',
+          image: 'https://images.unsplash.com/photo-1485462537746-965f33f7f6a7?w=200&h=250&fit=crop',
+          quantity: 1,
+        },
+      ],
+      total_amount: 3250,
+      currency: 'TL',
+      source: 'manual',
+      is_archived: false,
+      created_at: daysAgo(5),
+      updated_at: hoursAgo(1),
+    },
+  ];
+
+  const { error: shipErr } = await supabase
+    .from('shipments')
+    .upsert(shipments, { onConflict: 'id' });
+  if (shipErr) throw shipErr;
+
+  // ── Kargo olayları ────────────────────────────────────────────────────────
+
+  const events = [
+    // Selma Çilek — dağıtımda
+    { shipment_id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', status: 'ordered',          description: 'Sipariş alındı',             location: 'Selma Çilek Depo',            timestamp: daysAgo(3) },
+    { shipment_id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', status: 'processing',       description: 'Paket hazırlandı, kargoya teslim edildi', location: 'İstanbul, Anadolu Yakası Hub', timestamp: daysAgo(2) },
+    { shipment_id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', status: 'in_transit',       description: 'Transfer merkezine ulaştı',  location: 'İstanbul, Kartal Transfer Merkezi', timestamp: daysAgo(1) },
+    { shipment_id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', status: 'out_for_delivery', description: 'Dağıtıma çıktı',             location: 'İstanbul, Kadıköy Şubesi',      timestamp: hoursAgo(2) },
+
+    // HOF Silk — teslim edildi
+    { shipment_id: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', status: 'ordered',          description: 'Sipariş alındı',             location: 'HOF Silk Depo',                timestamp: daysAgo(5) },
+    { shipment_id: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', status: 'processing',       description: 'Paket hazırlandı',           location: 'İstanbul, Avrupa Yakası Hub',   timestamp: daysAgo(4) },
+    { shipment_id: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', status: 'in_transit',       description: 'Yolda',                      location: 'İstanbul, Bağcılar Transfer',   timestamp: daysAgo(3) },
+    { shipment_id: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', status: 'out_for_delivery', description: 'Dağıtıma çıktı',             location: 'İstanbul, Beşiktaş Şubesi',     timestamp: hoursAgo(5) },
+    { shipment_id: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', status: 'delivered',        description: 'Teslim edildi — Kapıya bırakıldı', location: 'İstanbul, Beşiktaş',      timestamp: hoursAgo(1) },
+  ];
+
+  // Önce bu shipment'lara ait eski event'leri temizle
+  await supabase.from('shipment_events')
+    .delete()
+    .in('shipment_id', shipments.map(s => s.id));
+
+  const { error: evErr } = await supabase.from('shipment_events').insert(events);
+  if (evErr) throw evErr;
+
+  console.log('✓  Seeded 2 shipments (Selma Çilek — dağıtımda, HOF Silk — teslim edildi)');
+}
+
 async function main() {
   console.log(`\n🌱  Seeding local Supabase at ${SUPABASE_URL}\n`);
-  await ensureDemoUser();
+  const userId = await ensureDemoUser();
   await seedBrands();
+  await seedShipments(userId);
   console.log(`\n✅  Done. Login: ${DEMO_EMAIL} / ${DEMO_PASSWORD}\n`);
 }
 
