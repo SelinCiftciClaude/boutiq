@@ -73,6 +73,49 @@ export function useDiscoverCategories(brandIds: string[]) {
   });
 }
 
+// Bir kategorideki markaları döndür (brand filter row için)
+export interface CategoryBrand {
+  id: string;
+  name: string;
+  logoUrl: string | null;
+}
+
+export function useCategoryBrands(categorySlug: string, brandIds: string[]) {
+  return useQuery({
+    queryKey: ['category-brands', categorySlug, brandIds],
+    queryFn: async (): Promise<CategoryBrand[]> => {
+      if (categorySlug === 'all') return [];
+
+      const { data: catRow } = await supabase
+        .from('master_categories')
+        .select('id')
+        .eq('slug', categorySlug)
+        .maybeSingle();
+      if (!catRow) return [];
+
+      let q = supabase
+        .from('products')
+        .select('brand_id, brands!inner(id, name, logo_url)')
+        .eq('master_category_id', catRow.id)
+        .eq('is_available', true);
+      if (brandIds.length > 0) q = q.in('brand_id', brandIds);
+
+      const { data } = await q.limit(1000);
+
+      const map = new Map<string, CategoryBrand>();
+      for (const row of data ?? []) {
+        const b = (row as any).brands;
+        if (b && !map.has(b.id)) {
+          map.set(b.id, { id: b.id, name: b.name, logoUrl: b.logo_url ?? null });
+        }
+      }
+      return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name, 'tr'));
+    },
+    enabled: categorySlug !== 'all',
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
 // Sonsuz ürün feed'i
 export function useDiscoverFeed(
   brandIds: string[],

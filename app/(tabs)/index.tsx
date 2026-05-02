@@ -32,6 +32,8 @@ import { useSavedBrands } from '@/hooks/useSavedBrands';
 import {
   useDiscoverFeed,
   useDiscoverCategories,
+  useCategoryBrands,
+  type CategoryBrand,
   DiscoverProduct,
   DiscoverCategory,
   DiscoverFilters,
@@ -478,6 +480,124 @@ function DiscoverHeader({ onFilterPress }: DiscoverHeaderProps) {
   );
 }
 
+// ── BrandFilterRow ────────────────────────────────────────────────────────────
+interface BrandFilterRowProps {
+  brands: CategoryBrand[];
+  selected: string[];
+  onToggle: (id: string) => void;
+  onClear: () => void;
+}
+
+function BrandFilterRow({ brands, selected, onToggle, onClear }: BrandFilterRowProps) {
+  if (brands.length < 2) return null;
+  const allSelected = selected.length === 0;
+
+  return (
+    <View style={bfr.wrap}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={bfr.row}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Tümü */}
+        <TouchableOpacity
+          style={[bfr.pill, allSelected && bfr.pillActive]}
+          onPress={() => { Haptics.selectionAsync(); onClear(); }}
+          activeOpacity={0.75}
+        >
+          <Text style={[bfr.pillText, allSelected && bfr.pillTextActive]}>Tümü</Text>
+        </TouchableOpacity>
+
+        {brands.map(brand => {
+          const sel = selected.includes(brand.id);
+          const initial = brand.name.charAt(0).toUpperCase();
+          return (
+            <TouchableOpacity
+              key={brand.id}
+              style={[bfr.pill, sel && bfr.pillActive]}
+              onPress={() => { Haptics.selectionAsync(); onToggle(brand.id); }}
+              activeOpacity={0.75}
+            >
+              {/* Marka avatarı */}
+              <View style={[bfr.avatar, sel && bfr.avatarActive]}>
+                {brand.logoUrl ? (
+                  <Image source={{ uri: brand.logoUrl }} style={bfr.avatarImg} />
+                ) : (
+                  <Text style={[bfr.avatarInitial, sel && { color: '#fff' }]}>{initial}</Text>
+                )}
+              </View>
+              <Text style={[bfr.pillText, sel && bfr.pillTextActive]} numberOfLines={1}>
+                {brand.name}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
+    </View>
+  );
+}
+
+const bfr = StyleSheet.create({
+  wrap: {
+    backgroundColor: Colors.bg,
+    borderBottomWidth: 0.5,
+    borderBottomColor: Colors.border1,
+    paddingVertical: 8,
+  },
+  row: {
+    paddingHorizontal: 12,
+    gap: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  pill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 16,
+    backgroundColor: Colors.surface2,
+    borderWidth: 0.5,
+    borderColor: Colors.border2,
+  },
+  pillActive: {
+    backgroundColor: Colors.rose3,
+    borderColor: Colors.rose3,
+  },
+  pillText: {
+    fontFamily: Fonts.uiMedium,
+    fontSize: 11,
+    color: Colors.text2,
+    maxWidth: 90,
+  },
+  pillTextActive: {
+    color: '#fff',
+  },
+  avatar: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: Colors.surface3,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  avatarActive: {
+    backgroundColor: 'rgba(255,255,255,0.25)',
+  },
+  avatarImg: {
+    width: 18,
+    height: 18,
+  },
+  avatarInitial: {
+    fontFamily: Fonts.ui,
+    fontSize: 9,
+    color: Colors.text3,
+  },
+});
+
 // ── CategoryTabs ──────────────────────────────────────────────────────────────
 interface CategoryTabsProps {
   categories: DiscoverCategory[];
@@ -555,6 +675,7 @@ function MasonryGrid({ items, totalHeight }: MasonryGridProps) {
 export default function DiscoverScreen() {
   const insets = useSafeAreaInsets();
   const [activeCategory, setActiveCategory] = useState('all');
+  const [brandFilter, setBrandFilter] = useState<string[]>([]);
   const [showFilter, setShowFilter] = useState(false);
   const [filters, setFilters] = useState<DiscoverFilters>({
     onSale: false,
@@ -571,6 +692,13 @@ export default function DiscoverScreen() {
   );
 
   const { data: categories = [] } = useDiscoverCategories(brandIds);
+  const { data: categoryBrands = [] } = useCategoryBrands(activeCategory, brandIds);
+
+  // Filtre aktifse sadece seçili markalar, değilse tümü
+  const effectiveBrandIds = useMemo(
+    () => brandFilter.length > 0 ? brandFilter : brandIds,
+    [brandFilter, brandIds],
+  );
 
   const {
     data: feedPages,
@@ -580,7 +708,7 @@ export default function DiscoverScreen() {
     isLoading,
     refetch,
     isRefetching,
-  } = useDiscoverFeed(brandIds, activeCategory, filters);
+  } = useDiscoverFeed(effectiveBrandIds, activeCategory, filters);
 
   const allProducts = useMemo(
     () => (feedPages?.pages ?? []).flat() as DiscoverProduct[],
@@ -608,6 +736,7 @@ export default function DiscoverScreen() {
   const handleCategorySelect = useCallback((slug: string) => {
     Haptics.selectionAsync();
     setActiveCategory(slug);
+    setBrandFilter([]); // kategori değişince butik filtresi sıfırla
   }, []);
 
   const handleApplyFilters = useCallback((f: DiscoverFilters) => {
@@ -668,12 +797,26 @@ export default function DiscoverScreen() {
           />
         }
       >
-        {/* Index 0 — sticky CategoryTabs */}
-        <CategoryTabs
-          categories={categories}
-          active={activeCategory}
-          onSelect={handleCategorySelect}
-        />
+        {/* Index 0 — sticky header (CategoryTabs + BrandFilterRow birlikte) */}
+        <View>
+          <CategoryTabs
+            categories={categories}
+            active={activeCategory}
+            onSelect={handleCategorySelect}
+          />
+          {activeCategory !== 'all' && (
+            <BrandFilterRow
+              brands={categoryBrands}
+              selected={brandFilter}
+              onToggle={(id) =>
+                setBrandFilter(prev =>
+                  prev.includes(id) ? prev.filter(b => b !== id) : [...prev, id]
+                )
+              }
+              onClear={() => setBrandFilter([])}
+            />
+          )}
+        </View>
 
         {/* Grid / empty / skeleton */}
         {content}
