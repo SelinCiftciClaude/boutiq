@@ -1,4 +1,10 @@
-import React, { useState, useRef } from 'react';
+import React, {
+  useState,
+  useMemo,
+  useCallback,
+  useRef,
+  useEffect,
+} from 'react';
 import {
   View,
   Text,
@@ -7,607 +13,991 @@ import {
   TouchableOpacity,
   Image,
   Animated,
-  FlatList,
   Dimensions,
+  Modal,
+  RefreshControl,
+  ActivityIndicator,
+  Switch,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
-import * as Clipboard from 'expo-clipboard';
 import * as Linking from 'expo-linking';
 import { router } from 'expo-router';
-import { Colors } from '../../constants/Colors';
-import { Fonts } from '../../constants/Typography';
-import { CATEGORIES } from '../../constants/MockData';
-import { BrandCard } from '../../components/BrandCard';
-import { ProductCard } from '../../components/ProductCard';
-import { Badge } from '../../components/ui/Badge';
-import { AddBrandSheet } from '../../components/AddBrandSheet';
-import { useBrands } from '@/hooks/useBrands';
+
+import { Colors } from '@/constants/Colors';
+import { Fonts } from '@/constants/Typography';
 import { useSavedBrands } from '@/hooks/useSavedBrands';
-import { useProducts } from '@/hooks/useProducts';
-import { useCampaigns } from '@/hooks/useCampaigns';
-import { useShipments } from '@/hooks/useShipments';
-import { useInterests } from '@/context/InterestsContext';
-import { useNotifications } from '@/hooks/useNotifications';
+import {
+  useDiscoverFeed,
+  useDiscoverCategories,
+  DiscoverProduct,
+  DiscoverCategory,
+  DiscoverFilters,
+} from '@/hooks/useDiscoverFeed';
 import { useAuth } from '@/context/AuthContext';
-import { useTrending } from '@/hooks/useTrending';
-import { trackAffiliateClick } from '@/services/queries';
-import { Brand, Campaign, Shipment, ShipmentStatus } from '../../types';
+import { useInterests } from '@/context/InterestsContext';
 
-function CampaignBanner({ campaign, onCopyCode, userId }: { campaign: Campaign; onCopyCode: (code: string) => void; userId?: string }) {
-  const code = campaign.code ?? 'BUTİKA10';
-  const handlePress = () => {
-    trackAffiliateClick(userId ?? null, campaign.brandId, null, campaign.affiliateUrl || campaign.url);
-    Linking.openURL(campaign.affiliateUrl || campaign.url);
-  };
+// ── Constants ────────────────────────────────────────────────────────────────
+const SCREEN_W = Dimensions.get('window').width;
+const GRID_PADDING = 12;
+const CARD_GAP = 8;
+const cardWidth = (SCREEN_W - GRID_PADDING * 2 - CARD_GAP) / 2;
+const INFO_HEIGHT = 72;
+
+// ── Affiliate URL helper ──────────────────────────────────────────────────────
+function buildAffiliateUrl(url: string): string {
+  if (!url) return url;
+  const separator = url.includes('?') ? '&' : '?';
+  return `${url}${separator}utm_source=butika&utm_medium=discover`;
+}
+
+// ── Masonry layout algorithm ──────────────────────────────────────────────────
+interface MasonryItem {
+  product: DiscoverProduct;
+  x: number;
+  y: number;
+  height: number;
+}
+
+function computeLayouts(
+  products: DiscoverProduct[],
+  cw: number,
+): { items: MasonryItem[]; totalHeight: number } {
+  const colHeights = [0, 0];
+  const items: MasonryItem[] = [];
+  for (const p of products) {
+    const ar = p.imageAspectRatio || 0.75;
+    const imageH = cw / ar;
+    const cardH = imageH + INFO_HEIGHT;
+    const col = colHeights[0] <= colHeights[1] ? 0 : 1;
+    items.push({
+      product: p,
+      x: col * (cw + CARD_GAP) + GRID_PADDING,
+      y: colHeights[col],
+      height: cardH,
+    });
+    colHeights[col] += cardH + CARD_GAP;
+  }
+  return { items, totalHeight: Math.max(colHeights[0], colHeights[1]) };
+}
+
+// ── Skeleton placeholder heights (alternating) ────────────────────────────────
+const SKELETON_ASPECT_RATIOS = [0.75, 1.2, 0.75, 1.2, 1.2, 0.75, 1.2, 0.75];
+
+// ── ProductCard ───────────────────────────────────────────────────────────────
+interface ProductCardProps {
+  product: DiscoverProduct;
+  cardWidth: number;
+  height: number;
+}
+
+const ProductCard = React.memo(function ProductCard({
+  product,
+  cardWidth: cw,
+  height,
+}: ProductCardProps) {
+  const [imgLoaded, setImgLoaded] = useState(false);
+  const [imgError, setImgError] = useState(false);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  const handleLoad = useCallback(() => {
+    setImgLoaded(true);
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+  }, [fadeAnim]);
+
+  const handleError = useCallback(() => {
+    setImgError(true);
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 150,
+      useNativeDriver: true,
+    }).start();
+  }, [fadeAnim]);
+
+  const ar = product.imageAspectRatio || 0.75;
+  const imageHeight = cw / ar;
+
+  const handlePress = useCallback(() => {
+    const url = buildAffiliateUrl(product.affiliateUrl || product.url);
+    Linking.openURL(url);
+  }, [product.affiliateUrl, product.url]);
+
+  const handleLongPress = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    // ActionSheet placeholder — share/hide
+  }, []);
+
+  const handleDotsPress = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  }, []);
+
   return (
-    <TouchableOpacity activeOpacity={0.88} style={styles.campaignCard} onPress={handlePress}>
-      <LinearGradient
-        colors={[Colors.surface1, Colors.surface2]}
-        start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-        style={StyleSheet.absoluteFill}
-      />
-      {/* Üst altın çizgi */}
-      <View style={styles.campaignAccent} />
-
-      <View style={styles.campaignContent}>
-        {/* Üst satır: logo + marka adı + sponsorlu badge */}
-        <View style={styles.campaignTopRow}>
-          <Image source={{ uri: campaign.brandLogo }} style={styles.campaignLogo} />
-          <Text style={styles.campaignBrand} numberOfLines={1}>{campaign.brandName}</Text>
-          {campaign.isSponsored && (
-            <View style={styles.sponsoredBadge}>
-              <Text style={styles.sponsoredText}>Sponsorlu</Text>
-            </View>
-          )}
-        </View>
-
-        {/* Kampanya başlığı */}
-        <Text style={styles.campaignTitle} numberOfLines={2}>{campaign.title}</Text>
-
-        {/* Alt satır: indirim + kupon kodu */}
-        <View style={styles.campaignBottomRow}>
-          {campaign.discount ? (
-            <View style={styles.discountBadge}>
-              <Text style={styles.discountText}>
-                {campaign.discountType === 'percent'
-                  ? `%${campaign.discount} İndirim`
-                  : `₺${campaign.discount} İndirim`}
-              </Text>
-            </View>
-          ) : <View />}
-
-          <TouchableOpacity
-            style={styles.codeBox}
-            onPress={(e) => { e.stopPropagation?.(); onCopyCode(code); }}
-            activeOpacity={0.7}
+    <TouchableOpacity
+      style={[pc.card, { width: cw, height }]}
+      onPress={handlePress}
+      onLongPress={handleLongPress}
+      activeOpacity={0.92}
+    >
+      {/* Image */}
+      <View style={{ width: cw, height: imageHeight, overflow: 'hidden' }}>
+        {imgError ? (
+          <Animated.View
+            style={[
+              pc.imgPlaceholder,
+              { width: cw, height: imageHeight, opacity: fadeAnim },
+            ]}
           >
-            <Text style={styles.codeText}>{code}</Text>
-            <Ionicons name="copy-outline" size={13} color={Colors.rose3} />
-          </TouchableOpacity>
+            <Ionicons name="image-outline" size={28} color={Colors.text4} />
+          </Animated.View>
+        ) : (
+          <Animated.Image
+            source={{ uri: product.imageUrl }}
+            style={{ width: cw, height: imageHeight, opacity: fadeAnim }}
+            resizeMode="cover"
+            onLoad={handleLoad}
+            onError={handleError}
+          />
+        )}
+
+        {/* Badges — top left */}
+        {(product.isNew || product.isOnSale) && (
+          <View style={pc.badgeStack}>
+            {product.isNew && (
+              <View style={[pc.badge, pc.badgeNew]}>
+                <Text style={pc.badgeText}>YENİ</Text>
+              </View>
+            )}
+            {product.isOnSale && (
+              <View style={[pc.badge, pc.badgeSale]}>
+                <Text style={pc.badgeText}>İNDİRİM</Text>
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* Three-dots — top right */}
+        <TouchableOpacity
+          style={pc.dotsBtn}
+          onPress={handleDotsPress}
+          hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+        >
+          <Ionicons name="ellipsis-horizontal" size={14} color="#fff" />
+        </TouchableOpacity>
+      </View>
+
+      {/* Info */}
+      <View style={[pc.info, { height: INFO_HEIGHT }]}>
+        <Text style={pc.brand} numberOfLines={1}>
+          {product.brandName}
+        </Text>
+        <Text style={pc.name} numberOfLines={2}>
+          {product.name}
+        </Text>
+        <View style={pc.priceRow}>
+          <Text style={pc.price}>₺{product.price.toLocaleString('tr-TR')}</Text>
+          {product.isOnSale && product.originalPrice != null && (
+            <Text style={pc.originalPrice}>
+              ₺{product.originalPrice.toLocaleString('tr-TR')}
+            </Text>
+          )}
         </View>
       </View>
     </TouchableOpacity>
   );
-}
+});
 
-// ── Kargo durumu renkleri ────────────────────────────────────────────────────
-const STATUS_DOT: Record<ShipmentStatus, string> = {
-  delivered:        '#3AAA78',  // yeşil
-  out_for_delivery: '#C49450',  // sarı-altın
-  in_transit:       '#C49450',
-  shipped:          '#C49450',
-  processing:       '#BC3C3C',  // kırmızı
-  ordered:          '#BC3C3C',
-  returned:         '#BC3C3C',
-};
+// ── SkeletonGrid ──────────────────────────────────────────────────────────────
+function SkeletonGrid() {
+  const shimmer = useRef(new Animated.Value(0.4)).current;
 
-const STATUS_PROGRESS: Record<ShipmentStatus, number> = {
-  ordered: 0.08, processing: 0.25, shipped: 0.45,
-  in_transit: 0.65, out_for_delivery: 0.85, delivered: 1, returned: 0,
-};
+  useEffect(() => {
+    const anim = Animated.loop(
+      Animated.sequence([
+        Animated.timing(shimmer, {
+          toValue: 0.8,
+          duration: 700,
+          useNativeDriver: true,
+        }),
+        Animated.timing(shimmer, {
+          toValue: 0.4,
+          duration: 700,
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    anim.start();
+    return () => anim.stop();
+  }, [shimmer]);
 
-const STATUS_LABEL: Record<ShipmentStatus, string> = {
-  ordered: 'Henüz kargoya verilmedi', processing: 'Hazırlanıyor', shipped: 'Kargoya verildi',
-  in_transit: 'Yolda', out_for_delivery: 'Dağıtımda', delivered: 'Teslim edildi', returned: 'İade',
-};
-
-// Tarih: "1 Mayıs 2026" formatı
-function todayLabel() {
-  return new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
-}
-
-// Tente saçağı — alt kenar, aşağı bakan üçgenler
-const SACAK_W = 22;  // her üçgenin genişliği
-const SACAK_H = 14;  // her üçgenin yüksekliği
-const SCREEN_W = Dimensions.get('window').width;
-const SACAK_COUNT = Math.ceil(SCREEN_W / SACAK_W) + 1;
-
-function TenteSacak() {
-  return (
-    <View style={{ overflow: 'hidden' }}>
-      {/* Burgund ana çizgi */}
-      <View style={{ height: 4, backgroundColor: Colors.rose3 }} />
-      {/* Üçgenler */}
-      <View style={{ flexDirection: 'row', height: SACAK_H }}>
-        {[...Array(SACAK_COUNT)].map((_, i) => (
-          <View
-            key={i}
-            style={{
-              width: 0,
-              height: 0,
-              borderLeftWidth: SACAK_W / 2,
-              borderRightWidth: SACAK_W / 2,
-              borderTopWidth: SACAK_H,
-              borderLeftColor: 'transparent',
-              borderRightColor: 'transparent',
-              borderTopColor: Colors.rose3,
-            }}
-          />
-        ))}
-      </View>
-    </View>
+  // Build skeleton items using the same masonry algorithm
+  const skeletonProducts = useMemo(
+    () =>
+      SKELETON_ASPECT_RATIOS.map((ar, i) => ({
+        id: `sk-${i}`,
+        imageAspectRatio: ar,
+      })),
+    [],
   );
-}
 
-// Tente şerit aksanı — bölüm başlıklarında kullanılır
-function TenteAccent() {
+  const colHeights = [0, 0];
+  const skItems: Array<{ x: number; y: number; height: number; key: string }> = [];
+  for (const p of skeletonProducts) {
+    const imageH = cardWidth / p.imageAspectRatio;
+    const cardH = imageH + INFO_HEIGHT;
+    const col = colHeights[0] <= colHeights[1] ? 0 : 1;
+    skItems.push({
+      key: p.id,
+      x: col * (cardWidth + CARD_GAP) + GRID_PADDING,
+      y: colHeights[col],
+      height: cardH,
+    });
+    colHeights[col] += cardH + CARD_GAP;
+  }
+  const totalH = Math.max(colHeights[0], colHeights[1]);
+
   return (
-    <View style={{ flexDirection: 'row', height: 5, width: 32, marginBottom: 8, borderRadius: 2, overflow: 'hidden' }}>
-      {[...Array(6)].map((_, i) => (
-        <View key={i} style={{ flex: 1, backgroundColor: i % 2 === 0 ? Colors.stripeWarm : Colors.stripeCool }} />
+    <View style={{ height: totalH, position: 'relative', marginTop: 8 }}>
+      {skItems.map(item => (
+        <Animated.View
+          key={item.key}
+          style={{
+            position: 'absolute',
+            left: item.x,
+            top: item.y,
+            width: cardWidth,
+            height: item.height,
+            borderRadius: 12,
+            backgroundColor: Colors.surface3,
+            opacity: shimmer,
+          }}
+        />
       ))}
     </View>
   );
 }
 
-function ShipmentCard2({ s }: { s: Shipment }) {
-  const dot   = STATUS_DOT[s.status];
-  const prog  = STATUS_PROGRESS[s.status];
-  const label = STATUS_LABEL[s.status];
-  const isDelivered = s.status === 'delivered';
-  const isActive    = !isDelivered && s.status !== 'returned';
+// ── EmptyState ────────────────────────────────────────────────────────────────
+type EmptyVariant = 'noBrands' | 'noProducts';
 
+interface EmptyStateProps {
+  variant: EmptyVariant;
+  onClearCategory?: () => void;
+  clearInterests?: () => void;
+}
+
+function EmptyState({ variant, onClearCategory, clearInterests }: EmptyStateProps) {
+  if (variant === 'noBrands') {
+    return (
+      <View style={es.wrap}>
+        <View style={es.iconCircle}>
+          <Ionicons name="bookmark-outline" size={32} color={Colors.rose3} />
+        </View>
+        <Text style={es.title}>Henüz butik eklemedin</Text>
+        <Text style={es.subtitle}>
+          Onboarding'de ilgi alanlarını seç, keşif feed'in canlansın.
+        </Text>
+        {clearInterests && (
+          <TouchableOpacity
+            style={es.btn}
+            onPress={clearInterests}
+            activeOpacity={0.85}
+          >
+            <Text style={es.btnText}>İlgi alanlarını sıfırla</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+    );
+  }
   return (
-    <TouchableOpacity
-      style={sw.card}
-      activeOpacity={0.85}
-      onPress={() => router.push(`/shipment/${s.id}` as any)}
-    >
-      {/* Üst satır: butik adı + nokta */}
-      <View style={sw.topRow}>
-        <Text style={sw.brandName} numberOfLines={1}>{s.brandName}</Text>
-        <View style={[sw.dot, { backgroundColor: dot }]} />
+    <View style={es.wrap}>
+      <View style={es.iconCircle}>
+        <Ionicons name="search-outline" size={32} color={Colors.rose3} />
       </View>
-
-      {/* Kargo firması */}
-      <Text style={sw.carrier}>{s.carrier}</Text>
-
-      {/* Durum */}
-      <Text style={[sw.statusText, { color: dot }]}>{label}</Text>
-
-      {/* Progress bar */}
-      <View style={sw.progressTrack}>
-        <View style={[sw.progressFill, { width: `${prog * 100}%` as any, backgroundColor: dot }]} />
-      </View>
-
-      {/* ETA */}
-      <Text style={[sw.eta, isDelivered && { color: '#3AAA78' }]} numberOfLines={1}>
-        {s.estimatedDelivery}
+      <Text style={es.title}>Bu kategoride ürün yok</Text>
+      <Text style={es.subtitle}>
+        Başka bir kategori dene ya da tüm ürünlere bak.
       </Text>
-    </TouchableOpacity>
+      {onClearCategory && (
+        <TouchableOpacity
+          style={es.linkBtn}
+          onPress={onClearCategory}
+          activeOpacity={0.7}
+        >
+          <Text style={es.linkBtnText}>Tümüne bak</Text>
+        </TouchableOpacity>
+      )}
+    </View>
   );
 }
 
-export default function HomeScreen() {
-  const insets = useSafeAreaInsets();
-  const [feedTab, setFeedTab] = useState<'discover' | 'foryou'>('discover');
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [copiedCode, setCopiedCode] = useState<string | null>(null);
-  const scrollY = useRef(new Animated.Value(0)).current;
-  const [addSheetBrand, setAddSheetBrand] = useState<Brand | null>(null);
+// ── FilterSheet ───────────────────────────────────────────────────────────────
+interface FilterSheetProps {
+  visible: boolean;
+  filters: DiscoverFilters;
+  onApply: (f: DiscoverFilters) => void;
+  onClose: () => void;
+}
 
-  const { user } = useAuth();
-  const { data: brands = [] } = useBrands();
-  const { data: products = [] } = useProducts();
-  const { data: campaigns = [] } = useCampaigns();
-  const savedBrands = useSavedBrands();
-  const { data: allShipments = [] } = useShipments();
-  const { interests } = useInterests();
-  const { unreadCount } = useNotifications();
-  const { brands: trendingBrandsQ } = useTrending();
-  const trendingBrands = trendingBrandsQ.data ?? [];
+function FilterSheet({ visible, filters, onApply, onClose }: FilterSheetProps) {
+  const [local, setLocal] = useState<DiscoverFilters>(filters);
+  const slideAnim = useRef(new Animated.Value(400)).current;
 
-  // İlgi alanlarına göre sıralama: seçilen kategoriler önce
-  const interestCategories = interests.filter(Boolean);
+  useEffect(() => {
+    if (visible) {
+      setLocal(filters);
+      Animated.spring(slideAnim, {
+        toValue: 0,
+        useNativeDriver: true,
+        damping: 20,
+        stiffness: 180,
+      }).start();
+    } else {
+      Animated.timing(slideAnim, {
+        toValue: 400,
+        duration: 220,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [visible, filters, slideAnim]);
 
-  const sortedBrands = [...brands].sort((a, b) => {
-    const aIdx = interestCategories.indexOf(a.category);
-    const bIdx = interestCategories.indexOf(b.category);
-    const aScore = aIdx === -1 ? 999 : aIdx;
-    const bScore = bIdx === -1 ? 999 : bIdx;
-    return aScore - bScore;
-  });
+  const handleApply = useCallback(() => {
+    onApply(local);
+    onClose();
+  }, [local, onApply, onClose]);
 
-  // Kategori filtresi
-  const filteredBrands = selectedCategory === 'all'
-    ? sortedBrands
-    : sortedBrands.filter(b => b.category === selectedCategory);
-
-  const filteredBrandIds = new Set(filteredBrands.map(b => b.id));
-
-  const filteredProducts = selectedCategory === 'all'
-    ? products
-    : products.filter(p => filteredBrandIds.has(p.brandId));
-
-  // "Senin İçin" feed: interest + saved brand kategorilerinden ürünler
-  const savedBrandCategories = savedBrands.data?.map(b => b.category) ?? [];
-  const interestCats = interests.filter(Boolean);
-  const forYouCategories = [...new Set([...interestCats, ...savedBrandCategories])];
-
-  const forYouBrands = forYouCategories.length > 0
-    ? sortedBrands.filter(b => forYouCategories.includes(b.category))
-    : sortedBrands.slice(0, 4);
-
-  // "Beğenebileceğin Ürünler": kullanıcının koleksiyonunda OLMAYAN markalardan,
-  // ilgi alanlarıyla eşleşen kategorilerdeki ürünler
-  const savedBrandIds = new Set(savedBrands.data?.map(b => b.id) ?? []);
-  const discoverCategories = forYouCategories.length > 0 ? forYouCategories : null;
-
-  const discoverProducts = products
-    .filter(p => !savedBrandIds.has(p.brandId)) // koleksiyonda olmayan markalar
-    .filter(p => !discoverCategories || discoverCategories.includes(p.category as any))
-    .filter(p => selectedCategory === 'all' || p.category === selectedCategory)
-    .slice(0, 20);
-
-  const forYouProducts = forYouCategories.length > 0
-    ? products.filter(p => forYouBrands.some(b => b.id === p.brandId))
-    : products.slice(0, 6);
-
-  const handleAddBrand = (brand: Brand) => setAddSheetBrand(brand);
-
-  const handleCopyCode = async (code: string) => {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    await Clipboard.setStringAsync(code);
-    setCopiedCode(code);
-    setTimeout(() => setCopiedCode(null), 2000);
-  };
-
-  const headerOpacity = scrollY.interpolate({
-    inputRange: [0, 60],
-    outputRange: [0, 1],
-    extrapolate: 'clamp',
-  });
-
-  const activeCampaigns = campaigns.filter((c) => !c.isRead);
-  const featuredBrand = filteredBrands[0] ?? brands[0];
+  const handleReset = useCallback(() => {
+    const reset: DiscoverFilters = { onSale: false, newOnly: false, maxPrice: null };
+    setLocal(reset);
+    onApply(reset);
+    onClose();
+  }, [onApply, onClose]);
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-
-      {/* Kopyalandı toast */}
-      {copiedCode && (
-        <View style={styles.toast} pointerEvents="none">
-          <Ionicons name="checkmark-circle" size={16} color={Colors.success} />
-          <Text style={styles.toastText}>"{copiedCode}" kopyalandı</Text>
-        </View>
-      )}
-
-      <Animated.ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-        onScroll={Animated.event(
-          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-          { useNativeDriver: true }
-        )}
-        scrollEventThrottle={16}
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+    >
+      <TouchableOpacity
+        style={fs.backdrop}
+        activeOpacity={1}
+        onPress={onClose}
+      />
+      <Animated.View
+        style={[fs.sheet, { transform: [{ translateY: slideAnim }] }]}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.headerLogo}>BUTİKA</Text>
-          <TouchableOpacity style={styles.notifBtn} onPress={() => router.push('/notifications' as any)}>
-            <Ionicons name="notifications-outline" size={20} color={Colors.text2} />
-            {unreadCount > 0 && (
-              <View style={styles.notifBadge}>
-                <Text style={styles.notifCount}>{unreadCount}</Text>
-              </View>
-            )}
-          </TouchableOpacity>
+        {/* Handle */}
+        <View style={fs.handle} />
+
+        <Text style={fs.title}>Filtrele</Text>
+
+        {/* Toggle: only on sale */}
+        <View style={fs.row}>
+          <View style={fs.rowTextWrap}>
+            <Text style={fs.rowLabel}>Sadece indirimdekiler</Text>
+            <Text style={fs.rowSub}>İndirimli ürünleri göster</Text>
+          </View>
+          <Switch
+            value={local.onSale}
+            onValueChange={v => setLocal(prev => ({ ...prev, onSale: v }))}
+            trackColor={{ false: Colors.surface3, true: Colors.rose3 }}
+            thumbColor={Colors.surface1}
+          />
         </View>
 
+        <View style={fs.divider} />
 
-        {/* Senin İçin feed */}
-        {feedTab === 'foryou' && (
-          <>
-            {forYouCategories.length === 0 ? (
-              <View style={styles.forYouEmpty}>
-                <Text style={styles.forYouEmptyIcon}>✨</Text>
-                <Text style={styles.forYouEmptyTitle}>Feed'in henüz boş</Text>
-                <Text style={styles.forYouEmptySubtitle}>
-                  İlgi alanı ekle veya butik kaydet, sana özel içerikler gösterelim.
-                </Text>
-              </View>
-            ) : (
-              <>
-                <View style={styles.section}>
-                  <Text style={styles.sectionTitle}>Senin için butikler</Text>
-                  <View style={styles.brandsGrid}>
-                    {forYouBrands.map(brand => (
-                      <BrandCard
-                        key={brand.id} brand={brand} variant="grid"
-                        onAdd={handleAddBrand}
-                        onPress={b => router.push(`/brand/${b.id}` as any)}
-                        isSaved={savedBrands.isSaved(brand.id)}
-                      />
-                    ))}
-                  </View>
-                </View>
-                <View style={styles.section}>
-                  <Text style={styles.sectionTitle}>Senin için ürünler</Text>
-                  <View style={styles.productsGrid}>
-                    <View style={styles.productCol}>
-                      {forYouProducts.filter((_, i) => i % 2 === 0).map((p, i) => (
-                        <ProductCard key={p.id} product={p} tall={i % 3 === 1} />
-                      ))}
-                    </View>
-                    <View style={[styles.productCol, styles.productColOffset]}>
-                      {forYouProducts.filter((_, i) => i % 2 === 1).map((p, i) => (
-                        <ProductCard key={p.id} product={p} tall={i % 3 === 0} />
-                      ))}
-                    </View>
-                  </View>
-                </View>
-              </>
-            )}
-            <View style={{ height: 100 }} />
-          </>
+        {/* Toggle: new only */}
+        <View style={fs.row}>
+          <View style={fs.rowTextWrap}>
+            <Text style={fs.rowLabel}>Sadece yeni gelenler</Text>
+            <Text style={fs.rowSub}>Yeni eklenen ürünleri göster</Text>
+          </View>
+          <Switch
+            value={local.newOnly}
+            onValueChange={v => setLocal(prev => ({ ...prev, newOnly: v }))}
+            trackColor={{ false: Colors.surface3, true: Colors.rose3 }}
+            thumbColor={Colors.surface1}
+          />
+        </View>
+
+        {/* Buttons */}
+        <TouchableOpacity
+          style={fs.applyBtn}
+          onPress={handleApply}
+          activeOpacity={0.88}
+        >
+          <Text style={fs.applyBtnText}>Uygula</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={fs.resetBtn}
+          onPress={handleReset}
+          activeOpacity={0.7}
+        >
+          <Text style={fs.resetBtnText}>Sıfırla</Text>
+        </TouchableOpacity>
+      </Animated.View>
+    </Modal>
+  );
+}
+
+// ── DiscoverHeader ────────────────────────────────────────────────────────────
+interface DiscoverHeaderProps {
+  onFilterPress: () => void;
+}
+
+function DiscoverHeader({ onFilterPress }: DiscoverHeaderProps) {
+  return (
+    <View style={dh.wrap}>
+      <Text style={dh.title}>Keşfet</Text>
+      <View style={dh.actions}>
+        <TouchableOpacity
+          style={dh.iconBtn}
+          onPress={() => router.push('/search' as any)}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Ionicons name="search-outline" size={20} color={Colors.text2} />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={dh.iconBtn}
+          onPress={onFilterPress}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Ionicons name="options-outline" size={20} color={Colors.text2} />
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+
+// ── CategoryTabs ──────────────────────────────────────────────────────────────
+interface CategoryTabsProps {
+  categories: DiscoverCategory[];
+  active: string;
+  onSelect: (slug: string) => void;
+}
+
+function CategoryTabs({ categories, active, onSelect }: CategoryTabsProps) {
+  return (
+    <View style={ct.wrap}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={ct.scrollContent}
+      >
+        {/* All tab */}
+        <TouchableOpacity
+          style={[ct.tab, active === 'all' && ct.tabActive]}
+          onPress={() => onSelect('all')}
+          activeOpacity={0.8}
+        >
+          <Text style={[ct.tabText, active === 'all' && ct.tabTextActive]}>
+            Tümü
+          </Text>
+        </TouchableOpacity>
+
+        {categories.map(cat => (
+          <TouchableOpacity
+            key={cat.id}
+            style={[ct.tab, active === cat.slug && ct.tabActive]}
+            onPress={() => onSelect(cat.slug)}
+            activeOpacity={0.8}
+          >
+            <Text style={[ct.tabText, active === cat.slug && ct.tabTextActive]}>
+              {cat.emoji} {cat.nameTr}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+    </View>
+  );
+}
+
+// ── MasonryGrid ───────────────────────────────────────────────────────────────
+interface MasonryGridProps {
+  items: MasonryItem[];
+  totalHeight: number;
+}
+
+function MasonryGrid({ items, totalHeight }: MasonryGridProps) {
+  return (
+    <View style={{ height: totalHeight, position: 'relative', marginTop: 8 }}>
+      {items.map(item => (
+        <View
+          key={item.product.id}
+          style={{
+            position: 'absolute',
+            left: item.x,
+            top: item.y,
+            width: cardWidth,
+          }}
+        >
+          <ProductCard
+            product={item.product}
+            cardWidth={cardWidth}
+            height={item.height}
+          />
+        </View>
+      ))}
+    </View>
+  );
+}
+
+// ── DiscoverScreen ────────────────────────────────────────────────────────────
+export default function DiscoverScreen() {
+  const insets = useSafeAreaInsets();
+  const [activeCategory, setActiveCategory] = useState('all');
+  const [showFilter, setShowFilter] = useState(false);
+  const [filters, setFilters] = useState<DiscoverFilters>({
+    onSale: false,
+    newOnly: false,
+    maxPrice: null,
+  });
+
+  const { data: savedBrands = [] } = useSavedBrands();
+  const { clearInterests } = useInterests();
+
+  const brandIds = useMemo(
+    () => (savedBrands as any[]).map((b: any) => b.id as string),
+    [savedBrands],
+  );
+
+  const { data: categories = [] } = useDiscoverCategories(brandIds);
+
+  const {
+    data: feedPages,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    refetch,
+    isRefetching,
+  } = useDiscoverFeed(brandIds, activeCategory, filters);
+
+  const allProducts = useMemo(
+    () => (feedPages?.pages ?? []).flat() as DiscoverProduct[],
+    [feedPages],
+  );
+
+  const { items: masonryItems, totalHeight } = useMemo(
+    () => computeLayouts(allProducts, cardWidth),
+    [allProducts],
+  );
+
+  const handleScroll = useCallback(
+    ({ nativeEvent }: any) => {
+      const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
+      if (
+        contentOffset.y + layoutMeasurement.height >=
+        contentSize.height - 300
+      ) {
+        if (hasNextPage && !isFetchingNextPage) fetchNextPage();
+      }
+    },
+    [hasNextPage, isFetchingNextPage, fetchNextPage],
+  );
+
+  const handleCategorySelect = useCallback((slug: string) => {
+    Haptics.selectionAsync();
+    setActiveCategory(slug);
+  }, []);
+
+  const handleApplyFilters = useCallback((f: DiscoverFilters) => {
+    setFilters(f);
+  }, []);
+
+  const hasBrands = brandIds.length > 0;
+  const hasProducts = allProducts.length > 0;
+
+  // Decide what to show in the content area
+  let content: React.ReactNode;
+  if (!hasBrands) {
+    content = (
+      <EmptyState
+        variant="noBrands"
+        clearInterests={clearInterests}
+      />
+    );
+  } else if (isLoading) {
+    content = <SkeletonGrid />;
+  } else if (!hasProducts) {
+    content = (
+      <EmptyState
+        variant="noProducts"
+        onClearCategory={() => setActiveCategory('all')}
+      />
+    );
+  } else {
+    content = (
+      <>
+        <MasonryGrid items={masonryItems} totalHeight={totalHeight} />
+        {isFetchingNextPage && (
+          <View style={s.loadingMore}>
+            <ActivityIndicator color={Colors.rose3} size="small" />
+          </View>
         )}
+      </>
+    );
+  }
 
+  return (
+    <View style={[s.container, { paddingTop: insets.top }]}>
+      {/* Fixed header — outside scroll */}
+      <DiscoverHeader onFilterPress={() => setShowFilter(true)} />
+
+      {/* Scrollable content: CategoryTabs (sticky via stickyHeaderIndices) + grid */}
+      <ScrollView
+        style={s.scroll}
+        showsVerticalScrollIndicator={false}
+        onScroll={handleScroll}
+        scrollEventThrottle={400}
+        stickyHeaderIndices={[0]}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefetching}
+            onRefresh={refetch}
+            tintColor={Colors.rose3}
+          />
+        }
+      >
+        {/* Index 0 — sticky CategoryTabs */}
+        <CategoryTabs
+          categories={categories}
+          active={activeCategory}
+          onSelect={handleCategorySelect}
+        />
+
+        {/* Grid / empty / skeleton */}
+        {content}
+
+        {/* Bottom spacer */}
         <View style={{ height: 100 }} />
-      </Animated.ScrollView>
+      </ScrollView>
 
-      <AddBrandSheet
-        brand={addSheetBrand}
-        visible={!!addSheetBrand}
-        alreadySaved={addSheetBrand ? savedBrands.isSaved(addSheetBrand.id) : false}
-        currentCategory={addSheetBrand?.category}
-        onSave={(brand) => savedBrands.add.mutate({ brandId: brand.id, isFavorite: true })}
-        onRemove={(id) => savedBrands.remove.mutate(id)}
-        onClose={() => setAddSheetBrand(null)}
+      {/* Filter sheet */}
+      <FilterSheet
+        visible={showFilter}
+        filters={filters}
+        onApply={handleApplyFilters}
+        onClose={() => setShowFilter(false)}
       />
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.bg },
-  floatingHeader: {
-    position: 'absolute', top: 0, left: 0, right: 0, height: 100, zIndex: 50, pointerEvents: 'none',
-  },
-  bgGlow1: {
-    position: 'absolute', top: -80, right: -120,
-    width: 350, height: 350, borderRadius: 175,
-    backgroundColor: Colors.goldGlow, opacity: 0.5,
-  },
-  bgGlow2: {
-    position: 'absolute', top: 350, left: -180,
-    width: 400, height: 400, borderRadius: 200,
-    backgroundColor: Colors.roseGlow, opacity: 0.3,
-  },
-  toast: {
-    position: 'absolute', top: 100, alignSelf: 'center',
-    flexDirection: 'row', alignItems: 'center', gap: 8,
-    backgroundColor: Colors.surface2, borderRadius: 20,
-    paddingHorizontal: 16, paddingVertical: 10,
-    borderWidth: 0.5, borderColor: Colors.borderGold,
-    shadowColor: Colors.gold3, shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2, shadowRadius: 16, elevation: 8, zIndex: 100,
-  },
-  toastText: { fontFamily: Fonts.uiMedium, fontSize: 13, color: Colors.text1 },
-  scrollContent: { paddingHorizontal: 16, paddingTop: 8 },
+// ── Styles ────────────────────────────────────────────────────────────────────
 
-  header: {
+// Main screen
+const s = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: Colors.bg,
+  },
+  scroll: {
+    flex: 1,
+  },
+  loadingMore: {
+    paddingVertical: 20,
+    alignItems: 'center',
+  },
+});
+
+// DiscoverHeader
+const dh = StyleSheet.create({
+  wrap: {
+    height: 52,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: 8,
-    paddingBottom: 20,
+    paddingHorizontal: 16,
+    backgroundColor: Colors.bg,
+    borderBottomWidth: 0.5,
+    borderBottomColor: Colors.border1,
   },
-  headerLogo: {
+  title: {
     fontFamily: Fonts.display,
-    fontSize: 34,
-    letterSpacing: 1.5,
+    fontSize: 26,
     color: Colors.rose3,
   },
-  notifBtn: {
-    width: 40, height: 40, borderRadius: 20,
-    backgroundColor: Colors.surface2, alignItems: 'center', justifyContent: 'center',
-    borderWidth: 0.5, borderColor: Colors.border2, position: 'relative',
-  },
-  notifBadge: {
-    position: 'absolute', top: 8, right: 8,
-    width: 15, height: 15, borderRadius: 7.5,
-    backgroundColor: Colors.rose3, alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1.5, borderColor: Colors.bg,
-  },
-  notifCount: { fontFamily: Fonts.ui, fontSize: 8, color: Colors.surface1 },
-  section: { marginBottom: 28, paddingHorizontal: 16 },
-  sectionHeader: {
-    flexDirection: 'row', justifyContent: 'space-between',
-    alignItems: 'flex-end', marginBottom: 14,
-  },
-  sectionTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  liveDot: {
-    width: 7, height: 7, borderRadius: 3.5, backgroundColor: Colors.rose3,
-    shadowColor: Colors.rose3, shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 1, shadowRadius: 6, elevation: 4,
-  },
-  sectionLabel: {
-    fontFamily: Fonts.uiMedium, fontSize: 9, color: Colors.gold3,
-    letterSpacing: 2.5, textTransform: 'uppercase', marginBottom: 3,
-  },
-  sectionTitle: { fontFamily: Fonts.editorial, fontSize: 24, color: Colors.text1, letterSpacing: 0 },
-  seeAll: { fontFamily: Fonts.uiMedium, fontSize: 11, color: Colors.text4, letterSpacing: 1, textTransform: 'uppercase' },
-  emptyFilter: { fontFamily: Fonts.uiLight, fontSize: 14, color: Colors.text4, textAlign: 'center', paddingVertical: 24 },
-  // Campaign
-  campaignCard: {
-    borderRadius: 14, overflow: 'hidden',
-    borderWidth: 0.5, borderColor: Colors.borderGold,
-  },
-  campaignAccent: {
-    position: 'absolute', top: 0, left: 0, right: 0, height: 1.5,
-    backgroundColor: Colors.gold3, opacity: 0.7,
-  },
-  campaignContent: { padding: 16, gap: 10 },
-  campaignTopRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  campaignLogo: {
-    width: 34, height: 34, borderRadius: 17,
-    backgroundColor: Colors.surface3, borderWidth: 0.5, borderColor: Colors.borderGold,
-  },
-  campaignBrand: { fontFamily: Fonts.uiMedium, flex: 1, fontSize: 12, color: Colors.text3, letterSpacing: 0.5 },
-  sponsoredBadge: {
-    backgroundColor: Colors.glassGold, borderRadius: 4,
-    paddingHorizontal: 6, paddingVertical: 3,
-    borderWidth: 0.5, borderColor: Colors.borderGold,
-  },
-  sponsoredText: { fontFamily: Fonts.uiMedium, fontSize: 8, color: Colors.gold3, letterSpacing: 1 },
-  campaignTitle: {
-    fontFamily: Fonts.uiMedium, fontSize: 15, color: Colors.text1,
-    letterSpacing: -0.2, lineHeight: 21,
-  },
-  campaignBottomRow: {
-    flexDirection: 'row', alignItems: 'center',
-    justifyContent: 'space-between', marginTop: 4,
-  },
-  discountBadge: {
-    backgroundColor: Colors.glassRose, borderRadius: 6,
-    paddingHorizontal: 10, paddingVertical: 5,
-    borderWidth: 0.5, borderColor: Colors.borderRose,
-  },
-  discountText: { fontFamily: Fonts.ui, fontSize: 12, color: Colors.rose4 },
-  codeBox: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    backgroundColor: Colors.glassGold, borderRadius: 8,
-    paddingHorizontal: 12, paddingVertical: 7,
-    borderWidth: 0.5, borderColor: Colors.borderGold,
-  },
-  codeText: { fontFamily: Fonts.ui, fontSize: 13, color: Colors.gold4, letterSpacing: 2 },
-  // Category
-  categoryScroll: { paddingLeft: 16, paddingRight: 16, gap: 8, marginBottom: 24 },
-  categoryChip: {
-    flexDirection: 'row', alignItems: 'center', gap: 5,
-    paddingHorizontal: 14, paddingVertical: 8, borderRadius: 6,
-    backgroundColor: Colors.surface2, borderWidth: 0.5, borderColor: Colors.border2, overflow: 'hidden',
-  },
-  categoryChipActive: { borderColor: Colors.borderGold },
-  categoryIcon: { fontSize: 14 },
-  categoryLabel: { fontFamily: Fonts.uiMedium, fontSize: 12, color: Colors.text3 },
-  categoryLabelActive: { color: Colors.gold4 },
-  // Brands grid
-  brandsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  // Products masonry
-  productsGrid: { flexDirection: 'row', gap: 10 },
-  productCol: { flex: 1, gap: 0 },
-  productColOffset: { paddingTop: 20 },
-  feedTabs: { flexDirection: 'row', gap: 8, marginBottom: 20 },
-  feedTab: {
-    flex: 1, paddingVertical: 10, borderRadius: 8, alignItems: 'center',
-    backgroundColor: Colors.surface2, borderWidth: 0.5, borderColor: Colors.border2, overflow: 'hidden',
-  },
-  feedTabActive: { borderColor: Colors.borderGold },
-  feedTabText: { fontFamily: Fonts.uiMedium, fontSize: 12, color: Colors.text3, letterSpacing: 0.5, textTransform: 'uppercase' },
-  feedTabTextActive: { color: Colors.gold4 },
-  forYouEmpty: { alignItems: 'center', paddingVertical: 48, paddingHorizontal: 32, gap: 10 },
-  forYouEmptyIcon: { fontSize: 48 },
-  forYouEmptyTitle: { fontFamily: Fonts.editorial, fontSize: 22, color: Colors.text2 },
-  forYouEmptySubtitle: { fontFamily: Fonts.uiLight, fontSize: 14, color: Colors.text4, textAlign: 'center', lineHeight: 20 },
-  affiliateNote: {
-    flexDirection: 'row', gap: 6, alignItems: 'flex-start',
-    paddingHorizontal: 4, marginBottom: 8,
-  },
-  affiliateText: { fontFamily: Fonts.uiLight, fontSize: 10, color: Colors.text5, lineHeight: 16, flex: 1 },
-  trendingList: { paddingRight: 4 },
-});
-
-// Kargo widget stilleri
-const CARD_W = 164;
-const sw = StyleSheet.create({
-  emptyWrap: {
+  actions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    paddingVertical: 16,
-    paddingHorizontal: 14,
+    gap: 8,
+  },
+  iconBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: Colors.surface2,
-    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 0.5,
     borderColor: Colors.border2,
   },
-  emptyText: {
+});
+
+// CategoryTabs
+const ct = StyleSheet.create({
+  wrap: {
+    backgroundColor: Colors.bg,
+    borderBottomWidth: 0.5,
+    borderBottomColor: Colors.border1,
+  },
+  scrollContent: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    flexDirection: 'row',
+    gap: 8,
+  },
+  tab: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 20,
+    backgroundColor: Colors.surface2,
+    borderWidth: 0.5,
+    borderColor: Colors.border2,
+  },
+  tabActive: {
+    backgroundColor: Colors.rose3,
+    borderColor: Colors.rose3,
+  },
+  tabText: {
+    fontFamily: Fonts.uiMedium,
+    fontSize: 12,
+    color: Colors.text3,
+  },
+  tabTextActive: {
+    color: '#FFFFFF',
+  },
+});
+
+// ProductCard
+const pc = StyleSheet.create({
+  card: {
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: Colors.surface1,
+    borderWidth: 0.5,
+    borderColor: Colors.border1,
+  },
+  imgPlaceholder: {
+    backgroundColor: Colors.surface3,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgeStack: {
+    position: 'absolute',
+    top: 8,
+    left: 8,
+    flexDirection: 'column',
+    gap: 4,
+  },
+  badge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  badgeNew: {
+    backgroundColor: 'rgba(45,90,17,0.9)',
+  },
+  badgeSale: {
+    backgroundColor: 'rgba(163,45,45,0.9)',
+  },
+  badgeText: {
+    fontFamily: Fonts.ui,
+    fontSize: 9,
+    color: '#FFFFFF',
+    letterSpacing: 0.5,
+  },
+  dotsBtn: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  info: {
+    backgroundColor: Colors.surface1,
+    padding: 8,
+  },
+  brand: {
+    fontFamily: Fonts.uiMedium,
+    fontSize: 10,
+    color: Colors.rose3,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+    marginBottom: 2,
+  },
+  name: {
+    fontFamily: Fonts.uiLight,
+    fontSize: 12,
+    color: Colors.text1,
+    lineHeight: 16,
+    numberOfLines: 2,
+    marginBottom: 4,
+  } as any,
+  priceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  price: {
+    fontFamily: Fonts.ui,
+    fontSize: 13,
+    color: Colors.rose3,
+  },
+  originalPrice: {
+    fontFamily: Fonts.uiLight,
+    fontSize: 11,
+    color: Colors.text4,
+    textDecorationLine: 'line-through',
+    marginLeft: 4,
+  },
+});
+
+// EmptyState
+const es = StyleSheet.create({
+  wrap: {
+    alignItems: 'center',
+    paddingVertical: 56,
+    paddingHorizontal: 32,
+    gap: 12,
+  },
+  iconCircle: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: Colors.surface2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 0.5,
+    borderColor: Colors.border2,
+    marginBottom: 4,
+  },
+  title: {
+    fontFamily: Fonts.uiMedium,
+    fontSize: 17,
+    color: Colors.text1,
+    textAlign: 'center',
+  },
+  subtitle: {
     fontFamily: Fonts.uiLight,
     fontSize: 14,
     color: Colors.text4,
+    textAlign: 'center',
+    lineHeight: 20,
   },
-  dateLabel: {
+  btn: {
+    marginTop: 8,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 10,
+    backgroundColor: Colors.rose3,
+  },
+  btnText: {
     fontFamily: Fonts.uiMedium,
-    fontSize: 12,
-    letterSpacing: 1.8,
-    color: Colors.text2,
-    textTransform: 'uppercase',
-    marginBottom: 12,
+    fontSize: 14,
+    color: '#FFFFFF',
   },
-  card: {
-    width: CARD_W,
-    backgroundColor: Colors.surface2,
-    borderRadius: 14,
-    borderWidth: 0.5,
-    borderColor: Colors.border2,
-    padding: 14,
-    gap: 5,
+  linkBtn: {
+    marginTop: 4,
+    paddingVertical: 8,
   },
-  topRow: {
+  linkBtnText: {
+    fontFamily: Fonts.uiMedium,
+    fontSize: 14,
+    color: Colors.rose3,
+    textDecorationLine: 'underline',
+  },
+});
+
+// FilterSheet
+const fs = StyleSheet.create({
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+  },
+  sheet: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: Colors.surface1,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 24,
+    paddingBottom: 40,
+  },
+  handle: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: Colors.border3,
+    alignSelf: 'center',
+    marginBottom: 20,
+  },
+  title: {
+    fontFamily: Fonts.display,
+    fontSize: 22,
+    color: Colors.text1,
+    marginBottom: 20,
+  },
+  row: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 2,
+    paddingVertical: 14,
   },
-  carrier: {
-    fontFamily: Fonts.uiLight,
-    fontSize: 11,
-    color: Colors.text4,
+  rowTextWrap: {
+    flex: 1,
+    marginRight: 16,
   },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  brandName: {
-    fontFamily: Fonts.ui,
+  rowLabel: {
+    fontFamily: Fonts.uiMedium,
     fontSize: 15,
     color: Colors.text1,
-    letterSpacing: -0.2,
   },
-  statusText: {
-    fontFamily: Fonts.uiMedium,
-    fontSize: 12,
-    letterSpacing: 0.1,
-  },
-  progressTrack: {
-    height: 3,
-    backgroundColor: Colors.border2,
-    borderRadius: 3,
-    overflow: 'hidden',
-    marginVertical: 4,
-  },
-  progressFill: {
-    height: '100%',
-    borderRadius: 3,
-  },
-  eta: {
+  rowSub: {
     fontFamily: Fonts.uiLight,
-    fontSize: 11,
+    fontSize: 12,
+    color: Colors.text4,
+    marginTop: 2,
+  },
+  divider: {
+    height: 0.5,
+    backgroundColor: Colors.border1,
+  },
+  applyBtn: {
+    marginTop: 24,
+    backgroundColor: Colors.rose3,
+    borderRadius: 12,
+    paddingVertical: 15,
+    alignItems: 'center',
+  },
+  applyBtnText: {
+    fontFamily: Fonts.uiMedium,
+    fontSize: 16,
+    color: '#FFFFFF',
+  },
+  resetBtn: {
+    marginTop: 12,
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  resetBtnText: {
+    fontFamily: Fonts.uiMedium,
+    fontSize: 14,
     color: Colors.text3,
   },
 });

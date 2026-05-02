@@ -40,14 +40,17 @@ CREATE INDEX IF NOT EXISTS idx_reminders_due
 -- 4. RLS: reminders
 ALTER TABLE shipment_reminders ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "reminder_own" ON shipment_reminders
-  USING (auth.uid() = user_id);
-
-CREATE POLICY "reminder_insert_own" ON shipment_reminders
-  FOR INSERT WITH CHECK (auth.uid() = user_id);
-
-CREATE POLICY "reminder_delete_own" ON shipment_reminders
-  FOR DELETE USING (auth.uid() = user_id);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='shipment_reminders' AND policyname='reminder_own') THEN
+    CREATE POLICY "reminder_own" ON shipment_reminders USING (auth.uid() = user_id);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='shipment_reminders' AND policyname='reminder_insert_own') THEN
+    CREATE POLICY "reminder_insert_own" ON shipment_reminders FOR INSERT WITH CHECK (auth.uid() = user_id);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='shipment_reminders' AND policyname='reminder_delete_own') THEN
+    CREATE POLICY "reminder_delete_own" ON shipment_reminders FOR DELETE USING (auth.uid() = user_id);
+  END IF;
+END $$;
 
 -- 5. Shipment count function (badge ve sayaç kutucukları için)
 CREATE OR REPLACE FUNCTION get_shipment_summary(p_user_id UUID)
