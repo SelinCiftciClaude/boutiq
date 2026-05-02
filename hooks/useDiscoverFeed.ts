@@ -107,7 +107,6 @@ export function useDiscoverFeed(
           master_categories(slug)
         `)
         .eq('is_available', true)
-        .eq('in_stock', true)
         .order('created_at', { ascending: false })
         .range(from, to);
 
