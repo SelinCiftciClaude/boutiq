@@ -697,11 +697,15 @@ export default function DiscoverScreen() {
   const { data: categories = [] } = useDiscoverCategories(brandIds);
   const { data: categoryBrands = [] } = useCategoryBrands(activeCategory, brandIds);
 
-  // Filtre aktifse sadece seçili markalar, değilse tümü
-  const effectiveBrandIds = useMemo(
-    () => brandFilter.length > 0 ? brandFilter : brandIds,
-    [brandFilter, brandIds],
-  );
+  // Marka ID'si önceliği:
+  // 1. Kullanıcı açıkça butik seçtiyse → o butikler
+  // 2. Arama aktifse → tüm butikler (keşif modu)
+  // 3. Hiçbiri yoksa → takip edilen butikler
+  const effectiveBrandIds = useMemo(() => {
+    if (brandFilter.length > 0) return brandFilter;
+    if (debouncedSearch.trim()) return [];
+    return brandIds;
+  }, [brandFilter, brandIds, debouncedSearch]);
 
   // 350ms debounce — her tuşa basmada query tetikleme
   useEffect(() => {
