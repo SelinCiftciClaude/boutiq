@@ -10,7 +10,8 @@ export function useSavedBrands() {
     queryKey: ['savedBrands', user?.id ?? 'anon'],
     queryFn: () => (user ? fetchSavedBrands(user.id) : Promise.resolve([])),
     enabled: !!user,
-    staleTime: 30_000,
+    staleTime: 5 * 60_000,
+    retry: 3,
   });
 
   const invalidate = () => {

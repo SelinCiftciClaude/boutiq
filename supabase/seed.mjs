@@ -151,9 +151,9 @@ async function seedBrands() {
     // ── Çanta & Aksesuar ──────────────────────────────────────────────────────
     {
       id: 'bbbbbbbb-0001-0001-0001-000000000009',
-      name: 'MyLouye',
-      handle: '@mylouye',
-      website: 'https://www.mylouye.com',
+      name: 'Mlouye',
+      handle: '@mlouye',
+      website: 'https://www.mlouye.com',
       category: 'çanta',
       cover_url: COVERS.canta,
       description: 'Özgün tasarımlı, el yapımı lüks çantalar.',
@@ -407,6 +407,79 @@ async function seedShipments(userId) {
   console.log('✓  Seeded 2 shipments (Selma Çilek — dağıtımda, HOF Silk — teslim edildi)');
 }
 
+async function seedProducts() {
+  // Önce kategori ID'lerini çek
+  const { data: cats } = await supabase
+    .from('master_categories')
+    .select('id, slug');
+  const catId = Object.fromEntries((cats ?? []).map(c => [c.slug, c.id]));
+
+  const B = {
+    selmacilek:  'bbbbbbbb-0001-0001-0001-000000000001',
+    hofsilk:     'bbbbbbbb-0001-0001-0001-000000000003',
+    sinemkivanc: 'bbbbbbbb-0001-0001-0001-000000000006',
+    loveonfriday:'bbbbbbbb-0001-0001-0001-000000000008',
+    mylouye:     'bbbbbbbb-0001-0001-0001-000000000009',
+    manuel:      'bbbbbbbb-0001-0001-0001-000000000010',
+    rebul:       'bbbbbbbb-0001-0001-0001-000000000015',
+    purest:      'bbbbbbbb-0001-0001-0001-000000000016',
+    vavrattan:   'bbbbbbbb-0001-0001-0001-000000000013',
+  };
+
+  const products = [
+    // ── Selma Çilek ──────────────────────────────────────────────────────────
+    { id: 'aa000001-aa01-aa01-aa01-aa0000000001', brand_id: B.selmacilek, name: 'Aeris Elbise', price: 16000, original_price: null, is_on_sale: false, is_new: true, master_category_id: catId['giyim'], image_url: 'https://www.selmacilek.com/cdn/shop/files/Artboard6_1.jpg?v=1756215502&width=1080', image_aspect_ratio: 0.75, url: 'https://www.selmacilek.com/products/f-kahverengi-elbise-kopya', is_available: true },
+    { id: 'aa000001-aa01-aa01-aa01-aa0000000002', brand_id: B.selmacilek, name: 'Alina Ekru Bluz', price: 8800, original_price: null, is_on_sale: false, is_new: true, master_category_id: catId['giyim'], image_url: 'https://www.selmacilek.com/cdn/shop/files/IMG-0443.jpg?v=1714039138&width=1080', image_aspect_ratio: 0.75, url: 'https://www.selmacilek.com/products/beyaz-straplez-uzun-kollu-tul-bluz', is_available: true },
+    { id: 'aa000001-aa01-aa01-aa01-aa0000000003', brand_id: B.selmacilek, name: 'Alto Siyah Tulum', price: 13800, original_price: null, is_on_sale: false, is_new: false, master_category_id: catId['giyim'], image_url: 'https://www.selmacilek.com/cdn/shop/files/Artboard57.jpg?v=1745215491&width=1080', image_aspect_ratio: 0.75, url: 'https://www.selmacilek.com/products/siyah-boyundan-baglamali-kapri-tulum', is_available: true },
+
+    // ── Hof Silk ─────────────────────────────────────────────────────────────
+    { id: 'bb000002-bb02-bb02-bb02-bb0000000001', brand_id: B.hofsilk, name: 'Béatrice Babydoll — Siyah', price: 2490, original_price: null, is_on_sale: false, is_new: true, master_category_id: catId['giyim'], image_url: 'https://www.hofsilk.com/cdn/shop/files/beatrice_a2518f40-7b9c-4a91-9026-9f9661234be3.jpg', image_aspect_ratio: 0.75, url: 'https://www.hofsilk.com/products/beatrice-babydoll-siyah', is_available: true },
+    { id: 'bb000002-bb02-bb02-bb02-bb0000000002', brand_id: B.hofsilk, name: 'Béatrice Ouvert Bodysuit — Siyah', price: 2290, original_price: null, is_on_sale: false, is_new: true, master_category_id: catId['giyim'], image_url: 'https://www.hofsilk.com/cdn/shop/files/beatrice_a9ae691c-f579-4f76-9bd3-423e437c0793.jpg', image_aspect_ratio: 0.75, url: 'https://www.hofsilk.com/products/beatrice-ouvert-bodysuit-siyah', is_available: true },
+    { id: 'bb000002-bb02-bb02-bb02-bb0000000003', brand_id: B.hofsilk, name: 'Lucy Dantel & Tül Sütyen — Siyah', price: 1990, original_price: null, is_on_sale: false, is_new: false, master_category_id: catId['giyim'], image_url: 'https://www.hofsilk.com/cdn/shop/files/lucy_copy_3.jpg', image_aspect_ratio: 0.75, url: 'https://www.hofsilk.com/products/lucy-dantel-tul-sutyen-siyah', is_available: true },
+
+    // ── Sinem Kıvanç ─────────────────────────────────────────────────────────
+    { id: 'cc000003-cc03-cc03-cc03-cc0000000001', brand_id: B.sinemkivanc, name: 'Askılı Hardal Çizgili Elbise', price: 2200, original_price: null, is_on_sale: false, is_new: true, master_category_id: catId['giyim'], image_url: 'https://cdn.myikas.com/images/464bde5b-438b-4d5d-94b8-2eb3673c9483/f3a56e53-d39c-486c-8914-4567787cf8fb/1080/photo-2026-04-28-12-15-33-5.jpg', image_aspect_ratio: 0.75, url: 'https://sinemkivanc.com/askili-hardal-cizgili-elbise', is_available: true },
+    { id: 'cc000003-cc03-cc03-cc03-cc0000000002', brand_id: B.sinemkivanc, name: 'Bel Vurgulu Puantiye Elbise', price: 1850, original_price: 2400, is_on_sale: true, is_new: false, master_category_id: catId['giyim'], image_url: 'https://cdn.myikas.com/images/464bde5b-438b-4d5d-94b8-2eb3673c9483/437ead1a-c732-4a52-b4f5-4d8924068843/1080/img-0153.jpg', image_aspect_ratio: 0.75, url: 'https://sinemkivanc.com/bel-vurgulu-puantiye-elbise', is_available: true },
+    { id: 'cc000003-cc03-cc03-cc03-cc0000000003', brand_id: B.sinemkivanc, name: 'Fular Detaylı Puantiye Elbise', price: 2080, original_price: null, is_on_sale: false, is_new: true, master_category_id: catId['giyim'], image_url: 'https://cdn.myikas.com/images/464bde5b-438b-4d5d-94b8-2eb3673c9483/769bd40d-9d8a-490e-9f72-a5491fcf5eb1/1080/img-9023.jpg', image_aspect_ratio: 0.75, url: 'https://sinemkivanc.com/fular-detayli-puantiye-elbise', is_available: true },
+
+    // ── Love on Friday ───────────────────────────────────────────────────────
+    { id: 'dd000004-dd04-dd04-dd04-dd0000000001', brand_id: B.loveonfriday, name: 'LIORA Üst — Siyah', price: 2189, original_price: null, is_on_sale: false, is_new: true, master_category_id: catId['giyim'], image_url: 'https://www.love-onfriday.com/cdn/shop/files/LIOR-UST-S-01-Siyah_1.jpg?v=1776420551&width=2401', image_aspect_ratio: 0.75, url: 'https://www.love-onfriday.com/products/liora-ust-siyah', is_available: true },
+    { id: 'dd000004-dd04-dd04-dd04-dd0000000002', brand_id: B.loveonfriday, name: 'ALEYA Teknik Bomber Ceket — Krem', price: 7249, original_price: 9800, is_on_sale: true, is_new: false, master_category_id: catId['giyim'], image_url: 'https://www.love-onfriday.com/cdn/shop/files/ALY-CKT-S-001-Krem_1.jpg?v=1776420733&width=2401', image_aspect_ratio: 0.75, url: 'https://www.love-onfriday.com/products/aleya-teknik-bomber-ceket-krem', is_available: true },
+    { id: 'dd000004-dd04-dd04-dd04-dd0000000003', brand_id: B.loveonfriday, name: 'ELIA Streç Çan Paça Pantolon — Siyah', price: 3289, original_price: null, is_on_sale: false, is_new: true, master_category_id: catId['giyim'], image_url: 'https://www.love-onfriday.com/cdn/shop/files/ELIA-PNT-S-01-Siyah_1.jpg?v=1776420620&width=2401', image_aspect_ratio: 0.75, url: 'https://www.love-onfriday.com/products/elia-mini-flare-pantolon-siyah', is_available: true },
+
+    // ── Mlouye ───────────────────────────────────────────────────────────────
+    { id: 'ee000005-ee05-ee05-ee05-ee0000000001', brand_id: B.mylouye, name: 'Isla Grab Purse — Espresso', price: 14450, original_price: null, is_on_sale: false, is_new: true, master_category_id: catId['canta'], image_url: 'https://www.mlouye.com/cdn/shop/files/Isla-Grab-Purse-Espresso_01_3a2cc992-ace7-4eca-8829-0a8ee00b5840.jpg?v=1776682283&width=1200', image_aspect_ratio: 0.85, url: 'https://www.mlouye.com/products/isla-grab-purse-espresso', is_available: true },
+    { id: 'ee000005-ee05-ee05-ee05-ee0000000002', brand_id: B.mylouye, name: 'Luna 20 — Parrot', price: 14800, original_price: null, is_on_sale: false, is_new: true, master_category_id: catId['canta'], image_url: 'https://www.mlouye.com/cdn/shop/files/Luna-20-Parrot_01_c99120eb-e192-46c7-a633-448628e470e1.jpg?v=1768294828&width=1200', image_aspect_ratio: 0.85, url: 'https://www.mlouye.com/products/luna-20-parrot', is_available: true },
+    { id: 'ee000005-ee05-ee05-ee05-ee0000000003', brand_id: B.mylouye, name: 'M Tote — Tan & Pink', price: 16830, original_price: null, is_on_sale: false, is_new: false, master_category_id: catId['canta'], image_url: 'https://www.mlouye.com/cdn/shop/files/M-Tote-Tan_Pink_01.jpg?v=1767687819&width=1200', image_aspect_ratio: 0.85, url: 'https://www.mlouye.com/products/m-tote-tan-pink', is_available: true },
+
+    // ── Manuel Atelier ───────────────────────────────────────────────────────
+    { id: 'ff000006-ff06-ff06-ff06-ff0000000001', brand_id: B.manuel, name: 'Mini Tote du Jour — Ecru Crochet', price: 21590, original_price: null, is_on_sale: false, is_new: true, master_category_id: catId['canta'], image_url: 'https://manuatelier.com/cdn/shop/files/2026161MINITOTEDUJOURCROCHET_SOFTCALFLEATHERECRU_BLACK_3.jpg?width=800', image_aspect_ratio: 0.85, url: 'https://manuatelier.com/products/mini-tote-du-jour-ecru-crochet-black-soft', is_available: true },
+    { id: 'ff000006-ff06-ff06-ff06-ff0000000002', brand_id: B.manuel, name: 'Le Cambon 20 — Siyah', price: 19720, original_price: 24000, is_on_sale: true, is_new: false, master_category_id: catId['canta'], image_url: 'https://manuatelier.com/cdn/shop/files/2024389_LeCambon20_Black_CalfLeather_1.jpg?width=800', image_aspect_ratio: 0.85, url: 'https://manuatelier.com/products/le-cambon-20-black', is_available: true },
+    { id: 'ff000006-ff06-ff06-ff06-ff0000000003', brand_id: B.manuel, name: 'Le Cambon East West — Vanilla', price: 25160, original_price: null, is_on_sale: false, is_new: true, master_category_id: catId['canta'], image_url: 'https://manuatelier.com/cdn/shop/files/2026143_LE_CAMBON_EAST_WEST_VANILLA_FRONT.jpg?width=800', image_aspect_ratio: 0.85, url: 'https://manuatelier.com/products/le-cambon-east-west-vanilla', is_available: true },
+
+    // ── Atelier Rebul ────────────────────────────────────────────────────────
+    { id: 'ab000007-ab07-ab07-ab07-ab0000000001', brand_id: B.rebul, name: 'Istanbul Eau de Parfum 125ml', price: 5250, original_price: null, is_on_sale: false, is_new: false, master_category_id: catId['parfum'], image_url: 'https://akn-atelier.a-cdn.akinoncloud.com/products/2023/11/03/272/9052fdd1-41bc-4be1-8f95-4c5d0bfcce1d_size400x400_cropCenter.jpg', image_aspect_ratio: 1.0, url: 'https://www.atelierrebul.com.tr/istanbul-eau-de-parfum-125-ml/', is_available: true },
+    { id: 'ab000007-ab07-ab07-ab07-ab0000000002', brand_id: B.rebul, name: 'Istanbul Bosphorus EDP 125ml', price: 5250, original_price: null, is_on_sale: false, is_new: true, master_category_id: catId['parfum'], image_url: 'https://akn-atelier.a-cdn.akinoncloud.com/products/2024/04/18/12146/f17994b1-1de4-4549-a41e-94c03b5e458a_size400x400_cropCenter.jpg', image_aspect_ratio: 1.0, url: 'https://www.atelierrebul.com.tr/istanbul-bosphorus-eau-de-parfum-125-ml/', is_available: true },
+    { id: 'ab000007-ab07-ab07-ab07-ab0000000003', brand_id: B.rebul, name: '1895 Eau de Parfum 125ml', price: 5250, original_price: 6200, is_on_sale: true, is_new: false, master_category_id: catId['parfum'], image_url: 'https://akn-atelier.a-cdn.akinoncloud.com/products/2024/08/16/55/d1a72e6f-87c7-4014-84df-e75f31f57425_size400x400_cropCenter.jpg', image_aspect_ratio: 1.0, url: 'https://www.atelierrebul.com.tr/1895-eau-de-parfum-125-ml/', is_available: true },
+
+    // ── The Purest Solutions ─────────────────────────────────────────────────
+    { id: 'ac000008-ac08-ac08-ac08-ac0000000001', brand_id: B.purest, name: 'Vitamin C Serum 30ml', price: 300, original_price: null, is_on_sale: false, is_new: false, master_category_id: catId['cilt-bakimi'], image_url: 'https://thepurestsolutions.com/cdn/shop/files/Brightening_LighteningVitaminCSerum-1.jpg?v=1776666975&width=1100', image_aspect_ratio: 0.9, url: 'https://thepurestsolutions.com/products/aydinlatici-ve-cilt-tonu-esitleyici-c-vitamini-cilt-serumu-30-ml-kopya', is_available: true },
+    { id: 'ac000008-ac08-ac08-ac08-ac0000000002', brand_id: B.purest, name: 'Arbutin Brightening Serum 30ml', price: 280, original_price: 380, is_on_sale: true, is_new: false, master_category_id: catId['cilt-bakimi'], image_url: 'https://thepurestsolutions.com/cdn/shop/files/BrighteningSerum-1.jpg?v=1776667064&width=1100', image_aspect_ratio: 0.9, url: 'https://thepurestsolutions.com/products/leke-karsiti-aydinlatici-arbutin-cilt-bakim-serumu-30ml', is_available: true },
+    { id: 'ac000008-ac08-ac08-ac08-ac0000000003', brand_id: B.purest, name: 'Glycolic Acid Blue Tonic 200ml', price: 300, original_price: null, is_on_sale: false, is_new: true, master_category_id: catId['cilt-bakimi'], image_url: 'https://thepurestsolutions.com/cdn/shop/files/ExfoliatingandClarifyingToner200ml-2000x2000-1.jpg?v=1776667095&width=1100', image_aspect_ratio: 0.9, url: 'https://thepurestsolutions.com/products/glikolik-asit-mavi-tonik-gozenek-sikilasitirici-200ml', is_available: true },
+
+    // ── VavRattan ────────────────────────────────────────────────────────────
+    { id: 'ad000009-ad09-ad09-ad09-ad0000000001', brand_id: B.vavrattan, name: 'Berlin 2+1+1 Yemek Takımı — Açık Gri', price: 31000, original_price: null, is_on_sale: false, is_new: false, master_category_id: catId['ev-dekor'], image_url: 'https://vavrattan.com/cdn/shop/files/157.png?v=1704394993&width=533', image_aspect_ratio: 1.0, url: 'https://vavrattan.com/products/berlin-2-1-1-yemek-takimi-acik-gri', is_available: true },
+    { id: 'ad000009-ad09-ad09-ad09-ad0000000002', brand_id: B.vavrattan, name: 'Berlin 2+2 Oturma Takımı — Taş Gri', price: 30000, original_price: 36000, is_on_sale: true, is_new: false, master_category_id: catId['ev-dekor'], image_url: 'https://vavrattan.com/cdn/shop/files/Berlin2_2OturmaTakimi-TasGri-1.png?v=1746903803&width=533', image_aspect_ratio: 1.0, url: 'https://vavrattan.com/products/berlin-2-2-tas-gri', is_available: true },
+    { id: 'ad000009-ad09-ad09-ad09-ad0000000003', brand_id: B.vavrattan, name: 'Berlin Bistro Oturma Takımı — Kum', price: 27000, original_price: null, is_on_sale: false, is_new: true, master_category_id: catId['ev-dekor'], image_url: 'https://vavrattan.com/cdn/shop/files/152.png?v=1704395188&width=533', image_aspect_ratio: 1.0, url: 'https://vavrattan.com/products/berlin-bistro-oturma-takimi-kum', is_available: true },
+  ];
+
+  const { error } = await supabase
+    .from('products')
+    .upsert(products, { onConflict: 'id' });
+  if (error) throw error;
+  console.log(`✓  Seeded ${products.length} products across ${Object.keys(B).length} brands`);
+}
+
 async function seedUserBrands(userId) {
   // Demo kullanıcının koleksiyonu — kategori çeşitliliği için
   const pairs = [
@@ -438,6 +511,7 @@ async function main() {
   console.log(`\n🌱  Seeding local Supabase at ${SUPABASE_URL}\n`);
   const userId = await ensureDemoUser();
   await seedBrands();
+  await seedProducts();
   await seedUserBrands(userId);
   await seedShipments(userId);
   console.log(`\n✅  Done. Login: ${DEMO_EMAIL} / ${DEMO_PASSWORD}\n`);

@@ -4,7 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StyleSheet } from 'react-native';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import * as Linking from 'expo-linking';
 import { useFonts } from 'expo-font';
 import {
@@ -37,18 +37,42 @@ SplashScreen.preventAutoHideAsync();
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: 1,
+      retry: 2,
+      retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 10000),
+      staleTime: 5 * 60_000,     // 5 dakika
+      gcTime: 15 * 60_000,       // 15 dakika cache'de tut
       refetchOnWindowFocus: false,
+      refetchOnReconnect: true,
     },
   },
 });
 
 function RouteGate() {
-  const { session, loading } = useAuth();
+  const { session, loading, signIn } = useAuth();
   const { hasInterests, checked } = useInterests();
   const segments = useSegments();
   const router = useRouter();
+  const qc = useQueryClient();
   const [shareUrl, setShareUrl] = useState<string | null>(null);
+  const autoLoginAttempted = useState(false);
+
+  // Kullanıcı çıkış yaptığında cache'i tamamen temizle.
+  const prevSessionRef = useState<string | null>(null);
+  useEffect(() => {
+    const prevId = prevSessionRef[0];
+    const curId  = session?.user?.id ?? null;
+    if (prevId && !curId) {
+      qc.clear();
+    }
+    prevSessionRef[1](curId);
+  }, [session?.user?.id, qc]);
+
+  // Oturum yoksa demo kullanıcısıyla otomatik giriş yap
+  useEffect(() => {
+    if (loading || session || autoLoginAttempted[0]) return;
+    autoLoginAttempted[1](true);
+    signIn('demo@boutiq.app', 'demo1234').catch(() => {});
+  }, [loading, session]);
 
   useEffect(() => {
     if (session?.user) getAndSavePushToken(session.user.id);

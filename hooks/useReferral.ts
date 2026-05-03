@@ -9,5 +9,6 @@ export function useReferral() {
     queryFn: () => getOrCreateReferralCode(user!.id),
     enabled: !!user,
     staleTime: Infinity,
+    retry: false,
   });
 }

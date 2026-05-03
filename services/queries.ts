@@ -513,9 +513,24 @@ export async function getOrCreateReferralCode(userId: string): Promise<string> {
 
   const rand = new Uint32Array(1);
   crypto.getRandomValues(rand);
-  const code = 'BTQ' + rand[0].toString(36).slice(0, 5).toUpperCase();
-  const { error } = await supabase.from('referral_codes').insert({ code, owner_user_id: userId });
-  if (error) throw error;
+  const code = 'BTQ' + rand[0].toString(36).padStart(7, '0').slice(0, 7).toUpperCase();
+
+  const { error } = await supabase
+    .from('referral_codes')
+    .insert({ code, owner_user_id: userId });
+
+  if (error) {
+    // Unique conflict — concurrent insert, ya da bu kullanıcının kodu zaten var
+    if (error.code === '23505') {
+      const { data: retry } = await supabase
+        .from('referral_codes')
+        .select('code')
+        .eq('owner_user_id', userId)
+        .maybeSingle();
+      return retry?.code ?? code;
+    }
+    throw error;
+  }
   return code;
 }
 

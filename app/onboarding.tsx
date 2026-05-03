@@ -395,15 +395,6 @@ export default function OnboardingScreen() {
             <Text style={styles.welcomeLogo}>BUTİKA</Text>
             <View style={styles.welcomeLogoDivider} />
           </View>
-          <View style={styles.welcomeCards}>
-            {['Manuel Atelier', 'Sinem Kıvanç', 'Atelier Rebul'].map((n, i) => (
-              <View key={i} style={[styles.welcomeCard, { marginTop: i * 14, marginLeft: i * 10, zIndex: 3 - i }]}>
-                <LinearGradient colors={[Colors.surface1, Colors.surface2]} style={StyleSheet.absoluteFill} />
-                <View style={styles.welcomeCardDot} />
-                <Text style={styles.welcomeCardName}>{n}</Text>
-              </View>
-            ))}
-          </View>
           <Text style={styles.welcomeHeadline}>Sevdiğin tüm butikleri{'\n'}tek yerde topla.</Text>
           <Text style={styles.welcomeSub}>Aşağıdaki 4 adımda Butika'yı sana özel hale getireceğiz. Yaklaşık 1 dakika sürer.</Text>
         </View>
@@ -582,9 +573,7 @@ export default function OnboardingScreen() {
         )}
 
         {step === 0 ? (
-          <TouchableOpacity onPress={handleSkip} style={styles.skipTopBtn}>
-            <Text style={styles.skipTopText}>Geç</Text>
-          </TouchableOpacity>
+          <View style={{ width: 36 }} />
         ) : step < 4 ? (
           <TouchableOpacity onPress={handleSkip} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
             <Text style={styles.skipTopText}>Atla</Text>

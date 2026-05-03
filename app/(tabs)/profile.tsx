@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Switch,
+  Modal,
   Image,
   Dimensions,
   FlatList,
@@ -34,6 +35,25 @@ type SavedBrand = { brand: Brand; userCategory: BrandCategory };
 
 const { width } = Dimensions.get('window');
 const CARD_W = (width - 48) / 2;
+
+// Tüm master kategoriler (keşfet kategori seçimi için)
+const ALL_CATEGORIES = [
+  { slug: 'giyim',       label: 'Giyim',           emoji: '👗' },
+  { slug: 'canta',       label: 'Çanta',           emoji: '👜' },
+  { slug: 'ayakkabi',    label: 'Ayakkabı',        emoji: '👠' },
+  { slug: 'taki',        label: 'Takı',            emoji: '💍' },
+  { slug: 'kozmetik',    label: 'Kozmetik',        emoji: '💄' },
+  { slug: 'cilt-bakimi', label: 'Cilt Bakımı',     emoji: '✨' },
+  { slug: 'sac-bakimi',  label: 'Saç Bakımı',      emoji: '💇' },
+  { slug: 'parfum',      label: 'Parfüm',          emoji: '🌸' },
+  { slug: 'ev-tekstil',  label: 'Ev Tekstili',     emoji: '🛏️' },
+  { slug: 'ev-dekor',    label: 'Ev & Dekor',      emoji: '🏠' },
+  { slug: 'mutfak',      label: 'Mutfak',          emoji: '🍽️' },
+  { slug: 'bebek',       label: 'Bebek & Çocuk',   emoji: '👶' },
+  { slug: 'evcil',       label: 'Pet',             emoji: '🐾' },
+  { slug: 'gida',        label: 'Gıda & Organik',  emoji: '🌿' },
+  { slug: 'aksesuar',    label: 'Aksesuar',        emoji: '👒' },
+];
 
 const CATEGORY_LABELS: Record<string, string> = {
   giyim: '👗 Giyim',
@@ -181,7 +201,8 @@ export default function ProfileScreen() {
   const [editSheet, setEditSheet] = useState<SavedBrand | null>(null);
 
   const { user: authUser, signOut } = useAuth();
-  const { clearInterests } = useInterests();
+  const { clearInterests, interests, addCategory, removeCategory } = useInterests();
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
   const { data: savedBrandsList = [], add: addSaved, remove: removeSaved } = useSavedBrands();
   const { data: dashboard } = useDashboard();
   const { data: profile, updateNotifications } = useProfile();
@@ -450,6 +471,40 @@ export default function ProfileScreen() {
               </View>
             </View>
 
+            {/* Keşfet Kategorileri */}
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Keşfet Kategorileri</Text>
+              </View>
+              <View style={[styles.settingsGroup, { padding: 14 }]}>
+                <Text style={styles.catDesc}>
+                  Keşfet sayfasında görmek istediğin kategorileri seç. Takip ettiğin markalar dışındaki kategorilere de göz atabilirsin.
+                </Text>
+                {/* Seçili kategoriler özeti */}
+                <View style={styles.catChips}>
+                  {ALL_CATEGORIES.filter(c => interests.includes(c.slug)).map(c => (
+                    <TouchableOpacity
+                      key={c.slug}
+                      style={styles.catChipActive}
+                      onPress={() => { Haptics.selectionAsync(); removeCategory(c.slug); }}
+                      activeOpacity={0.75}
+                    >
+                      <Text style={styles.catChipText}>{c.emoji} {c.label}</Text>
+                      <Ionicons name="close" size={11} color="#fff" style={{ marginLeft: 3 }} />
+                    </TouchableOpacity>
+                  ))}
+                  <TouchableOpacity
+                    style={styles.catChipAdd}
+                    onPress={() => setShowCategoryModal(true)}
+                    activeOpacity={0.75}
+                  >
+                    <Ionicons name="add" size={14} color={Colors.rose3} />
+                    <Text style={styles.catChipAddText}>Kategori ekle</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Uygulama</Text>
               <View style={styles.settingsGroup}>
@@ -475,6 +530,41 @@ export default function ProfileScreen() {
 
         <View style={{ height: 100 }} />
       </ScrollView>
+
+      {/* Kategori seçim modali */}
+      <Modal visible={showCategoryModal} transparent animationType="slide" onRequestClose={() => setShowCategoryModal(false)}>
+        <TouchableOpacity style={cat.backdrop} activeOpacity={1} onPress={() => setShowCategoryModal(false)} />
+        <View style={cat.sheet}>
+          <View style={cat.handle} />
+          <Text style={cat.title}>Keşfet Kategorileri</Text>
+          <Text style={cat.subtitle}>Seçili kategoriler Keşfet'te sekme olarak görünür</Text>
+          <ScrollView contentContainerStyle={cat.grid} showsVerticalScrollIndicator={false}>
+            {ALL_CATEGORIES.map(c => {
+              const active = interests.includes(c.slug);
+              return (
+                <TouchableOpacity
+                  key={c.slug}
+                  style={[cat.chip, active && cat.chipActive]}
+                  onPress={() => {
+                    Haptics.selectionAsync();
+                    if (active) removeCategory(c.slug);
+                    else addCategory(c.slug);
+                  }}
+                  activeOpacity={0.75}
+                >
+                  {active && <LinearGradient colors={[Colors.rose2, Colors.rose3]} style={StyleSheet.absoluteFill} />}
+                  <Text style={cat.chipEmoji}>{c.emoji}</Text>
+                  <Text style={[cat.chipLabel, active && cat.chipLabelActive]}>{c.label}</Text>
+                  {active && <Ionicons name="checkmark" size={13} color="#fff" style={{ marginLeft: 'auto' as any }} />}
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+          <TouchableOpacity style={cat.doneBtn} onPress={() => setShowCategoryModal(false)} activeOpacity={0.85}>
+            <Text style={cat.doneBtnText}>Tamam</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
 
       {/* Edit sheet for existing saved brand */}
       <AddBrandSheet
@@ -639,4 +729,48 @@ const styles = StyleSheet.create({
   footer: { alignItems: 'center', gap: 6, paddingVertical: 16 },
   footerText: { fontFamily: Fonts.uiMedium, fontSize: 10, color: Colors.gold3, letterSpacing: 2, textTransform: 'uppercase' },
   footerSub: { fontFamily: Fonts.uiLight, fontSize: 10, color: Colors.text5, textAlign: 'center', lineHeight: 16 },
+  // Kategori yönetim kartı
+  catDesc: { fontFamily: Fonts.uiLight, fontSize: 13, color: Colors.text3, lineHeight: 19, marginBottom: 12 },
+  catChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  catChipActive: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    paddingHorizontal: 10, paddingVertical: 6, borderRadius: 16,
+    backgroundColor: Colors.rose3,
+  },
+  catChipText: { fontFamily: Fonts.uiMedium, fontSize: 12, color: '#fff' },
+  catChipAdd: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    paddingHorizontal: 10, paddingVertical: 6, borderRadius: 16,
+    backgroundColor: Colors.surface3, borderWidth: 0.5, borderColor: Colors.borderBurgund,
+  },
+  catChipAddText: { fontFamily: Fonts.uiMedium, fontSize: 12, color: Colors.rose3 },
+});
+
+// Kategori modal stilleri
+const cat = StyleSheet.create({
+  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' },
+  sheet: {
+    backgroundColor: Colors.surface1, borderTopLeftRadius: 24, borderTopRightRadius: 24,
+    paddingHorizontal: 20, paddingBottom: 32, paddingTop: 12, maxHeight: '80%',
+    borderTopWidth: 0.5, borderColor: Colors.border2,
+  },
+  handle: { width: 36, height: 4, borderRadius: 2, backgroundColor: Colors.border3, alignSelf: 'center', marginBottom: 16 },
+  title: { fontFamily: Fonts.display, fontSize: 22, color: Colors.text1, marginBottom: 4 },
+  subtitle: { fontFamily: Fonts.uiLight, fontSize: 13, color: Colors.text3, marginBottom: 16 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingBottom: 16 },
+  chip: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    paddingHorizontal: 14, paddingVertical: 10, borderRadius: 10,
+    backgroundColor: Colors.surface2, borderWidth: 0.5, borderColor: Colors.border2,
+    overflow: 'hidden', minWidth: '45%', flex: 1,
+  },
+  chipActive: { borderColor: Colors.rose3 },
+  chipEmoji: { fontSize: 16 },
+  chipLabel: { fontFamily: Fonts.uiMedium, fontSize: 13, color: Colors.text2, flex: 1 },
+  chipLabelActive: { color: '#fff' },
+  doneBtn: {
+    height: 52, borderRadius: 12, backgroundColor: Colors.rose3,
+    alignItems: 'center', justifyContent: 'center', marginTop: 8,
+  },
+  doneBtnText: { fontFamily: Fonts.ui, fontSize: 14, letterSpacing: 0.5, color: '#fff' },
 });

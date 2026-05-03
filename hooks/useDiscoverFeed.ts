@@ -26,6 +26,7 @@ export interface DiscoverCategory {
   nameTr: string;
   emoji: string;
   productCount: number;
+  isExtra?: boolean; // kullanıcı manuel ekledi, takip edilen markalardan gelmiyor
 }
 
 export interface DiscoverFilters {
@@ -34,41 +35,60 @@ export interface DiscoverFilters {
   maxPrice: number | null;
 }
 
-// Kategorileri döndür: kullanıcının brand'larında ürünü olan master kategoriler
-export function useDiscoverCategories(brandIds: string[]) {
+// Kategorileri döndür: takip edilen markalar + kullanıcının manuel seçtikleri
+export function useDiscoverCategories(brandIds: string[], extraCategorySlugs: string[] = []) {
   return useQuery({
-    queryKey: ['discover-categories', brandIds],
+    queryKey: ['discover-categories', brandIds, extraCategorySlugs],
     queryFn: async () => {
-      if (!brandIds.length) return [];
-      const { data } = await supabase
-        .from('products')
-        .select('master_category_id, master_categories(id, slug, name_tr, emoji, display_order)')
-        .in('brand_id', brandIds)
-        .eq('is_available', true)
-        .not('master_category_id', 'is', null);
+      const countMap: Record<string, { cat: any; count: number; isExtra: boolean }> = {};
 
-      if (!data?.length) return [];
+      // 1. Takip edilen markalar → otomatik kategoriler
+      if (brandIds.length > 0) {
+        const { data } = await supabase
+          .from('products')
+          .select('master_category_id, master_categories(id, slug, name_tr, emoji, display_order)')
+          .in('brand_id', brandIds)
+          .eq('is_available', true)
+          .not('master_category_id', 'is', null);
 
-      // Benzersiz kategorileri say
-      const countMap: Record<string, { cat: any; count: number }> = {};
-      for (const row of data) {
-        const cat = (row as any).master_categories;
-        if (!cat) continue;
-        if (!countMap[cat.id]) countMap[cat.id] = { cat, count: 0 };
-        countMap[cat.id].count++;
+        for (const row of data ?? []) {
+          const cat = (row as any).master_categories;
+          if (!cat) continue;
+          if (!countMap[cat.id]) countMap[cat.id] = { cat, count: 0, isExtra: false };
+          countMap[cat.id].count++;
+        }
+      }
+
+      // 2. Kullanıcının manuel eklediği extra kategoriler
+      if (extraCategorySlugs.length > 0) {
+        const { data: extraCats } = await supabase
+          .from('master_categories')
+          .select('id, slug, name_tr, emoji, display_order')
+          .in('slug', extraCategorySlugs);
+
+        for (const cat of extraCats ?? []) {
+          if (!countMap[cat.id]) {
+            countMap[cat.id] = { cat, count: 0, isExtra: true };
+          }
+        }
       }
 
       return Object.values(countMap)
-        .sort((a, b) => b.count - a.count || a.cat.display_order - b.cat.display_order)
-        .map(({ cat, count }) => ({
+        .sort((a, b) => {
+          // Otomatik kategoriler önce (ürün sayısına göre), sonra extra'lar
+          if (a.isExtra !== b.isExtra) return a.isExtra ? 1 : -1;
+          return b.count - a.count || a.cat.display_order - b.cat.display_order;
+        })
+        .map(({ cat, count, isExtra }) => ({
           id: cat.id,
           slug: cat.slug,
           nameTr: cat.name_tr,
           emoji: cat.emoji ?? '',
           productCount: count,
-        } as DiscoverCategory));
+          isExtra,
+        } as DiscoverCategory & { isExtra: boolean }));
     },
-    enabled: brandIds.length > 0,
+    enabled: brandIds.length > 0 || extraCategorySlugs.length > 0,
     staleTime: 10 * 60 * 1000,
   });
 }
@@ -134,8 +154,12 @@ export function useDiscoverFeed(
   filters: DiscoverFilters,
   search: string = '',
 ) {
+  // Markalar yüklenmediyse ve arama da yoksa sorgu çalıştırma
+  const shouldRun = brandIds.length > 0 || !!search.trim();
+
   return useInfiniteQuery({
     queryKey: ['discover-feed', brandIds, categorySlug, filters, search],
+    enabled: shouldRun,
     queryFn: async ({ pageParam = 0 }) => {
       const masterCategoryId = await resolveCategoryId(categorySlug);
       if (categorySlug !== 'all' && !masterCategoryId) return [];

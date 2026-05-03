@@ -686,26 +686,36 @@ export default function DiscoverScreen() {
     maxPrice: null,
   });
 
-  const { data: savedBrands = [] } = useSavedBrands();
-  const { clearInterests } = useInterests();
+  const { data: savedBrands = [], isLoading: brandsLoading } = useSavedBrands();
+  const { clearInterests, interests } = useInterests();
 
   const brandIds = useMemo(
     () => (savedBrands as any[]).map((b: any) => b.id as string),
     [savedBrands],
   );
 
-  const { data: categories = [] } = useDiscoverCategories(brandIds);
+  // Kategoriler: takip edilen markalar + kullanıcının onboarding/profil'den seçtikleri
+  const { data: categories = [] } = useDiscoverCategories(brandIds, interests);
+
+  // Extra kategoriler (markadan gelmeyen, kullanıcı manuel ekledi)
+  const autoCategSlugs = useMemo(
+    () => new Set(categories.filter(c => !c.isExtra).map(c => c.slug)),
+    [categories],
+  );
+  const isExtraCategory = activeCategory !== 'all' && !autoCategSlugs.has(activeCategory);
   const { data: categoryBrands = [] } = useCategoryBrands(activeCategory, brandIds);
 
   // Marka ID'si önceliği:
   // 1. Kullanıcı açıkça butik seçtiyse → o butikler
   // 2. Arama aktifse → tüm butikler (keşif modu)
-  // 3. Hiçbiri yoksa → takip edilen butikler
+  // 3. Extra (manuel eklenen) kategori seçiliyse → tüm butikler
+  // 4. Hiçbiri yoksa → takip edilen butikler
   const effectiveBrandIds = useMemo(() => {
     if (brandFilter.length > 0) return brandFilter;
     if (debouncedSearch.trim()) return [];
+    if (isExtraCategory) return [];
     return brandIds;
-  }, [brandFilter, brandIds, debouncedSearch]);
+  }, [brandFilter, brandIds, debouncedSearch, isExtraCategory]);
 
   // 350ms debounce — her tuşa basmada query tetikleme
   useEffect(() => {
@@ -763,7 +773,11 @@ export default function DiscoverScreen() {
 
   // Decide what to show in the content area
   let content: React.ReactNode;
-  if (!hasBrands) {
+  if (brandsLoading && !hasBrands) {
+    // Markalar yüklenirken skeleton göster — "marka yok" ekranı DEĞİL
+    content = <SkeletonGrid />;
+  } else if (!hasBrands) {
+    // Yükleme bitti, gerçekten marka yok
     content = (
       <EmptyState
         variant="noBrands"
