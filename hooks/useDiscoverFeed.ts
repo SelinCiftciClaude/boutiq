@@ -156,9 +156,11 @@ export function useDiscoverFeed(
   categorySlug: string,
   filters: DiscoverFilters,
   search: string = '',
+  forYou: boolean = false,  // true = tüm markalardan keşif modu
 ) {
   // Markalar yüklenmediyse ve arama da yoksa sorgu çalıştırma
-  const shouldRun = brandIds.length > 0 || !!search.trim();
+  // forYou modunda her zaman çalış (brandIds boş bile olsa)
+  const shouldRun = brandIds.length > 0 || !!search.trim() || forYou;
 
   return useInfiniteQuery({
     queryKey: ['discover-feed', brandIds, categorySlug, filters, search],

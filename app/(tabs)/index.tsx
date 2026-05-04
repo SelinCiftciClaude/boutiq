@@ -725,52 +725,162 @@ function MasonryGrid({ items, totalHeight }: MasonryGridProps) {
   );
 }
 
-// ── DiscoverScreen ────────────────────────────────────────────────────────────
-export default function DiscoverScreen() {
-  const insets = useSafeAreaInsets();
-  const [activeCategory, setActiveCategory] = useState('all');
+// ── DiscoverTabSwitcher ───────────────────────────────────────────────────────
+
+type DiscoverTab = 'following' | 'foryou';
+
+function DiscoverTabSwitcher({
+  active,
+  onChange,
+  followingCount,
+}: {
+  active: DiscoverTab;
+  onChange: (t: DiscoverTab) => void;
+  followingCount: number;
+}) {
+  return (
+    <View style={dt.wrap}>
+      <TouchableOpacity
+        style={dt.tab}
+        onPress={() => { Haptics.selectionAsync(); onChange('following'); }}
+        activeOpacity={0.8}
+      >
+        <Text style={[dt.label, active === 'following' && dt.labelActive]}>
+          Takip ettiğin
+        </Text>
+        {followingCount > 0 && (
+          <View style={[dt.badge, active === 'following' && dt.badgeActive]}>
+            <Text style={[dt.badgeText, active === 'following' && dt.badgeTextActive]}>
+              {followingCount}
+            </Text>
+          </View>
+        )}
+        {active === 'following' && <View style={dt.underline} />}
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={dt.tab}
+        onPress={() => { Haptics.selectionAsync(); onChange('foryou'); }}
+        activeOpacity={0.8}
+      >
+        <Text style={[dt.label, active === 'foryou' && dt.labelActive]}>
+          Senin İçin
+        </Text>
+        <Text style={dt.sparkle}>✨</Text>
+        {active === 'foryou' && <View style={dt.underline} />}
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+const dt = StyleSheet.create({
+  wrap: {
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+    paddingBottom: 2,
+    backgroundColor: Colors.bg,
+    borderBottomWidth: 0.5,
+    borderBottomColor: Colors.border2,
+  },
+  tab: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    marginRight: 24,
+    gap: 6,
+    position: 'relative',
+  },
+  label: {
+    fontFamily: Fonts.displayBold,
+    fontSize: 16,
+    color: Colors.text4,
+  },
+  labelActive: {
+    color: Colors.text1,
+  },
+  badge: {
+    backgroundColor: Colors.surface2,
+    borderRadius: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    minWidth: 20,
+    alignItems: 'center',
+  },
+  badgeActive: {
+    backgroundColor: Colors.rose3,
+  },
+  badgeText: {
+    fontFamily: Fonts.ui,
+    fontSize: 10,
+    color: Colors.text4,
+  },
+  badgeTextActive: {
+    color: '#fff',
+  },
+  sparkle: {
+    fontSize: 13,
+  },
+  underline: {
+    position: 'absolute',
+    bottom: -1,
+    left: 0,
+    right: 0,
+    height: 2,
+    backgroundColor: Colors.rose3,
+    borderRadius: 1,
+  },
+});
+
+// ── DiscoverFeedPanel (ortak panel — her iki sekme bunu kullanır) ──────────────
+
+interface DiscoverFeedPanelProps {
+  mode: DiscoverTab;
+  visible: boolean;
+  brandIds: string[];
+  brandsLoading: boolean;
+  interests: string[];
+  clearInterests: () => void;
+  filters: DiscoverFilters;
+  activeCategory: string;
+  showFilter: boolean;
+  onCategoryChange: (slug: string) => void;
+  onApplyFilters: (f: DiscoverFilters, cat: string) => void;
+  onFilterClose: () => void;
+}
+
+function DiscoverFeedPanel({
+  mode, visible,
+  brandIds, brandsLoading, interests, clearInterests,
+  filters, activeCategory,
+  showFilter, onCategoryChange, onApplyFilters, onFilterClose,
+}: DiscoverFeedPanelProps) {
   const [brandFilter, setBrandFilter] = useState<string[]>([]);
   const [searchText, setSearchText] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [showFilter, setShowFilter] = useState(false);
-  const [filters, setFilters] = useState<DiscoverFilters>({
-    onSale: false,
-    newOnly: false,
-    maxPrice: null,
-  });
 
-  const { data: savedBrands = [], isLoading: brandsLoading } = useSavedBrands();
-  const { clearInterests, interests } = useInterests();
+  // "following" modunda kullanıcının butiği yoksa veya "foryou" modunda tüm markalar
+  const isForYou = mode === 'foryou';
+  const panelBrandIds = isForYou ? [] : brandIds;
 
-  const brandIds = useMemo(
-    () => (savedBrands as any[]).map((b: any) => b.id as string),
-    [savedBrands],
+  const { data: categories = [] } = useDiscoverCategories(
+    panelBrandIds,
+    isForYou ? interests : interests,
   );
 
-  // Kategoriler: takip edilen markalar + kullanıcının onboarding/profil'den seçtikleri
-  const { data: categories = [] } = useDiscoverCategories(brandIds, interests);
-
-  // Extra kategoriler (markadan gelmeyen, kullanıcı manuel ekledi)
   const autoCategSlugs = useMemo(
-    () => new Set(categories.filter(c => !c.isExtra).map(c => c.slug)),
+    () => new Set(categories.filter((c: any) => !c.isExtra).map((c: any) => c.slug)),
     [categories],
   );
   const isExtraCategory = activeCategory !== 'all' && !autoCategSlugs.has(activeCategory);
-  const { data: categoryBrands = [] } = useCategoryBrands(activeCategory, brandIds);
+  const { data: categoryBrands = [] } = useCategoryBrands(activeCategory, panelBrandIds);
 
-  // Marka ID'si önceliği:
-  // 1. Kullanıcı açıkça butik seçtiyse → o butikler
-  // 2. Arama aktifse → tüm butikler (keşif modu)
-  // 3. Extra (manuel eklenen) kategori seçiliyse → tüm butikler
-  // 4. Hiçbiri yoksa → takip edilen butikler
   const effectiveBrandIds = useMemo(() => {
     if (brandFilter.length > 0) return brandFilter;
-    if (debouncedSearch.trim()) return [];
+    if (debouncedSearch.trim()) return isForYou ? [] : [];
     if (isExtraCategory) return [];
-    return brandIds;
-  }, [brandFilter, brandIds, debouncedSearch, isExtraCategory]);
+    return panelBrandIds;
+  }, [brandFilter, panelBrandIds, debouncedSearch, isExtraCategory, isForYou]);
 
-  // 350ms debounce — her tuşa basmada query tetikleme
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(searchText), 350);
     return () => clearTimeout(t);
@@ -784,73 +894,40 @@ export default function DiscoverScreen() {
     isLoading,
     refetch,
     isRefetching,
-  } = useDiscoverFeed(effectiveBrandIds, activeCategory, filters, debouncedSearch);
+  } = useDiscoverFeed(effectiveBrandIds, activeCategory, filters, debouncedSearch, isForYou);
 
   const allProducts = useMemo(
     () => (feedPages?.pages ?? []).flat() as DiscoverProduct[],
     [feedPages],
   );
-
   const { items: masonryItems, totalHeight } = useMemo(
     () => computeLayouts(allProducts, cardWidth),
     [allProducts],
   );
 
-  const handleScroll = useCallback(
-    ({ nativeEvent }: any) => {
-      const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
-      if (
-        contentOffset.y + layoutMeasurement.height >=
-        contentSize.height - 300
-      ) {
-        if (hasNextPage && !isFetchingNextPage) fetchNextPage();
-      }
-    },
-    [hasNextPage, isFetchingNextPage, fetchNextPage],
-  );
+  const handleScroll = useCallback(({ nativeEvent }: any) => {
+    const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
+    if (contentOffset.y + layoutMeasurement.height >= contentSize.height - 300) {
+      if (hasNextPage && !isFetchingNextPage) fetchNextPage();
+    }
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const handleCategorySelect = useCallback((slug: string) => {
     Haptics.selectionAsync();
-    setActiveCategory(slug);
     setBrandFilter([]);
     setSearchText('');
     setDebouncedSearch('');
-  }, []);
+    onCategoryChange(slug);
+  }, [onCategoryChange]);
 
-  const handleApplyFilters = useCallback((f: DiscoverFilters, category: string) => {
-    setFilters(f);
-    if (category !== activeCategory) {
-      setActiveCategory(category);
-      setBrandFilter([]);
-      setSearchText('');
-      setDebouncedSearch('');
-    }
-  }, [activeCategory]);
-
-  const activeFilterCount = useMemo(() => {
-    let n = 0;
-    if (activeCategory !== 'all') n++;
-    if (filters.onSale) n++;
-    if (filters.newOnly) n++;
-    return n;
-  }, [activeCategory, filters]);
-
-  const hasBrands = brandIds.length > 0;
+  const hasBrands = isForYou || brandIds.length > 0;
   const hasProducts = allProducts.length > 0;
 
-  // Decide what to show in the content area
   let content: React.ReactNode;
-  if (brandsLoading && !hasBrands) {
-    // Markalar yüklenirken skeleton göster — "marka yok" ekranı DEĞİL
+  if (!isForYou && brandsLoading && !hasBrands) {
     content = <SkeletonGrid />;
-  } else if (!hasBrands) {
-    // Yükleme bitti, gerçekten marka yok
-    content = (
-      <EmptyState
-        variant="noBrands"
-        clearInterests={clearInterests}
-      />
-    );
+  } else if (!isForYou && !hasBrands) {
+    content = <EmptyState variant="noBrands" clearInterests={clearInterests} />;
   } else if (isLoading) {
     content = <SkeletonGrid />;
   } else if (!hasProducts) {
@@ -858,12 +935,24 @@ export default function DiscoverScreen() {
       <EmptyState
         variant="noProducts"
         searchQuery={debouncedSearch}
-        onClearCategory={() => { setActiveCategory('all'); setSearchText(''); setDebouncedSearch(''); }}
+        onClearCategory={() => { onCategoryChange('all'); setSearchText(''); setDebouncedSearch(''); }}
       />
     );
   } else {
     content = (
       <>
+        {/* Hint: az butik takip ediyorsan "Senin İçin"e yönlendirme */}
+        {mode === 'following' && brandIds.length > 0 && brandIds.length < 5 && (
+          <View style={s.followHint}>
+            <View style={s.followHintBadge}>
+              <Text style={s.followHintBadgeText}>{brandIds.length}</Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={s.followHintTitle}>{brandIds.length} butik takip ediyorsun</Text>
+              <Text style={s.followHintSub}>Daha fazla butik eklersen feed&apos;in çok daha zenginleşir.</Text>
+            </View>
+          </View>
+        )}
         <MasonryGrid items={masonryItems} totalHeight={totalHeight} />
         {isFetchingNextPage && (
           <View style={s.loadingMore}>
@@ -875,14 +964,7 @@ export default function DiscoverScreen() {
   }
 
   return (
-    <View style={[s.container, { paddingTop: insets.top }]}>
-      {/* Fixed header — outside scroll */}
-      <DiscoverHeader
-        onFilterPress={() => setShowFilter(true)}
-        activeFilterCount={activeFilterCount}
-      />
-
-      {/* Scrollable content: CategoryTabs (sticky via stickyHeaderIndices) + grid */}
+    <View style={{ flex: 1, display: visible ? 'flex' : 'none' }}>
       <ScrollView
         style={s.scroll}
         showsVerticalScrollIndicator={false}
@@ -890,33 +972,20 @@ export default function DiscoverScreen() {
         scrollEventThrottle={400}
         stickyHeaderIndices={[0]}
         refreshControl={
-          <RefreshControl
-            refreshing={isRefetching}
-            onRefresh={refetch}
-            tintColor={Colors.rose3}
-          />
+          <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={Colors.rose3} />
         }
       >
-        {/* Index 0 — sticky header (CategoryTabs + BrandFilterRow birlikte) */}
+        {/* Sticky: kategori + marka filtresi + arama */}
         <View>
-          <CategoryTabs
-            categories={categories}
-            active={activeCategory}
-            onSelect={handleCategorySelect}
-          />
+          <CategoryTabs categories={categories} active={activeCategory} onSelect={handleCategorySelect} />
           {activeCategory !== 'all' && (
             <BrandFilterRow
               brands={categoryBrands}
               selected={brandFilter}
-              onToggle={(id) =>
-                setBrandFilter(prev =>
-                  prev.includes(id) ? prev.filter(b => b !== id) : [...prev, id]
-                )
-              }
+              onToggle={id => setBrandFilter(prev => prev.includes(id) ? prev.filter(b => b !== id) : [...prev, id])}
               onClear={() => setBrandFilter([])}
             />
           )}
-          {/* Kategori içi arama */}
           <View style={s.searchBarWrap}>
             <Ionicons name="search-outline" size={16} color={Colors.text4} style={s.searchIcon} />
             <TextInput
@@ -942,21 +1011,108 @@ export default function DiscoverScreen() {
           </View>
         </View>
 
-        {/* Grid / empty / skeleton */}
         {content}
-
-        {/* Bottom spacer */}
         <View style={{ height: 100 }} />
       </ScrollView>
 
-      {/* Filter sheet */}
       <FilterSheet
         visible={showFilter}
         filters={filters}
         categories={categories}
         activeCategory={activeCategory}
-        onApply={handleApplyFilters}
-        onClose={() => setShowFilter(false)}
+        onApply={onApplyFilters}
+        onClose={onFilterClose}
+      />
+    </View>
+  );
+}
+
+// ── DiscoverScreen ────────────────────────────────────────────────────────────
+export default function DiscoverScreen() {
+  const insets = useSafeAreaInsets();
+  const [discoverTab, setDiscoverTab] = useState<DiscoverTab>('following');
+
+  // Her sekmenin kendi filtre + kategori state'i
+  const [followingCategory, setFollowingCategory] = useState('all');
+  const [foryouCategory, setForyouCategory] = useState('all');
+  const [followingFilters, setFollowingFilters] = useState<DiscoverFilters>({
+    onSale: false, newOnly: false, maxPrice: null,
+  });
+  const [foryouFilters, setForyouFilters] = useState<DiscoverFilters>({
+    onSale: false, newOnly: false, maxPrice: null,
+  });
+  const [showFilter, setShowFilter] = useState(false);
+
+  const { data: savedBrands = [], isLoading: brandsLoading } = useSavedBrands();
+  const { clearInterests, interests } = useInterests();
+
+  const brandIds = useMemo(
+    () => (savedBrands as any[]).map((b: any) => b.id as string),
+    [savedBrands],
+  );
+
+  // Aktif sekmenin filtre / kategori state'ini seç
+  const activeFilters   = discoverTab === 'following' ? followingFilters   : foryouFilters;
+  const activeCategory  = discoverTab === 'following' ? followingCategory  : foryouCategory;
+  const setActiveFilters   = discoverTab === 'following' ? setFollowingFilters   : setForyouFilters;
+  const setActiveCategory  = discoverTab === 'following' ? setFollowingCategory  : setForyouCategory;
+
+  const handleApplyFilters = useCallback((f: DiscoverFilters, cat: string) => {
+    setActiveFilters(f);
+    setActiveCategory(cat);
+  }, [setActiveFilters, setActiveCategory]);
+
+  const activeFilterCount = useMemo(() => {
+    let n = 0;
+    if (activeCategory !== 'all') n++;
+    if (activeFilters.onSale) n++;
+    if (activeFilters.newOnly) n++;
+    return n;
+  }, [activeCategory, activeFilters]);
+
+  return (
+    <View style={[s.container, { paddingTop: insets.top }]}>
+      {/* Fixed header */}
+      <DiscoverHeader
+        onFilterPress={() => setShowFilter(true)}
+        activeFilterCount={activeFilterCount}
+      />
+
+      {/* Fixed sekme çubuğu: "Takip ettiğin" | "Senin İçin" */}
+      <DiscoverTabSwitcher
+        active={discoverTab}
+        onChange={setDiscoverTab}
+        followingCount={brandIds.length}
+      />
+
+      {/* Her iki panel mount edilir, görünmeyen gizlenir (state korunur) */}
+      <DiscoverFeedPanel
+        mode="following"
+        visible={discoverTab === 'following'}
+        brandIds={brandIds}
+        brandsLoading={brandsLoading}
+        interests={interests}
+        clearInterests={clearInterests}
+        filters={followingFilters}
+        activeCategory={followingCategory}
+        showFilter={showFilter && discoverTab === 'following'}
+        onCategoryChange={setFollowingCategory}
+        onApplyFilters={(f, cat) => { setFollowingFilters(f); setFollowingCategory(cat); }}
+        onFilterClose={() => setShowFilter(false)}
+      />
+      <DiscoverFeedPanel
+        mode="foryou"
+        visible={discoverTab === 'foryou'}
+        brandIds={brandIds}
+        brandsLoading={brandsLoading}
+        interests={interests}
+        clearInterests={clearInterests}
+        filters={foryouFilters}
+        activeCategory={foryouCategory}
+        showFilter={showFilter && discoverTab === 'foryou'}
+        onCategoryChange={setForyouCategory}
+        onApplyFilters={(f, cat) => { setForyouFilters(f); setForyouCategory(cat); }}
+        onFilterClose={() => setShowFilter(false)}
       />
     </View>
   );
@@ -1001,6 +1157,46 @@ const s = StyleSheet.create({
   loadingMore: {
     paddingVertical: 20,
     alignItems: 'center',
+  },
+  followHint: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginHorizontal: 12,
+    marginTop: 8,
+    marginBottom: 4,
+    backgroundColor: Colors.surface1,
+    borderRadius: 12,
+    borderWidth: 0.5,
+    borderColor: Colors.border2,
+    padding: 12,
+  },
+  followHintBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: Colors.surface2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: Colors.border2,
+  },
+  followHintBadgeText: {
+    fontFamily: Fonts.ui,
+    fontSize: 14,
+    color: Colors.text2,
+  },
+  followHintTitle: {
+    fontFamily: Fonts.uiMedium,
+    fontSize: 13,
+    color: Colors.text1,
+    marginBottom: 2,
+  },
+  followHintSub: {
+    fontFamily: Fonts.uiLight,
+    fontSize: 11,
+    color: Colors.text4,
+    lineHeight: 15,
   },
 });
 
