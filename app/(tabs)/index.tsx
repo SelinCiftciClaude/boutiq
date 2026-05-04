@@ -858,14 +858,15 @@ function DiscoverFeedPanel({
   const [searchText, setSearchText] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
-  // "following" modunda kullanıcının butiği yoksa veya "foryou" modunda tüm markalar
   const isForYou = mode === 'foryou';
-  const panelBrandIds = isForYou ? [] : brandIds;
 
-  const { data: categories = [] } = useDiscoverCategories(
-    panelBrandIds,
-    isForYou ? interests : interests,
-  );
+  // "Takip ettiğin": sadece takip edilen markalar, en yeni önce
+  // "Senin İçin": tüm markalar, indirimli + yeni ürünler önce → farklı içerik
+  const panelBrandIds = isForYou ? [] : brandIds;
+  const excludeIds: string[] = []; // hariç tutma yok, ordering ile farklılaştırıyoruz
+
+  // Kategori listesi: "Senin İçin"de tüm ürünlerden çekilir (panelBrandIds=[])
+  const { data: categories = [] } = useDiscoverCategories(panelBrandIds, interests);
 
   const autoCategSlugs = useMemo(
     () => new Set(categories.filter((c: any) => !c.isExtra).map((c: any) => c.slug)),
@@ -876,10 +877,10 @@ function DiscoverFeedPanel({
 
   const effectiveBrandIds = useMemo(() => {
     if (brandFilter.length > 0) return brandFilter;
-    if (debouncedSearch.trim()) return isForYou ? [] : [];
+    if (debouncedSearch.trim()) return panelBrandIds;
     if (isExtraCategory) return [];
     return panelBrandIds;
-  }, [brandFilter, panelBrandIds, debouncedSearch, isExtraCategory, isForYou]);
+  }, [brandFilter, panelBrandIds, debouncedSearch, isExtraCategory]);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(searchText), 350);
@@ -894,7 +895,11 @@ function DiscoverFeedPanel({
     isLoading,
     refetch,
     isRefetching,
-  } = useDiscoverFeed(effectiveBrandIds, activeCategory, filters, debouncedSearch, isForYou);
+  } = useDiscoverFeed(
+    effectiveBrandIds, activeCategory, filters, debouncedSearch,
+    isForYou,   // forYou: boş brandIds ile de çalış
+    excludeIds, // excludeBrandIds: "Senin İçin"de takip edilenleri dışla
+  );
 
   const allProducts = useMemo(
     () => (feedPages?.pages ?? []).flat() as DiscoverProduct[],

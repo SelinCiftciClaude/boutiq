@@ -38,22 +38,26 @@ export interface DiscoverFilters {
   maxPrice: number | null;
 }
 
-// Kategorileri döndür: takip edilen markalar + kullanıcının manuel seçtikleri
+// Kategorileri döndür.
+// brandIds boşsa → tüm ürünlerden kategori listesi çeker ("Senin İçin" modu)
 export function useDiscoverCategories(brandIds: string[], extraCategorySlugs: string[] = []) {
   return useQuery({
     queryKey: ['discover-categories', brandIds, extraCategorySlugs],
     queryFn: async () => {
       const countMap: Record<string, { cat: any; count: number; isExtra: boolean }> = {};
 
-      // 1. Takip edilen markalar → otomatik kategoriler
-      if (brandIds.length > 0) {
-        const { data } = await supabase
+      // 1. Ürünleri olan kategorileri çek
+      //    brandIds doluysa sadece o markalar, boşsa tüm markalar
+      {
+        let q = supabase
           .from('products')
           .select('master_category_id, master_categories(id, slug, name_tr, emoji, display_order)')
-          .in('brand_id', brandIds)
           .eq('is_available', true)
           .not('master_category_id', 'is', null);
 
+        if (brandIds.length > 0) q = q.in('brand_id', brandIds);
+
+        const { data } = await q;
         for (const row of data ?? []) {
           const cat = (row as any).master_categories;
           if (!cat) continue;
@@ -78,7 +82,6 @@ export function useDiscoverCategories(brandIds: string[], extraCategorySlugs: st
 
       return Object.values(countMap)
         .sort((a, b) => {
-          // Otomatik kategoriler önce (ürün sayısına göre), sonra extra'lar
           if (a.isExtra !== b.isExtra) return a.isExtra ? 1 : -1;
           return b.count - a.count || a.cat.display_order - b.cat.display_order;
         })
@@ -91,7 +94,8 @@ export function useDiscoverCategories(brandIds: string[], extraCategorySlugs: st
           isExtra,
         } as DiscoverCategory & { isExtra: boolean }));
     },
-    enabled: brandIds.length > 0 || extraCategorySlugs.length > 0,
+    // Her zaman çalışır (all-brands modunda da)
+    enabled: true,
     staleTime: 10 * 60 * 1000,
   });
 }
@@ -156,14 +160,15 @@ export function useDiscoverFeed(
   categorySlug: string,
   filters: DiscoverFilters,
   search: string = '',
-  forYou: boolean = false,  // true = tüm markalardan keşif modu
+  forYou: boolean = false,       // true = tüm markalardan keşif modu
+  excludeBrandIds: string[] = [], // "Senin İçin": takip edilenleri dışla
 ) {
   // Markalar yüklenmediyse ve arama da yoksa sorgu çalıştırma
   // forYou modunda her zaman çalış (brandIds boş bile olsa)
   const shouldRun = brandIds.length > 0 || !!search.trim() || forYou;
 
   return useInfiniteQuery({
-    queryKey: ['discover-feed', brandIds, categorySlug, filters, search],
+    queryKey: ['discover-feed', brandIds, categorySlug, filters, search, excludeBrandIds],
     enabled: shouldRun,
     queryFn: async ({ pageParam = 0 }) => {
       const masterCategoryId = await resolveCategoryId(categorySlug);
@@ -205,6 +210,7 @@ export function useDiscoverFeed(
       }
 
       // Arama yoksa → standart tablo sorgusu
+      // forYou: indirimli + yeni ürünler önce (farklı keşif sıralaması)
       let query = supabase
         .from('products')
         .select(`
@@ -215,14 +221,16 @@ export function useDiscoverFeed(
           master_categories(slug)
         `)
         .eq('is_available', true)
-        .order('created_at', { ascending: false })
+        .order(forYou ? 'is_on_sale' : 'created_at', { ascending: false })
+        .order(forYou ? 'is_new' : 'created_at', { ascending: false })
         .range(pageParam * PAGE_SIZE, (pageParam + 1) * PAGE_SIZE - 1);
 
-      if (brandIds.length > 0) query = query.in('brand_id', brandIds);
-      if (masterCategoryId)    query = query.eq('master_category_id', masterCategoryId);
-      if (filters.onSale)      query = query.eq('is_on_sale', true);
-      if (filters.newOnly)     query = query.eq('is_new', true);
-      if (filters.maxPrice)    query = query.lte('price', filters.maxPrice);
+      if (brandIds.length > 0)        query = query.in('brand_id', brandIds);
+      if (excludeBrandIds.length > 0) query = query.not('brand_id', 'in', `(${excludeBrandIds.join(',')})`);
+      if (masterCategoryId)           query = query.eq('master_category_id', masterCategoryId);
+      if (filters.onSale)             query = query.eq('is_on_sale', true);
+      if (filters.newOnly)            query = query.eq('is_new', true);
+      if (filters.maxPrice)           query = query.lte('price', filters.maxPrice);
 
       const { data } = await query;
       return (data ?? [])
