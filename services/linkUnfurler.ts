@@ -16,6 +16,7 @@ export interface UnfurledProduct {
   productUrl: string;
   parserUsed: string;
   needsManualReview?: boolean;
+  category?: string; // master_categories slug (giyim, canta, parfum...)
 }
 
 export interface UnfurlResult {
@@ -73,6 +74,35 @@ function parseTurkishPrice(text: string): number {
   return parseFloat(cleaned.replace(/,/g, '')) || 0;
 }
 
+// ── Kategori eşleştirme ───────────────────────────────────────────────────────
+
+const CATEGORY_MAP: Array<{ slug: string; keywords: string[] }> = [
+  { slug: 'giyim',      keywords: ['elbise', 'bluz', 'pantolon', 'etek', 'ceket', 'mont', 'kazak', 'tişört', 'tisort', 'gömlek', 'gomlek', 'tulum', 'kimono', 'trençkot', 'trenkot', 'blazer', 'bodysuit', 'babydoll', 'pijama', 'sweatshirt', 'sweat', 'hırka', 'hirka', 'atlet', 'dress', 'blouse', 'top', 'shirt', 'pants', 'skirt', 'jacket', 'coat', 'sweater', 'knitwear', 'clothing', 'apparel', 'kıyafet', 'kiyafet', 'üst', 'ust', 'alt giyim', 'fashion'] },
+  { slug: 'canta',      keywords: ['çanta', 'canta', 'bag', 'tote', 'clutch', 'purse', 'handbag', 'crossbody', 'backpack', 'sırt çantası', 'sirt cantasi', 'omuz çantası', 'el çantası', 'wallet', 'cüzdan', 'cuzdan', 'pouch'] },
+  { slug: 'ayakkabi',   keywords: ['ayakkabı', 'ayakkabi', 'bot', 'çizme', 'cizme', 'sandalet', 'terlik', 'sneaker', 'loafer', 'topuklu', 'shoes', 'boots', 'heels', 'sneakers', 'slippers', 'footwear', 'espadrille'] },
+  { slug: 'taki',       keywords: ['takı', 'taki', 'kolye', 'bileklik', 'yüzük', 'yuzuk', 'küpe', 'kupe', 'broş', 'bros', 'bilezik', 'zincir', 'jewelry', 'jewellery', 'necklace', 'bracelet', 'ring', 'earring', 'anklet', 'charm'] },
+  { slug: 'kozmetik',   keywords: ['kozmetik', 'makyaj', 'ruj', 'fondöten', 'fondoten', 'maskara', 'rimel', 'allık', 'allik', 'göz', 'goz', 'makeup', 'cosmetics', 'lipstick', 'foundation', 'mascara', 'blush', 'eyeshadow', 'concealer', 'highlighter', 'contour'] },
+  { slug: 'cilt-bakimi', keywords: ['cilt bakımı', 'cilt bakimi', 'serum', 'yüz kremi', 'yuz kremi', 'tonik', 'nemlendirici', 'temizleyici', 'peeling', 'maske', 'güneş kremi', 'gunes kremi', 'spf', 'retinol', 'hyaluronik', 'hyaluronic', 'niacinamide', 'skincare', 'skin care', 'moisturizer', 'toner', 'cleanser', 'exfoliant', 'face cream', 'face mask', 'acid', 'asit', 'aydınlatıcı', 'aydinlatici', 'brightening'] },
+  { slug: 'sac-bakimi', keywords: ['saç', 'sac', 'şampuan', 'sampuan', 'saç kremi', 'sac kremi', 'saç yağı', 'saç maskesi', 'hair', 'shampoo', 'conditioner', 'hair mask', 'hair oil', 'serum sac', 'scalp'] },
+  { slug: 'parfum',     keywords: ['parfüm', 'parfum', 'eau de parfum', 'edp', 'edt', 'eau de toilette', 'cologne', 'kolonyası', 'kolonya', 'fragrance', 'perfume', 'scent', 'koku', 'mist', 'body mist', 'oud', 'attar'] },
+  { slug: 'ev-tekstil', keywords: ['nevresim', 'yorgan', 'yastık', 'yastik', 'battaniye', 'çarşaf', 'carsaf', 'havlu', 'bornoz', 'perde', 'masa örtüsü', 'bedding', 'towel', 'curtain', 'duvet', 'pillow', 'blanket', 'linen', 'ev tekstili'] },
+  { slug: 'ev-dekor',   keywords: ['dekorasyon', 'vazo', 'mum', 'tablo', 'heykel', 'rattan', 'hasır', 'sepet', 'koltuk', 'sandalye', 'masa', 'sehpa', 'kanepe', 'oturma', 'yemek takımı', 'yemek seti', 'home decor', 'decoration', 'furniture', 'mobilya', 'vase', 'candle', 'mirror', 'ayna', 'ev dekor', 'iç mimari'] },
+  { slug: 'mutfak',     keywords: ['mutfak', 'tabak', 'kase', 'bardak', 'fincan', 'tencere', 'tava', 'bıçak', 'bıcak', 'çatal', 'catal', 'kaşık', 'kasik', 'kitchen', 'cookware', 'plate', 'bowl', 'cup', 'mug', 'pot', 'pan', 'cutlery', 'servis takımı'] },
+  { slug: 'bebek',      keywords: ['bebek', 'çocuk', 'cocuk', 'oyuncak', 'baby', 'kids', 'children', 'infant', 'toddler', 'anne bebek', 'kreş', 'junior'] },
+  { slug: 'evcil',      keywords: ['evcil hayvan', 'evcil', 'kedi', 'köpek', 'kopek', 'pet', 'cat', 'dog', 'petshop', 'veteriner', 'mama', 'tasma', 'kafes'] },
+  { slug: 'gida',       keywords: ['gıda', 'gida', 'organik', 'zeytinyağı', 'zeytinyagi', 'ceviz', 'badem', 'şarap', 'sarap', 'bal', 'peynir', 'kahve', 'çay', 'food', 'organic', 'olive oil', 'walnut', 'wine', 'honey', 'coffee', 'tea', 'snack', 'süt', 'sut'] },
+  { slug: 'aksesuar',   keywords: ['aksesuar', 'şapka', 'sapka', 'bere', 'eşarp', 'esarp', 'kemer', 'gözlük', 'gozluk', 'güneş gözlüğü', 'eldiven', 'atkı', 'atki', 'kravat', 'papyon', 'hat', 'scarf', 'belt', 'sunglasses', 'gloves', 'tie', 'accessories', 'hair clip', 'toka', 'saç tokası'] },
+];
+
+export function mapToMasterCategory(raw: string): string | null {
+  if (!raw) return null;
+  const lower = raw.toLowerCase().trim();
+  for (const { slug, keywords } of CATEGORY_MAP) {
+    if (keywords.some(k => lower.includes(k))) return slug;
+  }
+  return null;
+}
+
 // ── Tier 2a: Shopify ──────────────────────────────────────────────────────────
 
 async function parseShopify(url: string): Promise<UnfurledProduct> {
@@ -107,6 +137,7 @@ async function parseShopify(url: string): Promise<UnfurledProduct> {
     merchantName: extractMerchantName(url),
     productUrl: url,
     parserUsed: 'shopify_api',
+    category: mapToMasterCategory(product.product_type || product.tags?.[0] || '') ?? undefined,
   };
 }
 
@@ -133,6 +164,7 @@ async function parseIkas(url: string, html: string): Promise<UnfurledProduct | n
           searchProducts(input:{page:1,perPage:1,slug:"${slug}"}) {
             results {
               id name
+              categories { name }
               variants {
                 prices { sellPrice discountPrice }
                 stocks { stockCount }
@@ -153,6 +185,7 @@ async function parseIkas(url: string, html: string): Promise<UnfurledProduct | n
     const sell = priceObj.sellPrice ?? 0;
     const discount = priceObj.discountPrice ?? null;
 
+    const rawCategory = product.categories?.[0]?.name ?? '';
     return {
       name: product.name,
       imageUrls: [],
@@ -164,6 +197,7 @@ async function parseIkas(url: string, html: string): Promise<UnfurledProduct | n
       merchantName: extractMerchantName(url),
       productUrl: url,
       parserUsed: 'ikas_graphql',
+      category: mapToMasterCategory(rawCategory) ?? undefined,
     };
   } catch {
     return null;
@@ -191,6 +225,9 @@ async function parseGeneric(url: string, html?: string): Promise<UnfurledProduct
       const price = parseTurkishPrice(String(offer.price ?? '0'));
       const imgs = Array.isArray(d.image) ? d.image : d.image ? [d.image] : [];
 
+      const rawCat = typeof d.category === 'string' ? d.category
+        : Array.isArray(d.category) ? d.category[0]
+        : '';
       return {
         name: d.name ?? '',
         description: d.description,
@@ -202,6 +239,7 @@ async function parseGeneric(url: string, html?: string): Promise<UnfurledProduct
         merchantName: d.brand?.name ?? extractMerchantName(url),
         productUrl: url,
         parserUsed: 'json_ld',
+        category: mapToMasterCategory(rawCat) ?? undefined,
       };
     } catch {}
   }

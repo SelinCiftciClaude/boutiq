@@ -53,6 +53,15 @@ export async function addSavedBrand(
       onConflict: 'user_id,brand_id',
     });
   if (error) throw error;
+
+  // Arka planda ürün senkronizasyonu — kullanıcıyı bekletme
+  const { data: brand } = await supabase
+    .from('brands').select('website, platform').eq('id', brandId).maybeSingle();
+  if (brand?.website) {
+    supabase.functions
+      .invoke('sync-brand-products', { body: { brand_id: brandId, website_url: brand.website } })
+      .catch(() => {});
+  }
 }
 
 export async function removeSavedBrand(userId: string, brandId: string): Promise<void> {

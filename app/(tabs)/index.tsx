@@ -210,6 +210,33 @@ const ProductCard = React.memo(function ProductCard({
             </Text>
           )}
         </View>
+
+        {/* Renk noktaları */}
+        {product.colors.length > 0 && (
+          <View style={pc.colorRow}>
+            {product.colors.slice(0, 5).map(c => (
+              <View
+                key={c}
+                style={[pc.colorDot, { backgroundColor: colorToHex(c) }]}
+              />
+            ))}
+            {product.colors.length > 5 && (
+              <Text style={pc.variantMore}>+{product.colors.length - 5}</Text>
+            )}
+          </View>
+        )}
+
+        {/* Beden chips */}
+        {product.sizes.length > 0 && (
+          <View style={pc.sizeRow}>
+            {product.sizes.slice(0, 4).map(s => (
+              <Text key={s} style={pc.sizeChip}>{s}</Text>
+            ))}
+            {product.sizes.length > 4 && (
+              <Text style={pc.variantMore}>+{product.sizes.length - 4}</Text>
+            )}
+          </View>
+        )}
       </View>
     </TouchableOpacity>
   );
@@ -290,11 +317,12 @@ type EmptyVariant = 'noBrands' | 'noProducts';
 
 interface EmptyStateProps {
   variant: EmptyVariant;
+  searchQuery?: string;
   onClearCategory?: () => void;
   clearInterests?: () => void;
 }
 
-function EmptyState({ variant, onClearCategory, clearInterests }: EmptyStateProps) {
+function EmptyState({ variant, searchQuery, onClearCategory, clearInterests }: EmptyStateProps) {
   if (variant === 'noBrands') {
     return (
       <View style={es.wrap}>
@@ -306,32 +334,30 @@ function EmptyState({ variant, onClearCategory, clearInterests }: EmptyStateProp
           Onboarding'de ilgi alanlarını seç, keşif feed'in canlansın.
         </Text>
         {clearInterests && (
-          <TouchableOpacity
-            style={es.btn}
-            onPress={clearInterests}
-            activeOpacity={0.85}
-          >
+          <TouchableOpacity style={es.btn} onPress={clearInterests} activeOpacity={0.85}>
             <Text style={es.btnText}>İlgi alanlarını sıfırla</Text>
           </TouchableOpacity>
         )}
       </View>
     );
   }
+
+  const isSearch = !!searchQuery?.trim();
   return (
     <View style={es.wrap}>
       <View style={es.iconCircle}>
-        <Ionicons name="search-outline" size={32} color={Colors.rose3} />
+        <Ionicons name={isSearch ? 'search-outline' : 'grid-outline'} size={32} color={Colors.rose3} />
       </View>
-      <Text style={es.title}>Bu kategoride ürün yok</Text>
+      <Text style={es.title}>
+        {isSearch ? `"${searchQuery}" bulunamadı` : 'Bu filtre için ürün yok'}
+      </Text>
       <Text style={es.subtitle}>
-        Başka bir kategori dene ya da tüm ürünlere bak.
+        {isSearch
+          ? 'Farklı bir kelime dene ya da filtreleri sıfırla.'
+          : 'Başka bir kategori dene ya da tüm ürünlere bak.'}
       </Text>
       {onClearCategory && (
-        <TouchableOpacity
-          style={es.linkBtn}
-          onPress={onClearCategory}
-          activeOpacity={0.7}
-        >
+        <TouchableOpacity style={es.linkBtn} onPress={onClearCategory} activeOpacity={0.7}>
           <Text style={es.linkBtnText}>Tümüne bak</Text>
         </TouchableOpacity>
       )}
@@ -343,109 +369,126 @@ function EmptyState({ variant, onClearCategory, clearInterests }: EmptyStateProp
 interface FilterSheetProps {
   visible: boolean;
   filters: DiscoverFilters;
-  onApply: (f: DiscoverFilters) => void;
+  categories: DiscoverCategory[];
+  activeCategory: string;
+  onApply: (f: DiscoverFilters, category: string) => void;
   onClose: () => void;
 }
 
-function FilterSheet({ visible, filters, onApply, onClose }: FilterSheetProps) {
-  const [local, setLocal] = useState<DiscoverFilters>(filters);
-  const slideAnim = useRef(new Animated.Value(400)).current;
+function FilterSheet({
+  visible,
+  filters,
+  categories,
+  activeCategory,
+  onApply,
+  onClose,
+}: FilterSheetProps) {
+  const [localFilters, setLocalFilters] = useState<DiscoverFilters>(filters);
+  const [localCategory, setLocalCategory] = useState(activeCategory);
+  const slideAnim = useRef(new Animated.Value(500)).current;
 
   useEffect(() => {
     if (visible) {
-      setLocal(filters);
-      Animated.spring(slideAnim, {
-        toValue: 0,
-        useNativeDriver: true,
-        damping: 20,
-        stiffness: 180,
-      }).start();
+      setLocalFilters(filters);
+      setLocalCategory(activeCategory);
+      Animated.spring(slideAnim, { toValue: 0, useNativeDriver: true, damping: 22, stiffness: 200 }).start();
     } else {
-      Animated.timing(slideAnim, {
-        toValue: 400,
-        duration: 220,
-        useNativeDriver: true,
-      }).start();
+      Animated.timing(slideAnim, { toValue: 500, duration: 200, useNativeDriver: true }).start();
     }
-  }, [visible, filters, slideAnim]);
+  }, [visible]);
 
-  const handleApply = useCallback(() => {
-    onApply(local);
-    onClose();
-  }, [local, onApply, onClose]);
+  const activeCount =
+    (localCategory !== 'all' ? 1 : 0) +
+    (localFilters.onSale ? 1 : 0) +
+    (localFilters.newOnly ? 1 : 0);
 
-  const handleReset = useCallback(() => {
-    const reset: DiscoverFilters = { onSale: false, newOnly: false, maxPrice: null };
-    setLocal(reset);
-    onApply(reset);
+  const handleApply = () => { onApply(localFilters, localCategory); onClose(); };
+
+  const handleReset = () => {
+    const empty: DiscoverFilters = { onSale: false, newOnly: false, maxPrice: null };
+    setLocalFilters(empty);
+    setLocalCategory('all');
+    onApply(empty, 'all');
     onClose();
-  }, [onApply, onClose]);
+  };
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}
-    >
-      <TouchableOpacity
-        style={fs.backdrop}
-        activeOpacity={1}
-        onPress={onClose}
-      />
-      <Animated.View
-        style={[fs.sheet, { transform: [{ translateY: slideAnim }] }]}
-      >
-        {/* Handle */}
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <TouchableOpacity style={fs.backdrop} activeOpacity={1} onPress={onClose} />
+      <Animated.View style={[fs.sheet, { transform: [{ translateY: slideAnim }] }]}>
         <View style={fs.handle} />
 
-        <Text style={fs.title}>Filtrele</Text>
-
-        {/* Toggle: only on sale */}
-        <View style={fs.row}>
-          <View style={fs.rowTextWrap}>
-            <Text style={fs.rowLabel}>Sadece indirimdekiler</Text>
-            <Text style={fs.rowSub}>İndirimli ürünleri göster</Text>
-          </View>
-          <Switch
-            value={local.onSale}
-            onValueChange={v => setLocal(prev => ({ ...prev, onSale: v }))}
-            trackColor={{ false: Colors.surface3, true: Colors.rose3 }}
-            thumbColor={Colors.surface1}
-          />
+        {/* Başlık */}
+        <View style={fs.titleRow}>
+          <Text style={fs.title}>Filtrele</Text>
+          {activeCount > 0 && (
+            <TouchableOpacity onPress={handleReset} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Text style={fs.resetLink}>Sıfırla</Text>
+            </TouchableOpacity>
+          )}
         </View>
+
+        {/* ── KATEGORİ ─────────────────────────────── */}
+        <Text style={fs.sectionLabel}>KATEGORİ</Text>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={fs.chipRow}
+        >
+          {[{ slug: 'all', nameTr: 'Tümü', emoji: '' }, ...categories].map(cat => {
+            const active = localCategory === cat.slug;
+            return (
+              <TouchableOpacity
+                key={cat.slug}
+                style={[fs.chip, active && fs.chipActive]}
+                onPress={() => { setLocalCategory(cat.slug); Haptics.selectionAsync(); }}
+                activeOpacity={0.75}
+              >
+                {cat.emoji ? <Text style={fs.chipEmoji}>{cat.emoji}</Text> : null}
+                <Text style={[fs.chipText, active && fs.chipTextActive]}>{cat.nameTr}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
 
         <View style={fs.divider} />
 
-        {/* Toggle: new only */}
+        {/* ── ÜRÜN ─────────────────────────────────── */}
+        <Text style={fs.sectionLabel}>ÜRÜN</Text>
+
+        <View style={fs.row}>
+          <View style={fs.rowTextWrap}>
+            <Text style={fs.rowLabel}>Sadece indirimde olanlar</Text>
+            <Text style={fs.rowSub}>Fiyatı düşürülmüş ürünleri göster</Text>
+          </View>
+          <Switch
+            value={localFilters.onSale}
+            onValueChange={v => setLocalFilters(p => ({ ...p, onSale: v }))}
+            trackColor={{ false: Colors.border2, true: Colors.rose3 }}
+            thumbColor="#fff"
+          />
+        </View>
+
+        <View style={fs.rowDivider} />
+
         <View style={fs.row}>
           <View style={fs.rowTextWrap}>
             <Text style={fs.rowLabel}>Sadece yeni gelenler</Text>
             <Text style={fs.rowSub}>Yeni eklenen ürünleri göster</Text>
           </View>
           <Switch
-            value={local.newOnly}
-            onValueChange={v => setLocal(prev => ({ ...prev, newOnly: v }))}
-            trackColor={{ false: Colors.surface3, true: Colors.rose3 }}
-            thumbColor={Colors.surface1}
+            value={localFilters.newOnly}
+            onValueChange={v => setLocalFilters(p => ({ ...p, newOnly: v }))}
+            trackColor={{ false: Colors.border2, true: Colors.rose3 }}
+            thumbColor="#fff"
           />
         </View>
 
-        {/* Buttons */}
-        <TouchableOpacity
-          style={fs.applyBtn}
-          onPress={handleApply}
-          activeOpacity={0.88}
-        >
-          <Text style={fs.applyBtnText}>Uygula</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={fs.resetBtn}
-          onPress={handleReset}
-          activeOpacity={0.7}
-        >
-          <Text style={fs.resetBtnText}>Sıfırla</Text>
+        {/* Uygula */}
+        <TouchableOpacity style={fs.applyBtn} onPress={handleApply} activeOpacity={0.88}>
+          <Text style={fs.applyBtnText}>
+            {activeCount > 0 ? `Uygula (${activeCount})` : 'Uygula'}
+          </Text>
         </TouchableOpacity>
       </Animated.View>
     </Modal>
@@ -455,9 +498,10 @@ function FilterSheet({ visible, filters, onApply, onClose }: FilterSheetProps) {
 // ── DiscoverHeader ────────────────────────────────────────────────────────────
 interface DiscoverHeaderProps {
   onFilterPress: () => void;
+  activeFilterCount?: number;
 }
 
-function DiscoverHeader({ onFilterPress }: DiscoverHeaderProps) {
+function DiscoverHeader({ onFilterPress, activeFilterCount = 0 }: DiscoverHeaderProps) {
   return (
     <View style={dh.wrap}>
       <Text style={dh.title}>Keşfet</Text>
@@ -470,11 +514,20 @@ function DiscoverHeader({ onFilterPress }: DiscoverHeaderProps) {
           <Ionicons name="search-outline" size={20} color={Colors.text2} />
         </TouchableOpacity>
         <TouchableOpacity
-          style={dh.iconBtn}
+          style={[dh.iconBtn, activeFilterCount > 0 && dh.iconBtnActive]}
           onPress={onFilterPress}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Ionicons name="options-outline" size={20} color={Colors.text2} />
+          <Ionicons
+            name="options-outline"
+            size={20}
+            color={activeFilterCount > 0 ? Colors.rose3 : Colors.text2}
+          />
+          {activeFilterCount > 0 && (
+            <View style={dh.badge}>
+              <Text style={dh.badgeText}>{activeFilterCount}</Text>
+            </View>
+          )}
         </TouchableOpacity>
       </View>
     </View>
@@ -764,9 +817,23 @@ export default function DiscoverScreen() {
     setDebouncedSearch('');
   }, []);
 
-  const handleApplyFilters = useCallback((f: DiscoverFilters) => {
+  const handleApplyFilters = useCallback((f: DiscoverFilters, category: string) => {
     setFilters(f);
-  }, []);
+    if (category !== activeCategory) {
+      setActiveCategory(category);
+      setBrandFilter([]);
+      setSearchText('');
+      setDebouncedSearch('');
+    }
+  }, [activeCategory]);
+
+  const activeFilterCount = useMemo(() => {
+    let n = 0;
+    if (activeCategory !== 'all') n++;
+    if (filters.onSale) n++;
+    if (filters.newOnly) n++;
+    return n;
+  }, [activeCategory, filters]);
 
   const hasBrands = brandIds.length > 0;
   const hasProducts = allProducts.length > 0;
@@ -790,7 +857,8 @@ export default function DiscoverScreen() {
     content = (
       <EmptyState
         variant="noProducts"
-        onClearCategory={() => setActiveCategory('all')}
+        searchQuery={debouncedSearch}
+        onClearCategory={() => { setActiveCategory('all'); setSearchText(''); setDebouncedSearch(''); }}
       />
     );
   } else {
@@ -809,7 +877,10 @@ export default function DiscoverScreen() {
   return (
     <View style={[s.container, { paddingTop: insets.top }]}>
       {/* Fixed header — outside scroll */}
-      <DiscoverHeader onFilterPress={() => setShowFilter(true)} />
+      <DiscoverHeader
+        onFilterPress={() => setShowFilter(true)}
+        activeFilterCount={activeFilterCount}
+      />
 
       {/* Scrollable content: CategoryTabs (sticky via stickyHeaderIndices) + grid */}
       <ScrollView
@@ -882,6 +953,8 @@ export default function DiscoverScreen() {
       <FilterSheet
         visible={showFilter}
         filters={filters}
+        categories={categories}
+        activeCategory={activeCategory}
         onApply={handleApplyFilters}
         onClose={() => setShowFilter(false)}
       />
@@ -963,6 +1036,27 @@ const dh = StyleSheet.create({
     borderWidth: 0.5,
     borderColor: Colors.border2,
   },
+  iconBtnActive: {
+    backgroundColor: 'rgba(107,21,32,0.08)',
+    borderColor: Colors.borderBurgund,
+  },
+  badge: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    backgroundColor: Colors.rose3,
+    borderRadius: 8,
+    minWidth: 16,
+    height: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+  },
+  badgeText: {
+    fontFamily: Fonts.ui,
+    fontSize: 9,
+    color: '#fff',
+  },
 });
 
 // CategoryTabs
@@ -999,6 +1093,40 @@ const ct = StyleSheet.create({
     color: '#FFFFFF',
   },
 });
+
+// Renk adı → HEX (Türkçe + İngilizce yaygın renkler)
+const COLOR_HEX: Record<string, string> = {
+  siyah: '#1a1a1a', black: '#1a1a1a',
+  beyaz: '#f8f8f8', white: '#f8f8f8',
+  krem: '#f0ead2', cream: '#f0ead2', ekru: '#f5f0e8', ecru: '#f5f0e8',
+  bej: '#e8d9c0', beige: '#e8d9c0',
+  lacivert: '#1a2e5a', navy: '#1a2e5a',
+  mavi: '#4a90d9', blue: '#4a90d9',
+  kırmızı: '#cc2200', red: '#cc2200',
+  pembe: '#e8a0a0', pink: '#e8a0a0',
+  pudra: '#f2d0d0', blush: '#f2c4c4',
+  gri: '#888888', grey: '#888888', gray: '#888888',
+  haki: '#8b8740', khaki: '#8b8740', olive: '#7a7a3a',
+  nane: '#a8d8a8', mint: '#a8d8a8',
+  yeşil: '#3a8a3a', green: '#3a8a3a',
+  turuncu: '#e87030', orange: '#e87030',
+  sarı: '#e8c830', yellow: '#e8c830', gold: '#c8a020',
+  mor: '#7a30c8', purple: '#7a30c8', lilac: '#c8a0d8',
+  bordo: '#6b1520', burgundy: '#6b1520', wine: '#5a1010',
+  kestane: '#5c3317', brown: '#7a4520', kahverengi: '#7a4520',
+  vanilla: '#f3e5ab', caramel: '#c68642',
+  parrot: '#e8371a', coral: '#e86040',
+  silver: '#c0c0c0', gümüş: '#c0c0c0',
+};
+
+function colorToHex(colorName: string): string {
+  const lower = colorName.toLowerCase().trim();
+  for (const [key, hex] of Object.entries(COLOR_HEX)) {
+    if (lower.includes(key)) return hex;
+  }
+  // Bilinmeyen renk için nötr gri
+  return '#c8c8c8';
+}
 
 // ProductCard
 const pc = StyleSheet.create({
@@ -1087,6 +1215,43 @@ const pc = StyleSheet.create({
     textDecorationLine: 'line-through',
     marginLeft: 4,
   },
+  colorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 6,
+    flexWrap: 'wrap',
+  },
+  colorDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    borderWidth: 0.5,
+    borderColor: 'rgba(0,0,0,0.12)',
+  },
+  sizeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    marginTop: 5,
+    flexWrap: 'wrap',
+  },
+  sizeChip: {
+    fontFamily: Fonts.uiLight,
+    fontSize: 9,
+    color: Colors.text4,
+    backgroundColor: Colors.surface2,
+    borderWidth: 0.5,
+    borderColor: Colors.border2,
+    borderRadius: 3,
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+  },
+  variantMore: {
+    fontFamily: Fonts.uiLight,
+    fontSize: 9,
+    color: Colors.text5,
+  },
 });
 
 // EmptyState
@@ -1156,25 +1321,79 @@ const fs = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: Colors.surface1,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 24,
-    paddingBottom: 40,
+    backgroundColor: Colors.bg,
+    borderTopLeftRadius: 22,
+    borderTopRightRadius: 22,
+    paddingHorizontal: 20,
+    paddingBottom: 44,
   },
   handle: {
-    width: 36,
-    height: 4,
+    width: 36, height: 4,
     borderRadius: 2,
-    backgroundColor: Colors.border3,
+    backgroundColor: Colors.border2,
     alignSelf: 'center',
-    marginBottom: 20,
+    marginTop: 12,
+    marginBottom: 16,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 18,
   },
   title: {
-    fontFamily: Fonts.display,
-    fontSize: 22,
+    fontFamily: Fonts.displayBold,
+    fontSize: 20,
     color: Colors.text1,
-    marginBottom: 20,
+  },
+  resetLink: {
+    fontFamily: Fonts.uiMedium,
+    fontSize: 13,
+    color: Colors.rose3,
+  },
+  sectionLabel: {
+    fontFamily: Fonts.ui,
+    fontSize: 10,
+    color: Colors.text4,
+    letterSpacing: 1.2,
+    marginBottom: 10,
+  },
+  chipRow: {
+    flexDirection: 'row',
+    gap: 7,
+    paddingBottom: 16,
+  },
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 13,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: Colors.surface1,
+    borderWidth: 1,
+    borderColor: Colors.border2,
+  },
+  chipActive: {
+    backgroundColor: Colors.rose3,
+    borderColor: Colors.rose3,
+  },
+  chipEmoji: { fontSize: 13 },
+  chipText: {
+    fontFamily: Fonts.uiMedium,
+    fontSize: 12,
+    color: Colors.text3,
+  },
+  chipTextActive: { color: '#fff' },
+  divider: {
+    height: 0.5,
+    backgroundColor: Colors.border2,
+    marginVertical: 14,
+  },
+  rowDivider: {
+    height: 0.5,
+    backgroundColor: Colors.border2,
+    marginHorizontal: 0,
   },
   row: {
     flexDirection: 'row',
@@ -1182,45 +1401,29 @@ const fs = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 14,
   },
-  rowTextWrap: {
-    flex: 1,
-    marginRight: 16,
-  },
+  rowTextWrap: { flex: 1, marginRight: 16 },
   rowLabel: {
     fontFamily: Fonts.uiMedium,
-    fontSize: 15,
+    fontSize: 14,
     color: Colors.text1,
   },
   rowSub: {
     fontFamily: Fonts.uiLight,
-    fontSize: 12,
+    fontSize: 11,
     color: Colors.text4,
     marginTop: 2,
   },
-  divider: {
-    height: 0.5,
-    backgroundColor: Colors.border1,
-  },
   applyBtn: {
-    marginTop: 24,
+    marginTop: 20,
     backgroundColor: Colors.rose3,
     borderRadius: 12,
     paddingVertical: 15,
     alignItems: 'center',
   },
   applyBtnText: {
-    fontFamily: Fonts.uiMedium,
-    fontSize: 16,
-    color: '#FFFFFF',
-  },
-  resetBtn: {
-    marginTop: 12,
-    alignItems: 'center',
-    paddingVertical: 8,
-  },
-  resetBtnText: {
-    fontFamily: Fonts.uiMedium,
-    fontSize: 14,
-    color: Colors.text3,
+    fontFamily: Fonts.ui,
+    fontSize: 15,
+    color: '#fff',
+    letterSpacing: 0.3,
   },
 });

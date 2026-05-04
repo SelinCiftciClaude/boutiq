@@ -9,7 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import * as Notifications from 'expo-notifications';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Typography';
 import { useInterests } from '@/context/InterestsContext';
@@ -225,6 +225,7 @@ export default function OnboardingScreen() {
   const insets = useSafeAreaInsets();
   const { markDone } = useInterests();
   const { user } = useAuth();
+  const qc = useQueryClient();
 
   const [step, setStep] = useState(0);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
@@ -364,10 +365,26 @@ export default function OnboardingScreen() {
     setSaving(true);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-    // Seçilen butikleri user_brands'e ekle
+    // Seçilen butikleri user_brands'e ekle + her biri için ürün sync'i tetikle
     if (user && selectedBrands.length > 0) {
       const rows = selectedBrands.map(brand_id => ({ user_id: user.id, brand_id, is_favorite: false }));
       await supabase.from('user_brands').upsert(rows, { onConflict: 'user_id,brand_id' });
+
+      // Her butik için arka planda ürün senkronizasyonu (non-blocking)
+      const { data: brands } = await supabase
+        .from('brands').select('id, website, platform').in('id', selectedBrands);
+      for (const brand of (brands ?? [])) {
+        if (brand.website) {
+          supabase.functions
+            .invoke('sync-brand-products', { body: { brand_id: brand.id, website_url: brand.website } })
+            .catch(() => {});
+        }
+      }
+
+      // Cache'i temizle — keşfet feed'i yeni markalarla yeniden yüklensin
+      qc.invalidateQueries({ queryKey: ['savedBrands'] });
+      qc.invalidateQueries({ queryKey: ['discover-feed'] });
+      qc.invalidateQueries({ queryKey: ['discover-categories'] });
     }
 
     // Push notification izni

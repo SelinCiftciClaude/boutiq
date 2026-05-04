@@ -7,6 +7,7 @@ export interface DiscoverProduct {
   id: string;
   name: string;
   imageUrl: string;
+  imageUrls: string[];
   imageAspectRatio: number;
   price: number;
   originalPrice: number | null;
@@ -18,6 +19,8 @@ export interface DiscoverProduct {
   brandName: string;
   brandLogoUrl: string | null;
   masterCategorySlug: string | null;
+  sizes: string[];
+  colors: string[];
 }
 
 export interface DiscoverCategory {
@@ -193,6 +196,9 @@ export function useDiscoverFeed(
             brandName: p.brand_name || p.brand_id || '—',
             brandLogoUrl: p.brand_logo_url ?? null,
             masterCategorySlug: p.master_category_slug ?? null,
+            sizes: [],
+            colors: [],
+            imageUrls: [],
           } as DiscoverProduct));
       }
 
@@ -200,9 +206,9 @@ export function useDiscoverFeed(
       let query = supabase
         .from('products')
         .select(`
-          id, name, image_url, image_aspect_ratio,
+          id, name, image_url, image_urls, image_aspect_ratio,
           price, original_price, is_on_sale, is_new,
-          url, affiliate_url, brand_id,
+          url, affiliate_url, brand_id, sizes, colors,
           brands(name, logo_url),
           master_categories(slug)
         `)
@@ -223,6 +229,7 @@ export function useDiscoverFeed(
           id: p.id,
           name: p.name,
           imageUrl: p.image_url,
+          imageUrls: (p as any).image_urls ?? [],
           imageAspectRatio: p.image_aspect_ratio ?? 0.75,
           price: p.price,
           originalPrice: p.original_price ?? null,
@@ -234,6 +241,8 @@ export function useDiscoverFeed(
           brandName: (p as any).brands?.name || '—',
           brandLogoUrl: (p as any).brands?.logo_url ?? null,
           masterCategorySlug: (p as any).master_categories?.slug ?? null,
+          sizes: (p as any).sizes ?? [],
+          colors: (p as any).colors ?? [],
         } as DiscoverProduct));
     },
     initialPageParam: 0,

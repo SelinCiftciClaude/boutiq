@@ -43,6 +43,7 @@ export interface Favorite {
   parserUsed: string;
   needsManualReview: boolean;
   shareSource: string;
+  masterCategoryId?: string;
   savedAt: string;
   collection?: Collection;
 }
@@ -184,6 +185,18 @@ export async function addFavorite(input: AddFavoriteInput): Promise<Favorite> {
 
   const urlHash = simpleHash(normalizeUrl(input.url));
 
+  // Kategori slug'unu UUID'ye çevir
+  let masterCategoryId: string | null = null;
+  const categorySlug = product.category;
+  if (categorySlug) {
+    const { data: cat } = await supabase
+      .from('master_categories')
+      .select('id')
+      .eq('slug', categorySlug)
+      .maybeSingle();
+    masterCategoryId = cat?.id ?? null;
+  }
+
   const { data, error } = await supabase
     .from('favorites')
     .insert({
@@ -209,6 +222,7 @@ export async function addFavorite(input: AddFavoriteInput): Promise<Favorite> {
       parser_used: product.parserUsed ?? 'unknown',
       needs_manual_review: product.needsManualReview ?? false,
       share_source: input.shareSource ?? 'in_app',
+      master_category_id: masterCategoryId,
     })
     .select('*, favorite_collections(id,name,emoji,is_default)')
     .single();
@@ -355,6 +369,7 @@ function favFromDb(row: any): Favorite {
     parserUsed: row.parser_used ?? 'unknown',
     needsManualReview: row.needs_manual_review ?? false,
     shareSource: row.share_source ?? 'in_app',
+    masterCategoryId: row.master_category_id ?? undefined,
     savedAt: row.saved_at,
     collection: col ? colFromDb(col) : undefined,
   };
