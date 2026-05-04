@@ -174,10 +174,17 @@ export function useDiscoverFeed(
       const masterCategoryId = await resolveCategoryId(categorySlug);
       if (categorySlug !== 'all' && !masterCategoryId) return [];
 
-      // Arama varsa → RPC (name + category + tags tüm alanlar)
+      // Arama varsa → RPC (kelime bazlı tokenized arama)
       if (search.trim()) {
+        // Türkçe büyük/küçük harf normalleştirmesi (ı/İ dahil)
+        // + fazla boşlukları temizle
+        const normalizedSearch = search
+          .toLocaleLowerCase('tr-TR')
+          .trim()
+          .replace(/\s+/g, ' ');
+
         const { data, error } = await supabase.rpc('search_products_feed', {
-          p_search:      search.trim(),
+          p_search:      normalizedSearch,
           p_brand_ids:   brandIds.length > 0 ? brandIds : null,
           p_category_id: masterCategoryId,
           p_on_sale:     filters.onSale,
