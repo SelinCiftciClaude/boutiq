@@ -433,12 +433,98 @@ async function syncShopifyProducts() {
   console.log(`✓  Shopify'dan ${totalInserted} ürün senkronize edildi`);
 }
 
+// ── Marka görsel varlıklarını çek (logo, og:image, brand_color) ──────────────
+async function extractBrandAssets() {
+  console.log('\n🎨  Marka görsel varlıkları çekiliyor...');
+
+  const PALETTE = [
+    '#4A1520','#2A3D4A','#3A2A10','#1A3D2A','#3A1A3A',
+    '#2A3A10','#4A3A20','#1A2A4A','#3A1020','#20304A',
+  ];
+  function colorFallback(name) {
+    let h = 0;
+    for (const c of name) h = (h * 31 + c.charCodeAt(0)) & 0x7fffffff;
+    return PALETTE[h % PALETTE.length];
+  }
+  function extractMeta(html, patterns) {
+    for (const re of patterns) {
+      const m = html.match(re);
+      if (m?.[1]?.trim()) return m[1].trim();
+    }
+    return null;
+  }
+  function absoluteUrl(url, base) {
+    if (!url) return '';
+    if (url.startsWith('http')) return url;
+    if (url.startsWith('//')) return 'https:' + url;
+    if (url.startsWith('/')) return new URL(base).origin + url;
+    return base.replace(/\/$/, '') + '/' + url;
+  }
+
+  const { data: brands } = await supabase.from('brands').select('id, name, website');
+  if (!brands?.length) return;
+
+  let updated = 0;
+  for (const brand of brands) {
+    try {
+      const website = brand.website?.startsWith('http')
+        ? brand.website : `https://${brand.website}`;
+
+      let html = '';
+      try {
+        const r = await fetch(website, {
+          headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Butika/1.0)' },
+          signal: AbortSignal.timeout(10000),
+        });
+        if (r.ok) html = await r.text();
+      } catch { /* skip */ }
+
+      const logoRaw  = extractMeta(html, [
+        /<link[^>]+rel=["']apple-touch-icon[^"']*["'][^>]+href=["']([^"']+)["']/i,
+        /<link[^>]+href=["']([^"']+)["'][^>]+rel=["']apple-touch-icon[^"']*["']/i,
+        /<link[^>]+rel=["']icon["'][^>]+sizes=["']192x192["'][^>]+href=["']([^"']+)["']/i,
+      ]);
+      const coverRaw = extractMeta(html, [
+        /<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i,
+        /<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i,
+        /<meta[^>]+name=["']twitter:image["'][^>]+content=["']([^"']+)["']/i,
+      ]);
+      let color = extractMeta(html, [
+        /<meta[^>]+name=["']theme-color["'][^>]+content=["'](#[0-9a-fA-F]{3,8})["']/i,
+        /<meta[^>]+content=["'](#[0-9a-fA-F]{3,8})["'][^>]+name=["']theme-color["']/i,
+      ]);
+      if (!color || color === '#ffffff' || color === '#FFFFFF') {
+        const cv = html.match(/--(?:primary|brand|accent)(?:-color)?:\s*(#[0-9a-fA-F]{3,8})/i);
+        color = (cv?.[1] && cv[1] !== '#ffffff') ? cv[1] : colorFallback(brand.name);
+      }
+
+      const logo  = logoRaw  ? absoluteUrl(logoRaw,  website) : null;
+      const cover = coverRaw ? absoluteUrl(coverRaw, website) : null;
+      const style = cover ? 'hero' : logo ? 'logo_centered' : 'initials';
+
+      const patch = { brand_color: color, card_style: style };
+      if (logo)  patch.logo_url  = logo;
+      if (cover) patch.cover_url = cover;
+
+      const { error } = await supabase.from('brands').update(patch).eq('id', brand.id);
+      if (!error) {
+        updated++;
+        console.log(`  ✓  ${brand.name.padEnd(28)} style=${style} color=${color}`);
+      }
+    } catch (e) {
+      console.log(`  ⚠  ${brand.name}: ${e.message}`);
+    }
+  }
+  console.log(`✓  ${updated}/${brands.length} marka güncellendi`);
+}
+
 async function main() {
   console.log(`\n🌱  Seeding local Supabase at ${SUPABASE_URL}\n`);
   const userId = await ensureDemoUser();
   await seedBrands();
   await seedProducts();
   await syncShopifyProducts();
+  await extractBrandAssets();
   await seedUserBrands(userId);
   await seedShipments(userId);
   console.log(`\n✅  Done. Login: ${DEMO_EMAIL} / ${DEMO_PASSWORD}\n`);

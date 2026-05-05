@@ -8,6 +8,8 @@ export interface BrandRow {
   handle?: string | null;
   logo_url?: string | null;
   cover_url?: string | null;
+  brand_color?: string | null;
+  card_style?: string | null;
   category: string;
   tags?: string[] | null;
   website: string;
@@ -101,6 +103,8 @@ export function fromDbBrand(row: BrandRow, isFavorite = false): Brand {
     handle: row.handle ?? '',
     logo: row.logo_url ?? '',
     coverImage: row.cover_url ?? '',
+    brandColor: row.brand_color ?? undefined,
+    cardStyle: (row.card_style as Brand['cardStyle']) ?? 'initials',
     category: row.category as BrandCategory,
     tags: row.tags ?? [],
     website: row.website,

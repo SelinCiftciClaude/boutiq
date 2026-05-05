@@ -58,8 +58,14 @@ export async function addSavedBrand(
   const { data: brand } = await supabase
     .from('brands').select('website, platform').eq('id', brandId).maybeSingle();
   if (brand?.website) {
+    const url = brand.website.startsWith('http')
+      ? brand.website
+      : `https://${brand.website}`;
     supabase.functions
-      .invoke('sync-brand-products', { body: { brand_id: brandId, website_url: brand.website } })
+      .invoke('sync-brand-products', { body: { brand_id: brandId, website_url: url } })
+      .catch(() => {});
+    supabase.functions
+      .invoke('extract-brand-assets', { body: { brand_id: brandId } })
       .catch(() => {});
   }
 }

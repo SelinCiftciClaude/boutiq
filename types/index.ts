@@ -4,6 +4,8 @@ export interface Brand {
   handle: string;
   logo: string;
   coverImage: string;
+  brandColor?: string;
+  cardStyle?: 'hero' | 'logo_centered' | 'initials';
   category: BrandCategory;
   tags: string[];
   website: string;

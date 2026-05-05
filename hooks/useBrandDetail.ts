@@ -17,6 +17,12 @@ export function useBrandDetail(brandId: string) {
     queryFn: () => fetchProductsByBrand(brandId, user?.id),
     enabled: !!brandId,
     staleTime: 60_000,
+    // Ürün yoksa (sync henüz tamamlanmadı) 4 saniyede bir tekrar dene, max 10 deneme (40sn)
+    refetchInterval: (query) => {
+      const count = Array.isArray(query.state.data) ? query.state.data.length : 0;
+      const attempts = query.state.dataUpdateCount;
+      return count === 0 && attempts < 10 ? 4_000 : false;
+    },
   });
 
   const campaigns = useQuery({

@@ -338,6 +338,13 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: 'brand_id and website_url required' }), { status: 400 });
     }
 
+    // https:// yoksa ekle
+    const normalizedUrl = website_url.startsWith('http')
+      ? website_url.replace(/\/$/, '')
+      : `https://${website_url.replace(/\/$/, '')}`;
+
+    console.log(`sync-brand-products start: brand=${brand_id} url=${normalizedUrl}`);
+
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
     const categoryCache = new Map<string, string>();
 
@@ -347,8 +354,7 @@ Deno.serve(async (req) => {
 
     let platform = brand?.platform ?? 'other';
     if (platform === 'other' || !platform) {
-      platform = await detectPlatform(website_url);
-      // Tespit edilen platform'u güncelle
+      platform = await detectPlatform(normalizedUrl);
       if (platform !== 'other') {
         await supabase.from('brands').update({ platform }).eq('id', brand_id);
       }
@@ -357,16 +363,22 @@ Deno.serve(async (req) => {
     // 2. Sync
     let result = { inserted: 0, updated: 0, skipped: 0 };
     if (platform === 'shopify') {
-      result = await syncShopify(supabase, brand_id, website_url, categoryCache);
+      result = await syncShopify(supabase, brand_id, normalizedUrl, categoryCache);
     } else if (platform === 'ikas') {
-      result = await syncIkas(supabase, brand_id, website_url, categoryCache);
+      result = await syncIkas(supabase, brand_id, normalizedUrl, categoryCache);
     }
 
     console.log(`sync-brand-products [${platform}] brand=${brand_id}`, result);
 
     return new Response(
       JSON.stringify({ ok: true, platform, ...result }),
-      { headers: { 'Content-Type': 'application/json' } }
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Headers': 'authorization, content-type',
+        },
+      }
     );
   } catch (e: any) {
     return new Response(JSON.stringify({ error: e.message }), { status: 500 });
