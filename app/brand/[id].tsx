@@ -166,8 +166,10 @@ export default function BrandDetailScreen() {
             <TouchableOpacity
               style={styles.visitBtn}
               onPress={() => {
-                trackAffiliateClick(user?.id ?? null, brand.id, null, brand.affiliateUrl || brand.website);
-                Linking.openURL(brand.affiliateUrl || brand.website);
+                const raw = brand.affiliateUrl || brand.website || '';
+                const url = raw.startsWith('http') ? raw : `https://${raw}`;
+                trackAffiliateClick(user?.id ?? null, brand.id, null, url);
+                Linking.openURL(url);
               }}
             >
               <Ionicons name="open-outline" size={16} color={Colors.text2} />
@@ -185,8 +187,10 @@ export default function BrandDetailScreen() {
                   style={styles.campaignCard}
                   activeOpacity={0.88}
                   onPress={() => {
-                    trackAffiliateClick(user?.id ?? null, c.brandId, null, c.affiliateUrl || c.url);
-                    Linking.openURL(c.affiliateUrl || c.url);
+                    const cRaw = c.affiliateUrl || c.url || '';
+                    const cUrl = cRaw.startsWith('http') ? cRaw : `https://${cRaw}`;
+                    trackAffiliateClick(user?.id ?? null, c.brandId, null, cUrl);
+                    Linking.openURL(cUrl);
                   }}
                 >
                   <LinearGradient colors={[Colors.surface1, Colors.surface2]} style={StyleSheet.absoluteFill} />
