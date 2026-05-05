@@ -9,6 +9,7 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import * as Linking from 'expo-linking';
+import * as WebBrowser from 'expo-web-browser';
 import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Typography';
 import { useBrandDetail } from '@/hooks/useBrandDetail';
@@ -169,7 +170,7 @@ export default function BrandDetailScreen() {
                 const raw = brand.affiliateUrl || brand.website || '';
                 const url = raw.startsWith('http') ? raw : `https://${raw}`;
                 trackAffiliateClick(user?.id ?? null, brand.id, null, url);
-                Linking.openURL(url);
+                WebBrowser.openBrowserAsync(url);
               }}
             >
               <Ionicons name="open-outline" size={16} color={Colors.text2} />
@@ -190,7 +191,7 @@ export default function BrandDetailScreen() {
                     const cRaw = c.affiliateUrl || c.url || '';
                     const cUrl = cRaw.startsWith('http') ? cRaw : `https://${cRaw}`;
                     trackAffiliateClick(user?.id ?? null, c.brandId, null, cUrl);
-                    Linking.openURL(cUrl);
+                    WebBrowser.openBrowserAsync(cUrl);
                   }}
                 >
                   <LinearGradient colors={[Colors.surface1, Colors.surface2]} style={StyleSheet.absoluteFill} />
