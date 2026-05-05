@@ -68,6 +68,26 @@ const CATEGORY_LABELS: Record<string, string> = {
   tasarımcı: '🎨 Tasarımcı',
 };
 
+function BrandLogoImage({ uri, name }: { uri: string; name: string }) {
+  const [error, setError] = useState(false);
+  const initial = (name || '?').charAt(0).toUpperCase();
+  if (error || !uri) {
+    return (
+      <View style={[miniStyles.logo, miniStyles.logoFallback]}>
+        <Text style={miniStyles.logoInitial}>{initial}</Text>
+      </View>
+    );
+  }
+  return (
+    <Image
+      source={{ uri }}
+      style={miniStyles.logo}
+      resizeMode="contain"
+      onError={() => setError(true)}
+    />
+  );
+}
+
 function BrandMiniCard({
   saved,
   onPress,
@@ -87,7 +107,7 @@ function BrandMiniCard({
         style={miniStyles.gradient}
       />
       <View style={miniStyles.content}>
-        <Image source={{ uri: saved.brand.logo }} style={miniStyles.logo} />
+        <BrandLogoImage uri={saved.brand.logo} name={saved.brand.name} />
         <Text style={miniStyles.name} numberOfLines={1}>
           {saved.brand.name}
         </Text>
@@ -122,9 +142,16 @@ const miniStyles = StyleSheet.create({
     padding: 10, flexDirection: 'row', alignItems: 'center', gap: 5,
   },
   logo: {
-    width: 22, height: 22, borderRadius: 11,
-    borderWidth: 1.5, borderColor: Colors.border2,
+    width: 26, height: 26, borderRadius: 13,
+    borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.3)',
     backgroundColor: Colors.surface3,
+  },
+  logoFallback: {
+    alignItems: 'center', justifyContent: 'center',
+    backgroundColor: Colors.rose3,
+  },
+  logoInitial: {
+    fontFamily: Fonts.ui, fontSize: 11, color: '#fff',
   },
   name: {
     fontSize: 12, fontWeight: '700',

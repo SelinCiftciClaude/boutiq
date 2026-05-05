@@ -19,7 +19,9 @@ import {
   ActivityIndicator,
   Switch,
   TextInput,
+  Platform,
 } from 'react-native';
+import { AddBoutiqueModal } from '@/components/AddBoutiqueModal';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -1036,6 +1038,7 @@ function DiscoverFeedPanel({
 export default function DiscoverScreen() {
   const insets = useSafeAreaInsets();
   const [discoverTab, setDiscoverTab] = useState<DiscoverTab>('following');
+  const [addBoutiqueVisible, setAddBoutiqueVisible] = useState(false);
 
   // Her sekmenin kendi filtre + kategori state'i
   const [followingCategory, setFollowingCategory] = useState('all');
@@ -1118,6 +1121,31 @@ export default function DiscoverScreen() {
         onCategoryChange={setForyouCategory}
         onApplyFilters={(f, cat) => { setForyouFilters(f); setForyouCategory(cat); }}
         onFilterClose={() => setShowFilter(false)}
+      />
+
+      {/* ── FAB: Butik Ekle ────────────────────────────────────────────── */}
+      <TouchableOpacity
+        style={[fab.btn, { bottom: insets.bottom + 72 }]}
+        onPress={() => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          setAddBoutiqueVisible(true);
+        }}
+        activeOpacity={0.88}
+      >
+        <LinearGradient
+          colors={[Colors.rose2, Colors.rose3]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+          style={fab.gradient}
+        >
+          <Ionicons name="storefront-outline" size={18} color="#FFF9EE" />
+          <Text style={fab.label}>Butik Ekle</Text>
+        </LinearGradient>
+      </TouchableOpacity>
+
+      <AddBoutiqueModal
+        visible={addBoutiqueVisible}
+        onClose={() => setAddBoutiqueVisible(false)}
       />
     </View>
   );
@@ -1626,5 +1654,35 @@ const fs = StyleSheet.create({
     fontSize: 15,
     color: '#fff',
     letterSpacing: 0.3,
+  },
+});
+
+// ── FAB ───────────────────────────────────────────────────────────────────────
+const fab = StyleSheet.create({
+  btn: {
+    position: 'absolute',
+    right: 18,
+    borderRadius: 28,
+    overflow: 'hidden',
+    // Gölge — iOS
+    shadowColor: Colors.rose1,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.40,
+    shadowRadius: 10,
+    // Gölge — Android
+    elevation: 8,
+  },
+  gradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    paddingHorizontal: 18,
+    paddingVertical: 13,
+  },
+  label: {
+    fontFamily: Fonts.uiMedium,
+    fontSize: 14,
+    color: '#FFF9EE',
+    letterSpacing: 0.1,
   },
 });
