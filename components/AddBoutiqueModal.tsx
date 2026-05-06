@@ -1,7 +1,7 @@
 /**
- * AddBoutiqueModal — URL bar autocomplete hissi.
- * Kullanıcı yazınca gecikme olmadan anında öneriler çıkar.
- * Local liste → anlık, Supabase → 150ms debounce ile arka planda günceller.
+ * AddBoutiqueModal — Hibrit butik arama.
+ * İsim → anlık local + DB önerileri.
+ * URL (casanaturale.com) → check-boutique-url edge function ile gerçek site bilgisi.
  */
 
 import React, {
@@ -51,6 +51,24 @@ const LOCAL_BRANDS: SuggestionItem[] = [
   { id: 'l20', name: 'H&M',                  website: 'hm.com',                 category: 'Giyim'      },
 ];
 
+// ── URL yardımcıları ─────────────────────────────────────────────────────────
+
+// Giriş URL benzeri mi? (casanaturale.com, www.shop.com gibi)
+function isUrlLike(q: string): boolean {
+  const t = q.trim();
+  return t.includes('.') && !t.includes(' ') && t.length >= 4 &&
+    /^[a-zA-Z0-9\-_.]+\.[a-zA-Z]{2,}/.test(t);
+}
+
+// "https://www.casanaturale.com/tr" → "casanaturale.com"
+function extractDomain(q: string): string {
+  return q.trim()
+    .replace(/^https?:\/\//, '')
+    .replace(/^www\./, '')
+    .split('/')[0]
+    .toLowerCase();
+}
+
 // ── Tipler ────────────────────────────────────────────────────────────────────
 
 interface SuggestionItem {
@@ -59,8 +77,12 @@ interface SuggestionItem {
   website: string;
   category: string;
   logoUrl?: string;
+  coverUrl?: string;
   productCount?: number;
-  fromDb?: boolean;  // true → DB'den geldi, ekleme butonuyla çalışır
+  fromDb?: boolean;    // true → DB'den geldi
+  fromUrl?: boolean;   // true → check-boutique-url'den geldi
+  platform?: 'shopify' | 'ikas' | 'other';
+  shopifyVerified?: boolean;
 }
 
 interface Props {
@@ -201,11 +223,15 @@ export function AddBoutiqueModal({ visible, onClose, onAdd }: Props) {
   const [dbLoading,  setDbLoading]  = useState(false);
   const [addingId,   setAddingId]   = useState<string | null>(null);
   const [addedId,    setAddedId]    = useState<string | null>(null);
-  // Web arama
+  // Web arama (simülasyon)
   const [webLoading, setWebLoading] = useState(false);
   const [webResult,  setWebResult]  = useState<SuggestionItem | null>(null);
   const [webAdding,  setWebAdding]  = useState(false);
   const [webAdded,   setWebAdded]   = useState(false);
+  // URL kontrol (gerçek)
+  const [urlState,   setUrlState]   = useState<'idle' | 'checking' | 'found' | 'notFound'>('idle');
+  const [urlResult,  setUrlResult]  = useState<SuggestionItem | null>(null);
+  const urlTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Animasyonlar
   const slideAnim    = useRef(new Animated.Value(SCREEN_H)).current;
@@ -256,6 +282,7 @@ export function AddBoutiqueModal({ visible, onClose, onAdd }: Props) {
     setAddingId(null); setAddedId(null);
     setWebLoading(false); setWebResult(null);
     setWebAdding(false); setWebAdded(false);
+    setUrlState('idle'); setUrlResult(null);
     listAnim.setValue(0);
   };
 
@@ -297,6 +324,58 @@ export function AddBoutiqueModal({ visible, onClose, onAdd }: Props) {
       setDbLoading(false);
     }, 150);
   }, [query]);
+
+  // ── URL kontrolü: DB + local boş gelince gerçek siteyi fetch et ─────────────
+  useEffect(() => {
+    if (urlTimer.current) clearTimeout(urlTimer.current);
+    const q = query.trim();
+
+    if (!isUrlLike(q)) {
+      setUrlState('idle');
+      setUrlResult(null);
+      return;
+    }
+
+    // Zaten DB'de bulunduysa URL kontrole gerek yok
+    if (dbResults.length > 0) {
+      setUrlState('idle');
+      setUrlResult(null);
+      return;
+    }
+
+    setUrlState('checking');
+    setUrlResult(null);
+
+    urlTimer.current = setTimeout(async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('check-boutique-url', {
+          body: { url: q },
+        });
+
+        if (error || !data?.found) {
+          setUrlState('notFound');
+          return;
+        }
+
+        setUrlResult({
+          id:              `url-${data.website}`,
+          name:            data.name,
+          website:         data.website,
+          category:        'Giyim',
+          logoUrl:         data.logoUrl ?? undefined,
+          coverUrl:        data.coverUrl ?? undefined,
+          platform:        data.platform,
+          shopifyVerified: data.shopifyVerified,
+          fromUrl:         true,
+          fromDb:          false,
+        });
+        setUrlState('found');
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      } catch {
+        setUrlState('notFound');
+      }
+    }, 600);
+  }, [query, dbResults.length]);
 
   // DB sonuçlarını local listeyle birleştir, local önce gelsin, DB'dekiler günceller
   const suggestions = useMemo((): SuggestionItem[] => {
@@ -477,9 +556,16 @@ export function AddBoutiqueModal({ visible, onClose, onAdd }: Props) {
           </View>
 
           {/* ── ÖNERI LİSTESİ ── */}
-          {hasContent ? (
+          {!query && (
+            <View style={s.emptyWrap}>
+              <Text style={s.emptyText}>200+ butik adı veya site adresi yaz</Text>
+            </View>
+          )}
+
+          {query.trim().length >= 1 && (
             <Animated.View style={[s.listWrap, { opacity: listAnim }]}>
-              {/* DB / Local sonuçları */}
+
+              {/* DB / Local önerileri */}
               {suggestions.map((item, i) => (
                 <SuggestionRow
                   key={item.id}
@@ -491,7 +577,7 @@ export function AddBoutiqueModal({ visible, onClose, onAdd }: Props) {
                 />
               ))}
 
-              {/* Başarı mesajı */}
+              {/* Eklendi mesajı */}
               {addedId && (
                 <View style={s.successRow}>
                   <Ionicons name="checkmark-circle" size={16} color={Colors.success} />
@@ -499,83 +585,96 @@ export function AddBoutiqueModal({ visible, onClose, onAdd }: Props) {
                 </View>
               )}
 
-              {/* Ayraç */}
-              {query.trim().length >= 2 && (
-                <View style={s.dividerRow}>
-                  <View style={s.dividerLine} />
-                  <Text style={s.dividerText}>web'de ara</Text>
-                  <View style={s.dividerLine} />
-                </View>
+              {/* ── URL kontrol sonucu ── */}
+              {isUrlLike(query) && (
+                <>
+                  {/* Ayraç (DB sonucu varsa) */}
+                  {suggestions.length > 0 && (
+                    <View style={s.dividerRow}>
+                      <View style={s.dividerLine} />
+                      <Text style={s.dividerText}>site adresi</Text>
+                      <View style={s.dividerLine} />
+                    </View>
+                  )}
+
+                  {/* Kontrol ediliyor */}
+                  {urlState === 'checking' && (
+                    <View style={s.urlCheckRow}>
+                      <ActivityIndicator size="small" color={Colors.gold3} />
+                      <Text style={s.urlCheckText}>
+                        {extractDomain(query)} kontrol ediliyor...
+                      </Text>
+                    </View>
+                  )}
+
+                  {/* Bulunamadı */}
+                  {urlState === 'notFound' && (
+                    <View style={s.urlCheckRow}>
+                      <Ionicons name="close-circle-outline" size={16} color={Colors.text4} />
+                      <Text style={s.urlCheckText}>Siteye ulaşılamadı</Text>
+                    </View>
+                  )}
+
+                  {/* Bulundu — gerçek site kartı */}
+                  {urlState === 'found' && urlResult && !webAdded && (
+                    <View style={s.urlFoundCard}>
+                      {/* Logo */}
+                      <View style={s.urlLogo}>
+                        {urlResult.logoUrl ? (
+                          <Image source={{ uri: urlResult.logoUrl }} style={s.urlLogoImg} />
+                        ) : (
+                          <Text style={s.urlLogoLetter}>{urlResult.name[0]?.toUpperCase()}</Text>
+                        )}
+                      </View>
+                      {/* Bilgi */}
+                      <View style={{ flex: 1 }}>
+                        <Text style={s.urlFoundName}>{urlResult.name}</Text>
+                        <View style={s.urlMeta}>
+                          <Text style={s.urlFoundDomain}>{urlResult.website}</Text>
+                          {urlResult.platform && urlResult.platform !== 'other' && (
+                            <View style={[s.platformBadge, urlResult.shopifyVerified && s.platformBadgeVerified]}>
+                              <Text style={s.platformBadgeText}>
+                                {urlResult.platform === 'shopify' ? 'Shopify' : 'İkas'}
+                                {urlResult.shopifyVerified ? ' ✓' : ''}
+                              </Text>
+                            </View>
+                          )}
+                        </View>
+                      </View>
+                      {/* Ekle butonu */}
+                      <TouchableOpacity
+                        style={[s.urlAddBtn, (addingId === urlResult.id || webAdding) && { opacity: 0.5 }]}
+                        onPress={() => addViaRpc(urlResult, { isWeb: true })}
+                        disabled={addingId === urlResult.id || webAdding}
+                      >
+                        {(addingId === urlResult.id || webAdding)
+                          ? <ActivityIndicator size="small" color="#fff" />
+                          : <Text style={s.urlAddBtnText}>+ Ekle</Text>
+                        }
+                      </TouchableOpacity>
+                    </View>
+                  )}
+
+                  {/* URL eklendi */}
+                  {webAdded && (
+                    <View style={s.successRow}>
+                      <Ionicons name="checkmark-circle" size={16} color={Colors.success} />
+                      <Text style={s.successText}>Başarıyla eklendi! Yönlendiriliyorsun...</Text>
+                    </View>
+                  )}
+                </>
               )}
 
-              {/* Web arama satırı */}
-              {query.trim().length >= 2 && !webAdded && (
-                <TouchableOpacity
-                  style={s.webRow}
-                  onPress={handleWebSearch}
-                  disabled={webLoading || !!webResult}
-                  activeOpacity={0.75}
-                >
-                  <Animated.View style={[s.webIcon, webLoading && { opacity: webBlink }]}>
-                    <Ionicons
-                      name={webResult ? 'checkmark-circle' : 'globe-outline'}
-                      size={16}
-                      color={webResult ? Colors.success : Colors.gold2}
-                    />
-                  </Animated.View>
-                  <View style={{ flex: 1 }}>
-                    {webLoading ? (
-                      <Text style={s.webLabel}>Instagram, Google taranıyor...</Text>
-                    ) : webResult ? (
-                      <>
-                        <Text style={s.webResultName}>{webResult.name}</Text>
-                        <Text style={s.webResultUrl}>{webResult.website} · Web'de bulundu</Text>
-                      </>
-                    ) : (
-                      <>
-                        <Text style={s.webLabel}>"{query}" için web'de ara</Text>
-                        <Text style={s.webSub}>Instagram · Google · Shopify mağazaları</Text>
-                      </>
-                    )}
-                  </View>
-                  {webResult && !webAdding && (
-                    <TouchableOpacity
-                      style={s.webAddBtn}
-                      onPress={handleAddWeb}
-                      disabled={webAdding}
-                    >
-                      <Text style={s.webAddBtnText}>+ Ekle</Text>
-                    </TouchableOpacity>
-                  )}
-                  {webAdding && <ActivityIndicator size="small" color={Colors.rose3} />}
-                  {!webResult && !webLoading && (
-                    <Ionicons name="chevron-forward" size={14} color={Colors.text5} />
-                  )}
-                </TouchableOpacity>
-              )}
-
-              {/* Web eklendi */}
-              {webAdded && (
-                <View style={s.successRow}>
-                  <Ionicons name="checkmark-circle" size={16} color={Colors.success} />
-                  <Text style={s.successText}>Başarıyla eklendi! Yönlendiriliyorsun...</Text>
+              {/* İsim araması — DB'de yok ve URL de değil */}
+              {suggestions.length === 0 && !dbLoading && !isUrlLike(query) && query.trim().length >= 2 && (
+                <View style={s.emptyWrap}>
+                  <Text style={s.emptyText}>
+                    "{query}" bulunamadı{'\n'}
+                    <Text style={{ color: Colors.gold2 }}>Site adresini yaz: örn. marka.com</Text>
+                  </Text>
                 </View>
               )}
             </Animated.View>
-          ) : (
-            /* Boş başlangıç durumu */
-            !query && (
-              <View style={s.emptyWrap}>
-                <Text style={s.emptyText}>200+ butik — hemen yazmaya başla</Text>
-              </View>
-            )
-          )}
-
-          {/* "Sonuç yok" mesajı */}
-          {query.trim().length >= 2 && suggestions.length === 0 && !dbLoading && !hasContent && (
-            <View style={s.emptyWrap}>
-              <Text style={s.emptyText}>"{query}" bulunamadı — web'de ara →</Text>
-            </View>
           )}
 
           <View style={{ height: 32 }} />
@@ -732,11 +831,86 @@ const s = StyleSheet.create({
   // Boş durum
   emptyWrap: {
     alignItems: 'center',
-    paddingVertical: 28,
+    paddingVertical: 24,
+    paddingHorizontal: 16,
   },
   emptyText: {
     fontFamily: Fonts.uiLight,
     fontSize: 13,
     color: Colors.text5,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+
+  // URL kontrol
+  urlCheckRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 14,
+  },
+  urlCheckText: {
+    fontFamily: Fonts.uiLight,
+    fontSize: 13,
+    color: Colors.text4,
+  },
+
+  // URL bulundu kartı
+  urlFoundCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: Colors.surface2,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: Colors.borderBurgund,
+    padding: 12,
+    marginVertical: 4,
+  },
+  urlLogo: {
+    width: 44, height: 44, borderRadius: 10,
+    backgroundColor: Colors.surface3,
+    alignItems: 'center', justifyContent: 'center',
+    overflow: 'hidden', flexShrink: 0,
+    borderWidth: 1, borderColor: Colors.border2,
+  },
+  urlLogoImg: { width: '100%', height: '100%' },
+  urlLogoLetter: { fontFamily: Fonts.displayBold, fontSize: 18, color: Colors.rose3 },
+  urlFoundName: {
+    fontFamily: Fonts.uiMedium,
+    fontSize: 14,
+    color: Colors.text1,
+    letterSpacing: -0.1,
+  },
+  urlMeta: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 3 },
+  urlFoundDomain: {
+    fontFamily: Fonts.uiLight,
+    fontSize: 11,
+    color: Colors.text4,
+  },
+  platformBadge: {
+    backgroundColor: Colors.surface3,
+    borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2,
+    borderWidth: 0.5, borderColor: Colors.border2,
+  },
+  platformBadgeVerified: {
+    backgroundColor: Colors.successGlow,
+    borderColor: `${Colors.success}40`,
+  },
+  platformBadgeText: {
+    fontFamily: Fonts.uiMedium,
+    fontSize: 10,
+    color: Colors.success,
+  },
+  urlAddBtn: {
+    backgroundColor: Colors.rose3,
+    borderRadius: 9,
+    paddingHorizontal: 14, paddingVertical: 8,
+    flexShrink: 0,
+  },
+  urlAddBtnText: {
+    fontFamily: Fonts.uiMedium,
+    fontSize: 13,
+    color: '#FFF9EE',
   },
 });
