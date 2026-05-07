@@ -36,7 +36,7 @@ export default function ForgotPasswordScreen() {
       <View style={styles.glow1} />
 
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+        <TouchableOpacity onPress={() => router.canGoBack() ? router.back() : router.replace('/(auth)/login' as any)} style={styles.backBtn}>
           <Ionicons name="chevron-back" size={22} color={Colors.text3} />
         </TouchableOpacity>
 
@@ -93,7 +93,7 @@ export default function ForgotPasswordScreen() {
           </View>
         )}
 
-        <TouchableOpacity onPress={() => router.back()} style={styles.backLink}>
+        <TouchableOpacity onPress={() => router.canGoBack() ? router.back() : router.replace('/(auth)/login' as any)} style={styles.backLink}>
           <Text style={styles.backLinkText}>Giriş'e dön</Text>
         </TouchableOpacity>
       </ScrollView>

@@ -5,7 +5,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { router } from 'expo-router';
+import { router, useNavigation } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Typography';
@@ -26,6 +26,8 @@ const LIMIT_OPTIONS = [
 ];
 
 export default function NotificationPreferencesScreen() {
+  const navigation = useNavigation();
+  const goBack = () => navigation.canGoBack() ? navigation.goBack() : router.replace('/(tabs)/profile' as any);
   const insets = useSafeAreaInsets();
   const { data: prefs, update } = useNotificationPrefs();
 
@@ -51,7 +53,7 @@ export default function NotificationPreferencesScreen() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+        <TouchableOpacity onPress={() => goBack()} style={styles.backBtn}>
           <Ionicons name="chevron-back" size={22} color={Colors.text2} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Bildirim Ayarları</Text>

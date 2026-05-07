@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useLocalSearchParams, router } from 'expo-router';
+import { useLocalSearchParams, router, useNavigation } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import * as Clipboard from 'expo-clipboard';
@@ -29,7 +29,9 @@ function stepIndex(status: string): number {
 // ── Ana ekran ─────────────────────────────────────────────────────────────────
 
 export default function ShipmentDetailScreen() {
-  const insets = useSafeAreaInsets();
+  const insets     = useSafeAreaInsets();
+  const navigation = useNavigation();
+  const goBack = () => navigation.canGoBack() ? navigation.goBack() : router.replace('/(tabs)/tracking' as any);
   const { id } = useLocalSearchParams<{ id: string }>();
   const [copied, setCopied] = useState(false);
 
@@ -49,7 +51,7 @@ export default function ShipmentDetailScreen() {
     return (
       <View style={[styles.container, styles.center, { paddingTop: insets.top }]}>
         <Text style={styles.notFound}>Kargo bulunamadı</Text>
-        <TouchableOpacity onPress={() => router.back()}>
+        <TouchableOpacity onPress={goBack}>
           <Text style={styles.goBack}>Geri dön</Text>
         </TouchableOpacity>
       </View>
@@ -93,7 +95,7 @@ export default function ShipmentDetailScreen() {
           style: 'destructive',
           onPress: async () => {
             await deleteMutation.mutateAsync(shipment.id);
-            router.back();
+            goBack();
           },
         },
       ]
@@ -104,7 +106,7 @@ export default function ShipmentDetailScreen() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+        <TouchableOpacity style={styles.backBtn} onPress={goBack}>
           <Ionicons name="chevron-back" size={22} color={Colors.text2} />
         </TouchableOpacity>
         <Text style={styles.headerTitle} numberOfLines={1}>{shipment.brandName}</Text>

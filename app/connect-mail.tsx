@@ -4,7 +4,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { router, useNavigation } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import * as WebBrowser from 'expo-web-browser';
@@ -130,6 +130,8 @@ const PERMISSIONS = [
 ];
 
 export default function ConnectMailScreen() {
+  const navigation = useNavigation();
+  const goBack = () => navigation.canGoBack() ? navigation.goBack() : router.replace('/(tabs)/tracking' as any);
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const qc = useQueryClient();
@@ -206,7 +208,7 @@ export default function ConnectMailScreen() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <LinearGradient colors={[Colors.surface3, Colors.bg]} style={StyleSheet.absoluteFill} locations={[0, 0.35]} />
 
-      <TouchableOpacity onPress={() => router.back()} style={[styles.backBtn, { top: insets.top + 12 }]}>
+      <TouchableOpacity onPress={() => goBack()} style={[styles.backBtn, { top: insets.top + 12 }]}>
         <Ionicons name="chevron-back" size={22} color={Colors.text3} />
       </TouchableOpacity>
 
@@ -225,7 +227,7 @@ export default function ConnectMailScreen() {
               {found > 0 && <Text style={{ color: Colors.gold3, fontWeight: '800' }}>{found} kargo</Text>}
               {found > 0 && ' bulundu ve eklendi.'}
             </Text>
-            <TouchableOpacity style={styles.doneBtn} onPress={() => router.back()}>
+            <TouchableOpacity style={styles.doneBtn} onPress={() => goBack()}>
               <LinearGradient colors={[Colors.rose2, Colors.rose4]} style={StyleSheet.absoluteFill} />
               <Text style={styles.doneBtnText}>Harika!</Text>
             </TouchableOpacity>

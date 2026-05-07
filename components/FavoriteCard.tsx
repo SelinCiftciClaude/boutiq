@@ -65,7 +65,7 @@ export function FavoriteCard({ item, onPress, onDelete, tall }: Props) {
 
           {item.watchPriceDrop && (
             <View style={styles.bellBadge}>
-              <Ionicons name="notifications" size={10} color={Colors.rose3} />
+              <Ionicons name="notifications" size={10} color="#5A6B2A" />
             </View>
           )}
 
@@ -138,9 +138,11 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 8,
     right: 8,
-    backgroundColor: 'rgba(255,255,255,0.94)',
+    backgroundColor: 'rgba(250,246,232,0.96)',
     borderRadius: 12,
     padding: 5,
+    borderWidth: 0.5,
+    borderColor: 'rgba(90,107,42,0.35)',
   },
 
   changeBadge: {

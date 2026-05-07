@@ -4,7 +4,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useLocalSearchParams, router } from 'expo-router';
+import { useLocalSearchParams, router, useNavigation } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { Colors } from '@/constants/Colors';
@@ -13,6 +13,8 @@ import { fetchPublicCollection } from '@/services/queries';
 import { ProductCard } from '@/components/ProductCard';
 
 export default function PublicCollectionScreen() {
+  const navigation = useNavigation();
+  const goBack = () => navigation.canGoBack() ? navigation.goBack() : router.replace('/(tabs)' as any);
   const { userId } = useLocalSearchParams<{ userId: string }>();
   const insets = useSafeAreaInsets();
 
@@ -31,7 +33,7 @@ export default function PublicCollectionScreen() {
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <TouchableOpacity onPress={() => goBack()} style={styles.backBtn}>
             <Ionicons name="chevron-back" size={20} color={Colors.text2} />
           </TouchableOpacity>
           <View style={styles.headerText}>

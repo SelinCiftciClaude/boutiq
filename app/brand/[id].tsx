@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useLocalSearchParams, router } from 'expo-router';
+import { useLocalSearchParams, router, useNavigation } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import * as Linking from 'expo-linking';
@@ -22,7 +22,8 @@ import * as Clipboard from 'expo-clipboard';
 
 export default function BrandDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const insets = useSafeAreaInsets();
+  const insets     = useSafeAreaInsets();
+  const navigation = useNavigation();
   const { user } = useAuth();
   const { brand: brandQ, products: productsQ, campaigns: campaignsQ } = useBrandDetail(id);
   const savedBrands = useSavedBrands();
@@ -76,7 +77,7 @@ export default function BrandDetailScreen() {
     return (
       <View style={[styles.center, { paddingTop: insets.top }]}>
         <Text style={styles.errorText}>Butik bulunamadı.</Text>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backLink}>
+        <TouchableOpacity onPress={() => navigation.canGoBack() ? navigation.goBack() : router.replace('/(tabs)/brands' as any)} style={styles.backLink}>
           <Text style={styles.backLinkText}>Geri dön</Text>
         </TouchableOpacity>
       </View>
@@ -103,7 +104,11 @@ export default function BrandDetailScreen() {
           <LinearGradient colors={['rgba(0,0,0,0.5)', 'transparent', 'rgba(0,0,0,0.7)']} style={StyleSheet.absoluteFill} />
 
           {/* Geri butonu */}
-          <TouchableOpacity onPress={() => router.back()} style={[styles.backBtn, { top: 16 }]}>
+          <TouchableOpacity
+            onPress={() => navigation.canGoBack() ? navigation.goBack() : router.replace('/(tabs)/brands' as any)}
+            style={[styles.backBtn, { top: 16 }]}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
             <Ionicons name="chevron-back" size={20} color="#fff" />
           </TouchableOpacity>
 
@@ -169,8 +174,11 @@ export default function BrandDetailScreen() {
               onPress={() => {
                 const raw = brand.affiliateUrl || brand.website || '';
                 const url = raw.startsWith('http') ? raw : `https://${raw}`;
+                if (!url || url === 'https://') return;
                 trackAffiliateClick(user?.id ?? null, brand.id, null, url);
-                WebBrowser.openBrowserAsync(url);
+                Linking.openURL(url).catch(() =>
+                  WebBrowser.openBrowserAsync(url)
+                );
               }}
             >
               <Ionicons name="open-outline" size={16} color={Colors.text2} />
@@ -190,8 +198,11 @@ export default function BrandDetailScreen() {
                   onPress={() => {
                     const cRaw = c.affiliateUrl || c.url || '';
                     const cUrl = cRaw.startsWith('http') ? cRaw : `https://${cRaw}`;
+                    if (!cUrl || cUrl === 'https://') return;
                     trackAffiliateClick(user?.id ?? null, c.brandId, null, cUrl);
-                    WebBrowser.openBrowserAsync(cUrl);
+                    Linking.openURL(cUrl).catch(() =>
+                      WebBrowser.openBrowserAsync(cUrl)
+                    );
                   }}
                 >
                   <LinearGradient colors={[Colors.surface1, Colors.surface2]} style={StyleSheet.absoluteFill} />

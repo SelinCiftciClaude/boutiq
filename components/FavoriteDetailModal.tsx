@@ -250,7 +250,11 @@ export function FavoriteDetailModal({ favorite, onClose }: Props) {
             <View style={styles.actions}>
               <TouchableOpacity
                 style={styles.actionBtn}
-                onPress={() => Linking.openURL(favorite.sourceUrl)}
+                onPress={() => {
+                  const url = favorite.sourceUrl;
+                  if (!url) return;
+                  Linking.openURL(url).catch(() => {});
+                }}
               >
                 <Ionicons name="open-outline" size={17} color={Colors.teal2} />
                 <Text style={[styles.actionText, { color: Colors.teal2 }]}>Ürünü Aç</Text>

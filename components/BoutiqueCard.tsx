@@ -62,53 +62,57 @@ export function BoutiqueCard({ boutique, onPress, onRemove }: Props) {
   const isManualBg = boutique.isManual || boutique.status === 'manual';
 
   return (
-    <TouchableOpacity
-      style={[s.card, isManualBg && s.cardManual]}
-      onPress={() => onPress?.(boutique)}
-      activeOpacity={0.8}
-    >
-      {/* Logo */}
-      <View style={s.logoWrap}>
-        {boutique.logoUrl ? (
-          <Image source={{ uri: boutique.logoUrl }} style={s.logo} />
-        ) : (
-          <View style={s.logoPlaceholder}>
-            <Text style={s.logoInitial}>{boutique.name[0]}</Text>
-          </View>
-        )}
-      </View>
-
-      {/* Bilgi */}
-      <View style={s.info}>
-        <View style={s.topRow}>
-          <Text style={s.name} numberOfLines={1}>{boutique.name}</Text>
-          <StatusBadge status={boutique.status} />
-        </View>
-        <Text style={s.handle}>{boutique.handle}</Text>
-        <View style={s.metaRow}>
-          <Text style={s.meta}>{boutique.category}</Text>
-          <Text style={s.metaDot}>·</Text>
-          <Text style={s.meta}>{boutique.productCount} ürün</Text>
-          {boutique.lastSync && (
-            <>
-              <Text style={s.metaDot}>·</Text>
-              <Text style={s.meta}>{boutique.lastSync}</Text>
-            </>
+    <View style={[s.card, isManualBg && s.cardManual]}>
+      {/* Tıklanabilir alan: logo + bilgi */}
+      <TouchableOpacity
+        style={s.pressable}
+        onPress={() => onPress?.(boutique)}
+        activeOpacity={0.75}
+      >
+        {/* Logo */}
+        <View style={s.logoWrap}>
+          {boutique.logoUrl ? (
+            <Image source={{ uri: boutique.logoUrl }} style={s.logo} />
+          ) : (
+            <View style={s.logoPlaceholder}>
+              <Text style={s.logoInitial}>{boutique.name[0]}</Text>
+            </View>
           )}
         </View>
-      </View>
 
-      {/* Çıkar */}
+        {/* Bilgi */}
+        <View style={s.info}>
+          <View style={s.topRow}>
+            <Text style={s.name} numberOfLines={1}>{boutique.name}</Text>
+            <StatusBadge status={boutique.status} />
+          </View>
+          <Text style={s.handle}>{boutique.handle}</Text>
+          <View style={s.metaRow}>
+            <Text style={s.meta}>{boutique.category}</Text>
+            <Text style={s.metaDot}>·</Text>
+            <Text style={s.meta}>{boutique.productCount} ürün</Text>
+            {boutique.lastSync && (
+              <>
+                <Text style={s.metaDot}>·</Text>
+                <Text style={s.meta}>{boutique.lastSync}</Text>
+              </>
+            )}
+          </View>
+        </View>
+      </TouchableOpacity>
+
+      {/* Çıkar — dışarıda, iç içe touchable sorunu yok */}
       {onRemove && (
         <TouchableOpacity
           style={s.removeBtn}
           onPress={() => onRemove(boutique.id)}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          activeOpacity={0.5}
         >
           <Ionicons name="close" size={16} color={Colors.text4} />
         </TouchableOpacity>
       )}
-    </TouchableOpacity>
+    </View>
   );
 }
 
@@ -116,13 +120,19 @@ const s = StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
     backgroundColor: Colors.surface1,
     borderRadius: 14,
-    padding: 14,
     marginBottom: 10,
     borderWidth: 0.5,
     borderColor: Colors.border2,
+    overflow: 'hidden',
+  },
+  pressable: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 14,
   },
   cardManual: {
     backgroundColor: 'rgba(180,130,0,0.06)',
@@ -147,5 +157,5 @@ const s = StyleSheet.create({
   metaRow:{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
   meta:   { fontFamily: Fonts.uiLight,  fontSize: 11, color: Colors.text4 },
   metaDot:{ fontFamily: Fonts.uiLight,  fontSize: 11, color: Colors.text5 },
-  removeBtn: { padding: 4 },
+  removeBtn: { paddingHorizontal: 14, paddingVertical: 14 },
 });

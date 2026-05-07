@@ -4,7 +4,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useNavigation } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { Colors } from '@/constants/Colors';
@@ -28,6 +28,8 @@ const STYLE_OPTIONS = [
 const MAX_SELECT = 3;
 
 export default function StylePreferencesScreen() {
+  const navigation = useNavigation();
+  const goBack = () => navigation.canGoBack() ? navigation.goBack() : router.replace('/(tabs)/profile' as any);
   const insets = useSafeAreaInsets();
   const { stylePreferences, markDone, interests } = useInterests();
   const updateStyleTags = useUpdateStyleTags();
@@ -47,7 +49,7 @@ export default function StylePreferencesScreen() {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     await markDone(interests, selected);
     updateStyleTags.mutate(selected);
-    router.back();
+    goBack();
   };
 
   return (
@@ -56,7 +58,7 @@ export default function StylePreferencesScreen() {
 
       {/* Header */}
       <View style={s.header}>
-        <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
+        <TouchableOpacity onPress={() => goBack()} style={s.backBtn}>
           <Ionicons name="arrow-back" size={20} color={Colors.text1} />
         </TouchableOpacity>
         <Text style={s.title}>Tarz Tercihlerim</Text>

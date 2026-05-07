@@ -9,73 +9,43 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useNavigation } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { Colors } from '@/constants/Colors';
 import { Fonts } from '@/constants/Typography';
 import { BoutiqueCard, type ManagedBoutique } from '@/components/BoutiqueCard';
 import { AddBoutiqueModal } from '@/components/AddBoutiqueModal';
+import { useSavedBrands } from '@/hooks/useSavedBrands';
+import type { Brand } from '@/types';
 
-// ── Demo verisi ───────────────────────────────────────────────────────────────
-
-const MOCK_BOUTIQUES: ManagedBoutique[] = [
-  {
-    id: 'mock-1',
-    name: 'Hof Silk',
-    handle: 'hofsilk.com',
-    category: 'Giyim',
+function brandToManaged(b: Brand): ManagedBoutique {
+  const domain = b.website
+    ? b.website.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0]
+    : b.handle;
+  return {
+    id: b.id,
+    name: b.name,
+    handle: domain,
+    logoUrl: b.logo || undefined,
+    category: b.category,
     status: 'synced',
-    productCount: 48,
-    lastSync: '2 saat önce',
+    productCount: b.productCount ?? 0,
+    lastSync: b.lastActive,
     isManual: false,
-  },
-  {
-    id: 'mock-2',
-    name: 'Selma Çilek',
-    handle: 'selmacilek.com',
-    category: 'Giyim',
-    status: 'synced',
-    productCount: 112,
-    lastSync: '1 gün önce',
-    isManual: false,
-  },
-  {
-    id: 'mock-3',
-    name: 'Mlouye',
-    handle: 'mlouye.com',
-    category: 'Çanta',
-    status: 'synced',
-    productCount: 34,
-    lastSync: '3 saat önce',
-    isManual: false,
-  },
-  {
-    id: 'mock-4',
-    name: 'Love on Friday',
-    handle: 'loveonfriday.com',
-    category: 'Giyim',
-    status: 'pending',
-    productCount: 0,
-    isManual: false,
-  },
-  {
-    id: 'mock-5',
-    name: 'Zara',
-    handle: 'zara.com',
-    category: 'Giyim',
-    status: 'manual',
-    productCount: 0,
-    isManual: true,
-  },
-];
+  };
+}
 
 // ── Ekran ─────────────────────────────────────────────────────────────────────
 
 export default function MyBoutiquesScreen() {
+  const navigation = useNavigation();
+  const goBack = () => navigation.canGoBack() ? navigation.goBack() : router.replace('/(tabs)/profile' as any);
   const insets = useSafeAreaInsets();
-  const [boutiques, setBoutiques] = useState<ManagedBoutique[]>(MOCK_BOUTIQUES);
+  const savedBrands = useSavedBrands();
   const [addModalVisible, setAddModalVisible] = useState(false);
+
+  const boutiques: ManagedBoutique[] = (savedBrands.data ?? []).map(brandToManaged);
 
   const handleRemove = (id: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -87,18 +57,13 @@ export default function MyBoutiquesScreen() {
         {
           text: 'Kaldır',
           style: 'destructive',
-          onPress: () => setBoutiques(prev => prev.filter(b => b.id !== id)),
+          onPress: () => savedBrands.remove.mutate(id),
         },
       ]
     );
   };
 
-  const handleAdd = (boutique: ManagedBoutique) => {
-    setBoutiques(prev => [boutique, ...prev]);
-  };
-
-  const syncedCount  = boutiques.filter(b => b.status === 'synced').length;
-  const pendingCount = boutiques.filter(b => b.status === 'pending').length;
+  const syncedCount = boutiques.length;
 
   return (
     <View style={[s.root, { paddingTop: insets.top }]}>
@@ -110,7 +75,7 @@ export default function MyBoutiquesScreen() {
       {/* Header */}
       <View style={s.header}>
         <TouchableOpacity
-          onPress={() => router.back()}
+          onPress={() => goBack()}
           style={s.backBtn}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
@@ -119,11 +84,6 @@ export default function MyBoutiquesScreen() {
 
         <View style={s.headerCenter}>
           <Text style={s.headerTitle}>Butiklerim</Text>
-          {pendingCount > 0 && (
-            <View style={s.pendingBadge}>
-              <Text style={s.pendingBadgeText}>{pendingCount} senkronize ediliyor</Text>
-            </View>
-          )}
         </View>
 
         <View style={s.headerRight}>
@@ -136,7 +96,7 @@ export default function MyBoutiquesScreen() {
         <View style={s.statStrip}>
           <View style={s.statItem}>
             <Text style={s.statValue}>{syncedCount}</Text>
-            <Text style={s.statLabel}>Senkron</Text>
+            <Text style={s.statLabel}>Takip</Text>
           </View>
           <View style={s.statDivider} />
           <View style={s.statItem}>
@@ -147,8 +107,8 @@ export default function MyBoutiquesScreen() {
           </View>
           <View style={s.statDivider} />
           <View style={s.statItem}>
-            <Text style={s.statValue}>{boutiques.filter(b => b.isManual).length}</Text>
-            <Text style={s.statLabel}>Manuel</Text>
+            <Text style={s.statValue}>{(savedBrands.data ?? []).filter(b => b.isFavorite).length}</Text>
+            <Text style={s.statLabel}>Favori</Text>
           </View>
         </View>
       )}
@@ -182,7 +142,7 @@ export default function MyBoutiquesScreen() {
         renderItem={({ item }) => (
           <BoutiqueCard
             boutique={item}
-            onPress={b => router.push((`/brand/${b.id}`) as any)}
+            onPress={b => router.push({ pathname: '/brand/[id]', params: { id: b.id } } as any)}
             onRemove={handleRemove}
           />
         )}
@@ -200,7 +160,7 @@ export default function MyBoutiquesScreen() {
       <AddBoutiqueModal
         visible={addModalVisible}
         onClose={() => setAddModalVisible(false)}
-        onAdd={handleAdd}
+        onAdd={() => {}}
       />
     </View>
   );
@@ -239,18 +199,6 @@ const s = StyleSheet.create({
     fontSize: 22,
     color: Colors.text1,
     letterSpacing: -0.4,
-  },
-  pendingBadge: {
-    backgroundColor: 'rgba(180,130,0,0.12)',
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    alignSelf: 'flex-start',
-  },
-  pendingBadgeText: {
-    fontFamily: Fonts.uiLight,
-    fontSize: 10,
-    color: '#A07010',
   },
   headerRight: {
     width: 38,

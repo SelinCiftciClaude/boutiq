@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { router, useNavigation } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Colors } from '@/constants/Colors';
@@ -35,7 +35,9 @@ function timeAgo(dateStr: string) {
 }
 
 export default function NotificationsScreen() {
-  const insets = useSafeAreaInsets();
+  const insets     = useSafeAreaInsets();
+  const navigation = useNavigation();
+  const goBack = () => navigation.canGoBack() ? navigation.goBack() : router.replace('/(tabs)/profile' as any);
   const { data: notifications = [], markRead, markAllRead, unreadCount } = useNotifications();
 
   const handlePress = (n: any) => {
@@ -45,7 +47,7 @@ export default function NotificationsScreen() {
     }
     if (n.type === 'shipment') router.push('/(tabs)/tracking' as any);
     else if (n.type === 'campaign') router.push('/(tabs)/' as any);
-    else router.back();
+    else goBack();
   };
 
   return (
@@ -54,7 +56,7 @@ export default function NotificationsScreen() {
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+        <TouchableOpacity onPress={goBack} style={styles.backBtn}>
           <Ionicons name="chevron-back" size={22} color={Colors.text3} />
         </TouchableOpacity>
         <View style={styles.headerCenter}>

@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useLocalSearchParams, router } from 'expo-router';
+import { useLocalSearchParams, router, useNavigation } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import * as Linking from 'expo-linking';
@@ -74,8 +74,10 @@ const chartStyles = StyleSheet.create({
 });
 
 export default function ProductDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const insets = useSafeAreaInsets();
+  const { id }     = useLocalSearchParams<{ id: string }>();
+  const insets     = useSafeAreaInsets();
+  const navigation = useNavigation();
+  const goBack = () => navigation.canGoBack() ? navigation.goBack() : router.replace('/(tabs)' as any);
   const { user } = useAuth();
   const { product: productQ, related: relatedQ, priceHistory } = useProductDetail(id);
   const { add: saveProduct, remove: unsaveProduct, isSaved } = useSavedProducts();
@@ -119,7 +121,7 @@ export default function ProductDetailScreen() {
     return (
       <View style={[styles.center, { paddingTop: insets.top }]}>
         <Text style={styles.errorText}>Ürün bulunamadı.</Text>
-        <TouchableOpacity onPress={() => router.back()}><Text style={styles.backLinkText}>Geri dön</Text></TouchableOpacity>
+        <TouchableOpacity onPress={goBack}><Text style={styles.backLinkText}>Geri dön</Text></TouchableOpacity>
       </View>
     );
   }
@@ -157,7 +159,7 @@ export default function ProductDetailScreen() {
           )}
 
           {/* Geri */}
-          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <TouchableOpacity onPress={goBack} style={styles.backBtn}>
             <Ionicons name="chevron-back" size={20} color={Colors.text1} />
           </TouchableOpacity>
 
@@ -257,8 +259,11 @@ export default function ProductDetailScreen() {
           <TouchableOpacity
             style={styles.visitBottomBtn}
             onPress={() => {
-              trackAffiliateClick(user?.id ?? null, product.brandId, product.id, product.affiliateUrl || product.url);
-              Linking.openURL(product.affiliateUrl || product.url);
+              const raw = product.affiliateUrl || product.url || '';
+              const url = raw.startsWith('http') ? raw : raw ? `https://${raw}` : null;
+              if (!url) return;
+              trackAffiliateClick(user?.id ?? null, product.brandId, product.id, url);
+              Linking.openURL(url).catch(() => {});
             }}
           >
             <LinearGradient colors={[Colors.rose2, Colors.rose4]} style={StyleSheet.absoluteFill} />

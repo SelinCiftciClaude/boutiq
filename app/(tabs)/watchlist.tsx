@@ -108,7 +108,7 @@ function WatchCard({ watch, onRemove }: { watch: ProductWatch; onRemove: () => v
         <View style={styles.cardActions}>
           <TouchableOpacity
             style={styles.buyBtn}
-            onPress={() => { Haptics.selectionAsync(); Linking.openURL(p.affiliateUrl); }}
+            onPress={() => { Haptics.selectionAsync(); if (p.affiliateUrl) Linking.openURL(p.affiliateUrl).catch(() => {}); }}
             activeOpacity={0.8}
           >
             <LinearGradient colors={[Colors.rose2, Colors.rose3]} style={StyleSheet.absoluteFill} />

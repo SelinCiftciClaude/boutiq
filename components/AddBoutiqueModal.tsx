@@ -1,7 +1,7 @@
 /**
- * AddBoutiqueModal — Hibrit butik arama.
- * İsim → anlık local + DB önerileri.
- * URL (casanaturale.com) → check-boutique-url edge function ile gerçek site bilgisi.
+ * AddBoutiqueModal — Google Suggest tarzı butik arama.
+ * Yazınca: anında local + 150ms DB + 400ms Clearbit canlı internet araması.
+ * URL girilirse: check-boutique-url edge function ile gerçek site bilgisi.
  */
 
 import React, {
@@ -26,41 +26,42 @@ import { addSavedBrand } from '@/services/queries';
 
 const { height: SCREEN_H } = Dimensions.get('window');
 
-// ── Anında filtrelenen local liste (sıfır gecikme) ────────────────────────────
-// DB'deki gerçek markalar — kullanıcı ilk harfi yazar yazmaz görünür
+// Favicon yardımcısı (Clearbit logosu yoksa Google favicon'u kullan)
+const favicon = (domain: string) =>
+  `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
+
+// ── Anında filtrelenen local tohum listesi ────────────────────────────────────
 const LOCAL_BRANDS: SuggestionItem[] = [
-  { id: 'l01', name: 'Selma Çilek',          website: 'selmacilek.com',         category: 'Giyim'      },
-  { id: 'l02', name: 'Hof Silk',             website: 'hofsilk.com',            category: 'Giyim'      },
-  { id: 'l03', name: 'Love on Friday',       website: 'loveonfriday.com',       category: 'Giyim'      },
-  { id: 'l04', name: 'Mlouye',               website: 'mlouye.com',             category: 'Çanta'      },
-  { id: 'l05', name: 'Manuel Atelier',       website: 'manuelatelier.com',      category: 'Giyim'      },
+  { id: 'l01', name: 'Selma Çilek',          website: 'selmacilek.com',         category: 'Giyim'       },
+  { id: 'l02', name: 'Hof Silk',             website: 'hofsilk.com',            category: 'Giyim'       },
+  { id: 'l03', name: 'Love on Friday',       website: 'loveonfriday.com',       category: 'Giyim'       },
+  { id: 'l04', name: 'Mlouye',               website: 'mlouye.com',             category: 'Çanta'       },
+  { id: 'l05', name: 'Manuel Atelier',       website: 'manuelatelier.com',      category: 'Giyim'       },
   { id: 'l06', name: 'The Purest Solutions', website: 'thepurestsolutions.com', category: 'Cilt Bakımı' },
   { id: 'l07', name: 'VavRattan',            website: 'vavrattan.com',          category: 'Ev & Dekor'  },
-  { id: 'l08', name: 'Muun',                 website: 'muun.com',               category: 'Giyim'      },
-  { id: 'l09', name: 'Noire Studio',         website: 'noirestudio.com',        category: 'Giyim'      },
-  { id: 'l10', name: 'Arce Leather',         website: 'arceleather.com',        category: 'Çanta'      },
-  { id: 'l11', name: 'Kamela',               website: 'kamela.com.tr',          category: 'Giyim'      },
-  { id: 'l12', name: 'Sia Moore',            website: 'siamoore.com',           category: 'Giyim'      },
-  { id: 'l13', name: 'Müf Studio',           website: 'mufstudio.com',          category: 'Giyim'      },
-  { id: 'l14', name: 'Baskı',               website: 'baski.com.tr',           category: 'Giyim'      },
-  { id: 'l15', name: 'Trendyol',             website: 'trendyol.com',           category: 'Giyim'      },
-  { id: 'l16', name: 'Zara',                 website: 'zara.com',               category: 'Giyim'      },
-  { id: 'l17', name: 'Mango',                website: 'mango.com',              category: 'Giyim'      },
-  { id: 'l18', name: 'Stradivarius',         website: 'stradivarius.com',       category: 'Giyim'      },
-  { id: 'l19', name: 'Massimo Dutti',        website: 'massimodutti.com',       category: 'Giyim'      },
-  { id: 'l20', name: 'H&M',                  website: 'hm.com',                 category: 'Giyim'      },
+  { id: 'l08', name: 'Muun',                 website: 'muun.com',               category: 'Giyim'       },
+  { id: 'l09', name: 'Noire Studio',         website: 'noirestudio.com',        category: 'Giyim'       },
+  { id: 'l10', name: 'Arce Leather',         website: 'arceleather.com',        category: 'Çanta'       },
+  { id: 'l11', name: 'Kamela',               website: 'kamela.com.tr',          category: 'Giyim'       },
+  { id: 'l12', name: 'Sia Moore',            website: 'siamoore.com',           category: 'Giyim'       },
+  { id: 'l13', name: 'Müf Studio',           website: 'mufstudio.com',          category: 'Giyim'       },
+  { id: 'l14', name: 'Baskı',               website: 'baski.com.tr',           category: 'Giyim'       },
+  { id: 'l15', name: 'Zara',                 website: 'zara.com',               category: 'Giyim'       },
+  { id: 'l16', name: 'Mango',                website: 'mango.com',              category: 'Giyim'       },
+  { id: 'l17', name: 'Stradivarius',         website: 'stradivarius.com',       category: 'Giyim'       },
+  { id: 'l18', name: 'Massimo Dutti',        website: 'massimodutti.com',       category: 'Giyim'       },
+  { id: 'l19', name: 'H&M',                  website: 'hm.com',                 category: 'Giyim'       },
+  { id: 'l20', name: 'Trendyol',             website: 'trendyol.com',           category: 'Giyim'       },
 ];
 
 // ── URL yardımcıları ─────────────────────────────────────────────────────────
 
-// Giriş URL benzeri mi? (casanaturale.com, www.shop.com gibi)
 function isUrlLike(q: string): boolean {
   const t = q.trim();
   return t.includes('.') && !t.includes(' ') && t.length >= 4 &&
     /^[a-zA-Z0-9\-_.]+\.[a-zA-Z]{2,}/.test(t);
 }
 
-// "https://www.casanaturale.com/tr" → "casanaturale.com"
 function extractDomain(q: string): string {
   return q.trim()
     .replace(/^https?:\/\//, '')
@@ -79,8 +80,8 @@ interface SuggestionItem {
   logoUrl?: string;
   coverUrl?: string;
   productCount?: number;
-  fromDb?: boolean;    // true → DB'den geldi
-  fromUrl?: boolean;   // true → check-boutique-url'den geldi
+  fromDb?: boolean;
+  fromUrl?: boolean;
   platform?: 'shopify' | 'ikas' | 'other';
   shopifyVerified?: boolean;
 }
@@ -135,7 +136,7 @@ function SuggestionRow({
       onPress={() => onAdd(item)}
       activeOpacity={0.75}
     >
-      {/* Favicon benzeri logo */}
+      {/* Logo */}
       <View style={sg.icon}>
         {item.logoUrl ? (
           <Image source={{ uri: item.logoUrl }} style={sg.iconImg} />
@@ -180,32 +181,19 @@ const sg = StyleSheet.create({
     width: 32, height: 32, borderRadius: 8,
     backgroundColor: Colors.surface3,
     alignItems: 'center', justifyContent: 'center',
-    overflow: 'hidden',
-    flexShrink: 0,
+    overflow: 'hidden', flexShrink: 0,
   },
   iconImg: { width: '100%', height: '100%' },
   iconLetter: { fontFamily: Fonts.displayBold, fontSize: 15, color: Colors.rose3 },
   textWrap: { flex: 1, gap: 1 },
   url: { fontFamily: Fonts.uiLight, fontSize: 11, color: Colors.text4 },
   addBtn: {
-    borderWidth: 1.5,
-    borderColor: Colors.rose3,
-    borderRadius: 7,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    minWidth: 52,
-    alignItems: 'center',
-    flexShrink: 0,
+    borderWidth: 1.5, borderColor: Colors.rose3, borderRadius: 7,
+    paddingHorizontal: 10, paddingVertical: 4,
+    minWidth: 52, alignItems: 'center', flexShrink: 0,
   },
-  addBtnFilled: {
-    backgroundColor: Colors.rose3,
-    borderColor: Colors.rose3,
-  },
-  addBtnText: {
-    fontFamily: Fonts.uiMedium,
-    fontSize: 12,
-    color: Colors.rose3,
-  },
+  addBtnFilled: { backgroundColor: Colors.rose3, borderColor: Colors.rose3 },
+  addBtnText: { fontFamily: Fonts.uiMedium, fontSize: 12, color: Colors.rose3 },
   addBtnTextFilled: { color: '#FFF9EE' },
 });
 
@@ -216,30 +204,26 @@ export function AddBoutiqueModal({ visible, onClose, onAdd }: Props) {
   const qc          = useQueryClient();
   const inputRef    = useRef<TextInput>(null);
   const dbTimer     = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const webTimer    = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cbTimer     = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const urlTimer    = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const [query,      setQuery]      = useState('');
-  const [dbResults,  setDbResults]  = useState<SuggestionItem[]>([]);
-  const [dbLoading,  setDbLoading]  = useState(false);
-  const [addingId,   setAddingId]   = useState<string | null>(null);
-  const [addedId,    setAddedId]    = useState<string | null>(null);
-  // Web arama (simülasyon)
-  const [webLoading, setWebLoading] = useState(false);
-  const [webResult,  setWebResult]  = useState<SuggestionItem | null>(null);
-  const [webAdding,  setWebAdding]  = useState(false);
-  const [webAdded,   setWebAdded]   = useState(false);
-  // URL kontrol (gerçek)
-  const [urlState,   setUrlState]   = useState<'idle' | 'checking' | 'found' | 'notFound'>('idle');
-  const [urlResult,  setUrlResult]  = useState<SuggestionItem | null>(null);
-  const urlTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [query,           setQuery]           = useState('');
+  const [dbResults,       setDbResults]       = useState<SuggestionItem[]>([]);
+  const [clearbitResults, setClearbitResults] = useState<SuggestionItem[]>([]);
+  const [dbLoading,       setDbLoading]       = useState(false);
+  const [cbLoading,       setCbLoading]       = useState(false);
+  const [addingId,        setAddingId]        = useState<string | null>(null);
+  const [addedId,         setAddedId]         = useState<string | null>(null);
+  const [urlState,        setUrlState]        = useState<'idle' | 'checking' | 'found' | 'notFound'>('idle');
+  const [urlResult,       setUrlResult]       = useState<SuggestionItem | null>(null);
+  const [urlAdded,        setUrlAdded]        = useState(false);
 
   // Animasyonlar
   const slideAnim    = useRef(new Animated.Value(SCREEN_H)).current;
   const backdropAnim = useRef(new Animated.Value(0)).current;
   const listAnim     = useRef(new Animated.Value(0)).current;
-  const webBlink     = useRef(new Animated.Value(1)).current;
 
-  // ── Modal açılış/kapanış ──────────────────────────────────────────────────
+  // ── Modal açılış/kapanış ─────────────────────────────────────────────────
   useEffect(() => {
     if (visible) {
       Animated.parallel([
@@ -256,51 +240,35 @@ export function AddBoutiqueModal({ visible, onClose, onAdd }: Props) {
     }
   }, [visible]);
 
-  // Web loading blink
-  useEffect(() => {
-    if (webLoading) {
-      const loop = Animated.loop(Animated.sequence([
-        Animated.timing(webBlink, { toValue: 0.35, duration: 550, useNativeDriver: true }),
-        Animated.timing(webBlink, { toValue: 1,    duration: 550, useNativeDriver: true }),
-      ]));
-      loop.start();
-      return () => loop.stop();
-    }
-    webBlink.setValue(1);
-  }, [webLoading]);
-
   // Liste fade-in
   useEffect(() => {
-    if (localFiltered.length > 0 || dbResults.length > 0) {
-      listAnim.setValue(0);
-      Animated.timing(listAnim, { toValue: 1, duration: 160, useNativeDriver: true }).start();
-    }
+    listAnim.setValue(0);
+    Animated.timing(listAnim, { toValue: 1, duration: 180, useNativeDriver: true }).start();
   }, [query]);
 
   const reset = () => {
-    setQuery(''); setDbResults([]); setDbLoading(false);
+    setQuery('');
+    setDbResults([]); setClearbitResults([]);
+    setDbLoading(false); setCbLoading(false);
     setAddingId(null); setAddedId(null);
-    setWebLoading(false); setWebResult(null);
-    setWebAdding(false); setWebAdded(false);
-    setUrlState('idle'); setUrlResult(null);
+    setUrlState('idle'); setUrlResult(null); setUrlAdded(false);
     listAnim.setValue(0);
   };
 
-  // ── Anlık local filtre ────────────────────────────────────────────────────
+  // ── Anlık local filtre ───────────────────────────────────────────────────
   const localFiltered = useMemo((): SuggestionItem[] => {
     const q = query.trim().toLowerCase();
     if (!q) return [];
     return LOCAL_BRANDS.filter(b =>
-      b.name.toLowerCase().includes(q) ||
-      b.website.toLowerCase().includes(q)
+      b.name.toLowerCase().includes(q) || b.website.toLowerCase().includes(q)
     ).slice(0, 5);
   }, [query]);
 
-  // ── DB araması (arka planda, 150ms debounce) ──────────────────────────────
+  // ── DB araması — 150ms debounce ──────────────────────────────────────────
   useEffect(() => {
     if (dbTimer.current) clearTimeout(dbTimer.current);
     const q = query.trim();
-    if (!q || q.length < 2) { setDbResults([]); setDbLoading(false); return; }
+    if (!q || q.length < 2 || isUrlLike(q)) { setDbResults([]); setDbLoading(false); return; }
 
     setDbLoading(true);
     dbTimer.current = setTimeout(async () => {
@@ -319,43 +287,58 @@ export function AddBoutiqueModal({ visible, onClose, onAdd }: Props) {
             logoUrl: b.logo_url ?? undefined,
             fromDb: true,
           })));
+        } else {
+          setDbResults([]);
         }
-      } catch { /* sessizce geç */ }
+      } catch { setDbResults([]); }
       setDbLoading(false);
     }, 150);
   }, [query]);
 
-  // ── URL kontrolü: DB + local boş gelince gerçek siteyi fetch et ─────────────
+  // ── Clearbit araması — 400ms debounce (isim modu) ────────────────────────
+  useEffect(() => {
+    if (cbTimer.current) clearTimeout(cbTimer.current);
+    const q = query.trim();
+    if (!q || q.length < 2 || isUrlLike(q)) { setClearbitResults([]); setCbLoading(false); return; }
+
+    setCbLoading(true);
+    cbTimer.current = setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `https://autocomplete.clearbit.com/v1/companies/suggest?query=${encodeURIComponent(q)}`
+        );
+        const data: Array<{ name: string; domain: string; logo: string }> = await res.json();
+        setClearbitResults(
+          (data ?? []).slice(0, 6).map(s => ({
+            id:      `cb-${s.domain}`,
+            name:    s.name,
+            website: s.domain,
+            category: 'Giyim',
+            logoUrl: s.logo || favicon(s.domain),
+            fromDb:  false,
+          }))
+        );
+      } catch { setClearbitResults([]); }
+      setCbLoading(false);
+    }, 400);
+  }, [query]);
+
+  // ── URL kontrolü — 600ms debounce ────────────────────────────────────────
   useEffect(() => {
     if (urlTimer.current) clearTimeout(urlTimer.current);
     const q = query.trim();
 
-    if (!isUrlLike(q)) {
-      setUrlState('idle');
-      setUrlResult(null);
-      return;
-    }
+    if (!isUrlLike(q)) { setUrlState('idle'); setUrlResult(null); return; }
+    if (dbResults.length > 0) { setUrlState('idle'); setUrlResult(null); return; }
 
-    // Zaten DB'de bulunduysa URL kontrole gerek yok
-    if (dbResults.length > 0) {
-      setUrlState('idle');
-      setUrlResult(null);
-      return;
-    }
-
-    setUrlState('checking');
-    setUrlResult(null);
+    setUrlState('checking'); setUrlResult(null);
 
     urlTimer.current = setTimeout(async () => {
       try {
         const { data, error } = await supabase.functions.invoke('check-boutique-url', {
           body: { url: q },
         });
-
-        if (error || !data?.found) {
-          setUrlState('notFound');
-          return;
-        }
+        if (error || !data?.found) { setUrlState('notFound'); return; }
 
         setUrlResult({
           id:              `url-${data.website}`,
@@ -371,48 +354,36 @@ export function AddBoutiqueModal({ visible, onClose, onAdd }: Props) {
         });
         setUrlState('found');
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      } catch {
-        setUrlState('notFound');
-      }
+      } catch { setUrlState('notFound'); }
     }, 600);
   }, [query, dbResults.length]);
 
-  // DB sonuçlarını local listeyle birleştir, local önce gelsin, DB'dekiler günceller
+  // ── Sonuçları birleştir — DB > Local > Clearbit (tekrar yok) ─────────────
   const suggestions = useMemo((): SuggestionItem[] => {
-    if (dbResults.length > 0) {
-      // DB sonuçları varsa onları kullan (daha doğru, ID'leri gerçek)
-      return dbResults.slice(0, 6);
-    }
-    return localFiltered;
-  }, [dbResults, localFiltered]);
+    if (isUrlLike(query.trim())) return [];
 
-  // ── Web araması (tıklanınca simüle et) ───────────────────────────────────
-  const handleWebSearch = useCallback(() => {
-    if (webLoading || webResult || !query.trim()) return;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setWebLoading(true);
-    setWebResult(null);
+    const seen = new Set<string>();
+    const out: SuggestionItem[] = [];
 
-    if (webTimer.current) clearTimeout(webTimer.current);
-    webTimer.current = setTimeout(() => {
-      const q    = query.trim();
-      const slug = q.toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, '');
-      setWebResult({
-        id: `web-${slug}`, name: q.charAt(0).toUpperCase() + q.slice(1),
-        website: `${slug}.com`, category: 'Giyim', fromDb: false,
-      });
-      setWebLoading(false);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    }, 1500);
-  }, [query, webLoading, webResult]);
+    const push = (item: SuggestionItem) => {
+      const key = extractDomain(item.website);
+      if (!seen.has(key)) { seen.add(key); out.push(item); }
+    };
 
-  // ── Ortak ekleme yardımcısı — hem local/web hem de doğrudan çağrı için ─────
-  const addViaRpc = useCallback(async (
-    item: SuggestionItem,
-    opts?: { isWeb?: boolean },
-  ) => {
+    // 1. DB sonuçları (gerçek ID'li, en güvenilir)
+    dbResults.forEach(push);
+    // 2. Anında local eşleşme
+    localFiltered.forEach(push);
+    // 3. Clearbit canlı internet araması
+    clearbitResults.forEach(push);
+
+    return out.slice(0, 8);
+  }, [dbResults, localFiltered, clearbitResults, query]);
+
+  // ── Genel ekleme (local/clearbit → RPC ile DB'ye yaz) ───────────────────
+  const addViaRpc = useCallback(async (item: SuggestionItem) => {
     if (!session?.user || addingId) return;
-    if (opts?.isWeb) setWebAdding(true); else setAddingId(item.id);
+    setAddingId(item.id);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     try {
@@ -425,79 +396,54 @@ export function AddBoutiqueModal({ visible, onClose, onAdd }: Props) {
       qc.invalidateQueries({ queryKey: ['discover-feed'] });
       qc.invalidateQueries({ queryKey: ['discover-categories'] });
 
-      const syncUrl = item.website.startsWith('http')
-        ? item.website
-        : `https://${item.website}`;
-      supabase.functions
-        .invoke('sync-brand-products', { body: { brand_id: brandId, website_url: syncUrl } })
-        .catch(() => {});
-      supabase.functions
-        .invoke('extract-brand-assets', { body: { brand_id: brandId } })
-        .catch(() => {});
+      const syncUrl = item.website.startsWith('http') ? item.website : `https://${item.website}`;
+      supabase.functions.invoke('sync-brand-products', { body: { brand_id: brandId, website_url: syncUrl } }).catch(() => {});
+      supabase.functions.invoke('extract-brand-assets', { body: { brand_id: brandId } }).catch(() => {});
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-
-      if (opts?.isWeb) {
-        setWebAdded(true);
-        setWebAdding(false);
-      } else {
-        setAddedId(item.id);
-      }
-
+      setAddedId(item.id);
       onAdd?.({
         id: brandId, name: item.name,
         handle: item.website.replace(/^https?:\/\//, '').replace(/^www\./, ''),
         logoUrl: item.logoUrl, category: item.category,
-        status: 'pending', productCount: item.productCount ?? 0,
-        isManual: opts?.isWeb ?? false,
+        status: 'pending', productCount: item.productCount ?? 0, isManual: false,
       });
-
-      setTimeout(() => { onClose(); router.push(`/brand/${brandId}` as any); }, 900);
+      setTimeout(() => { onClose(); router.push({ pathname: '/brand/[id]', params: { id: brandId } } as any); }, 900);
     } catch {
-      if (opts?.isWeb) setWebAdding(false); else setAddingId(null);
+      setAddingId(null);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     }
   }, [session, addingId, qc, onAdd, onClose]);
 
-  // ── DB markası ekleme (gerçek UUID, addSavedBrand daha hızlı) ────────────
+  // ── DB markası ekleme (gerçek UUID → addSavedBrand) ──────────────────────
   const handleAddDb = useCallback(async (item: SuggestionItem) => {
     if (!session?.user || addingId) return;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setAddingId(item.id);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     try {
       await addSavedBrand(session.user.id, item.id);
       qc.invalidateQueries({ queryKey: ['savedBrands'] });
       qc.invalidateQueries({ queryKey: ['discover-feed'] });
-      qc.invalidateQueries({ queryKey: ['discover-categories'] });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setAddedId(item.id);
       onAdd?.({
         id: item.id, name: item.name,
         handle: item.website.replace(/^https?:\/\//, '').replace(/^www\./, ''),
         logoUrl: item.logoUrl, category: item.category,
-        status: 'pending', productCount: item.productCount ?? 0, isManual: false,
+        status: 'synced', productCount: item.productCount ?? 0, isManual: false,
       });
-      setTimeout(() => { onClose(); router.push(`/brand/${item.id}` as any); }, 900);
+      setTimeout(() => { onClose(); router.push({ pathname: '/brand/[id]', params: { id: item.id } } as any); }, 900);
     } catch {
       setAddingId(null);
     }
   }, [session, addingId, qc, onAdd, onClose]);
 
-  // ── Web satırındaki "+ Ekle" butonu ───────────────────────────────────────
-  const handleAddWeb = useCallback(() => {
-    if (!webResult || webAdding || webAdded) return;
-    addViaRpc(webResult, { isWeb: true });
-  }, [webResult, webAdding, webAdded, addViaRpc]);
-
-  // ── Öneri listesindeki "+ Ekle" butonu ────────────────────────────────────
-  // fromDb=true → gerçek UUID var, addSavedBrand kullan
-  // fromDb=false/undefined → local veya web sonucu, RPC ile bul/oluştur
   const handleAdd = useCallback((item: SuggestionItem) => {
     if (item.fromDb) handleAddDb(item);
     else addViaRpc(item);
   }, [handleAddDb, addViaRpc]);
 
-  const hasContent = suggestions.length > 0 || webLoading || webResult;
+  const isSearching = dbLoading || cbLoading;
 
   return (
     <Modal visible={visible} transparent animationType="none" onRequestClose={onClose}>
@@ -513,14 +459,13 @@ export function AddBoutiqueModal({ visible, onClose, onAdd }: Props) {
         <Animated.View style={[s.sheet, { transform: [{ translateY: slideAnim }] }]}>
           <LinearGradient colors={[Colors.surface2, Colors.surface1]} style={StyleSheet.absoluteFill} />
 
-          {/* Tutma çubuğu */}
+          {/* Handle */}
           <View style={s.handle} />
 
-          {/* ── URL BAR ── */}
+          {/* ── ARAMA ÇUBUĞU ── */}
           <View style={s.urlBar}>
-            {/* Sol: arama ikonu */}
             <View style={s.urlLeft}>
-              {dbLoading
+              {isSearching
                 ? <ActivityIndicator size="small" color={Colors.gold3} style={{ width: 18 }} />
                 : <Ionicons name="search-outline" size={16}
                     color={query.length ? Colors.rose3 : Colors.text4} />
@@ -530,10 +475,14 @@ export function AddBoutiqueModal({ visible, onClose, onAdd }: Props) {
             <TextInput
               ref={inputRef}
               style={s.urlInput}
-              placeholder="Butik ara... (örn: muun, selma, zara)"
+              placeholder="Butik adı veya site adresi..."
               placeholderTextColor={Colors.text5}
               value={query}
-              onChangeText={t => { setQuery(t); setWebResult(null); setWebLoading(false); setWebAdded(false); }}
+              onChangeText={t => {
+                setQuery(t);
+                setAddedId(null);
+                setUrlAdded(false);
+              }}
               autoCapitalize="none"
               autoCorrect={false}
               returnKeyType="search"
@@ -542,7 +491,7 @@ export function AddBoutiqueModal({ visible, onClose, onAdd }: Props) {
 
             {query.length > 0 && (
               <TouchableOpacity
-                onPress={() => { setQuery(''); setDbResults([]); setWebResult(null); inputRef.current?.focus(); }}
+                onPress={() => { setQuery(''); setDbResults([]); setClearbitResults([]); inputRef.current?.focus(); }}
                 style={s.urlClear}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
@@ -555,17 +504,18 @@ export function AddBoutiqueModal({ visible, onClose, onAdd }: Props) {
             </TouchableOpacity>
           </View>
 
-          {/* ── ÖNERI LİSTESİ ── */}
+          {/* ── İÇERİK ── */}
           {!query && (
             <View style={s.emptyWrap}>
-              <Text style={s.emptyText}>200+ butik adı veya site adresi yaz</Text>
+              <Text style={s.emptyHint}>Marka adı veya domain yaz</Text>
+              <Text style={s.emptyEx}>Muun, Zara, selmacilek.com...</Text>
             </View>
           )}
 
           {query.trim().length >= 1 && (
             <Animated.View style={[s.listWrap, { opacity: listAnim }]}>
 
-              {/* DB / Local önerileri */}
+              {/* ── Öneri listesi ── */}
               {suggestions.map((item, i) => (
                 <SuggestionRow
                   key={item.id}
@@ -577,18 +527,17 @@ export function AddBoutiqueModal({ visible, onClose, onAdd }: Props) {
                 />
               ))}
 
-              {/* Eklendi mesajı */}
+              {/* Eklendi */}
               {addedId && (
                 <View style={s.successRow}>
                   <Ionicons name="checkmark-circle" size={16} color={Colors.success} />
-                  <Text style={s.successText}>Butik eklendi, feed yenileniyor...</Text>
+                  <Text style={s.successText}>Eklendi, yönlendiriliyorsun...</Text>
                 </View>
               )}
 
-              {/* ── URL kontrol sonucu ── */}
+              {/* ── URL modu ── */}
               {isUrlLike(query) && (
                 <>
-                  {/* Ayraç (DB sonucu varsa) */}
                   {suggestions.length > 0 && (
                     <View style={s.dividerRow}>
                       <View style={s.dividerLine} />
@@ -597,17 +546,13 @@ export function AddBoutiqueModal({ visible, onClose, onAdd }: Props) {
                     </View>
                   )}
 
-                  {/* Kontrol ediliyor */}
                   {urlState === 'checking' && (
                     <View style={s.urlCheckRow}>
                       <ActivityIndicator size="small" color={Colors.gold3} />
-                      <Text style={s.urlCheckText}>
-                        {extractDomain(query)} kontrol ediliyor...
-                      </Text>
+                      <Text style={s.urlCheckText}>{extractDomain(query)} kontrol ediliyor...</Text>
                     </View>
                   )}
 
-                  {/* Bulunamadı */}
                   {urlState === 'notFound' && (
                     <View style={s.urlCheckRow}>
                       <Ionicons name="close-circle-outline" size={16} color={Colors.text4} />
@@ -615,10 +560,8 @@ export function AddBoutiqueModal({ visible, onClose, onAdd }: Props) {
                     </View>
                   )}
 
-                  {/* Bulundu — gerçek site kartı */}
-                  {urlState === 'found' && urlResult && !webAdded && (
+                  {urlState === 'found' && urlResult && !urlAdded && (
                     <View style={s.urlFoundCard}>
-                      {/* Logo */}
                       <View style={s.urlLogo}>
                         {urlResult.logoUrl ? (
                           <Image source={{ uri: urlResult.logoUrl }} style={s.urlLogoImg} />
@@ -626,7 +569,6 @@ export function AddBoutiqueModal({ visible, onClose, onAdd }: Props) {
                           <Text style={s.urlLogoLetter}>{urlResult.name[0]?.toUpperCase()}</Text>
                         )}
                       </View>
-                      {/* Bilgi */}
                       <View style={{ flex: 1 }}>
                         <Text style={s.urlFoundName}>{urlResult.name}</Text>
                         <View style={s.urlMeta}>
@@ -641,13 +583,12 @@ export function AddBoutiqueModal({ visible, onClose, onAdd }: Props) {
                           )}
                         </View>
                       </View>
-                      {/* Ekle butonu */}
                       <TouchableOpacity
-                        style={[s.urlAddBtn, (addingId === urlResult.id || webAdding) && { opacity: 0.5 }]}
-                        onPress={() => addViaRpc(urlResult, { isWeb: true })}
-                        disabled={addingId === urlResult.id || webAdding}
+                        style={[s.urlAddBtn, addingId === urlResult.id && { opacity: 0.5 }]}
+                        onPress={() => addViaRpc(urlResult)}
+                        disabled={addingId === urlResult.id}
                       >
-                        {(addingId === urlResult.id || webAdding)
+                        {addingId === urlResult.id
                           ? <ActivityIndicator size="small" color="#fff" />
                           : <Text style={s.urlAddBtnText}>+ Ekle</Text>
                         }
@@ -655,24 +596,30 @@ export function AddBoutiqueModal({ visible, onClose, onAdd }: Props) {
                     </View>
                   )}
 
-                  {/* URL eklendi */}
-                  {webAdded && (
+                  {urlAdded && (
                     <View style={s.successRow}>
                       <Ionicons name="checkmark-circle" size={16} color={Colors.success} />
-                      <Text style={s.successText}>Başarıyla eklendi! Yönlendiriliyorsun...</Text>
+                      <Text style={s.successText}>Başarıyla eklendi!</Text>
                     </View>
                   )}
                 </>
               )}
 
-              {/* İsim araması — DB'de yok ve URL de değil */}
-              {suggestions.length === 0 && !dbLoading && !isUrlLike(query) && query.trim().length >= 2 && (
-                <View style={s.emptyWrap}>
-                  <Text style={s.emptyText}>
-                    "{query}" bulunamadı{'\n'}
-                    <Text style={{ color: Colors.gold2 }}>Site adresini yaz: örn. marka.com</Text>
-                  </Text>
-                </View>
+              {/* Sonuç yok + arama devam ediyor */}
+              {suggestions.length === 0 && !isUrlLike(query) && (
+                isSearching
+                  ? (
+                    <View style={s.searchingRow}>
+                      <Text style={s.searchingText}>"{query}" aranıyor...</Text>
+                    </View>
+                  ) : (
+                    <View style={s.emptyWrap}>
+                      <Text style={s.emptyText}>
+                        "{query}" bulunamadı{'\n'}
+                        <Text style={{ color: Colors.gold2 }}>Site adresini yaz: örn. marka.com</Text>
+                      </Text>
+                    </View>
+                  )
               )}
             </Animated.View>
           )}
@@ -707,165 +654,53 @@ const s = StyleSheet.create({
     borderRadius: 2, alignSelf: 'center', marginTop: 10, marginBottom: 12,
   },
 
-  // URL Bar
   urlBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginHorizontal: 14,
-    marginBottom: 6,
+    flexDirection: 'row', alignItems: 'center',
+    marginHorizontal: 14, marginBottom: 6,
     backgroundColor: Colors.surface3,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: Colors.border3,
-    paddingLeft: 12,
-    paddingRight: 4,
-    height: 48,
-    gap: 8,
+    borderRadius: 14, borderWidth: 1.5, borderColor: Colors.border3,
+    paddingLeft: 12, paddingRight: 4, height: 48, gap: 8,
   },
   urlLeft: { width: 20, alignItems: 'center' },
   urlInput: {
-    flex: 1,
-    fontFamily: Fonts.uiLight,
-    fontSize: 15,
-    color: Colors.text1,
-    height: '100%',
+    flex: 1, fontFamily: Fonts.uiLight, fontSize: 15,
+    color: Colors.text1, height: '100%',
   },
   urlClear: { padding: 4 },
   urlCancel: { paddingHorizontal: 10, paddingVertical: 8 },
-  urlCancelText: {
-    fontFamily: Fonts.uiMedium,
-    fontSize: 14,
-    color: Colors.rose3,
-  },
+  urlCancelText: { fontFamily: Fonts.uiMedium, fontSize: 14, color: Colors.rose3 },
 
-  // Öneri listesi
-  listWrap: {
-    paddingHorizontal: 18,
-    paddingTop: 4,
-  },
+  listWrap: { paddingHorizontal: 18, paddingTop: 4 },
 
-  // Başarı
-  successRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingVertical: 12,
-  },
-  successText: {
-    fontFamily: Fonts.uiLight,
-    fontSize: 13,
-    color: Colors.success,
-  },
+  successRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 12 },
+  successText: { fontFamily: Fonts.uiLight, fontSize: 13, color: Colors.success },
 
-  // Ayraç
-  dividerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginVertical: 10,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 0.5,
-    backgroundColor: Colors.border2,
-  },
+  searchingRow: { paddingVertical: 16, alignItems: 'center' },
+  searchingText: { fontFamily: Fonts.uiLight, fontSize: 13, color: Colors.text5 },
+
+  dividerRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginVertical: 10 },
+  dividerLine: { flex: 1, height: 0.5, backgroundColor: Colors.border2 },
   dividerText: {
-    fontFamily: Fonts.uiLight,
-    fontSize: 10,
-    color: Colors.text5,
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
+    fontFamily: Fonts.uiLight, fontSize: 10, color: Colors.text5,
+    letterSpacing: 0.8, textTransform: 'uppercase',
   },
 
-  // Web satırı
-  webRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingVertical: 11,
-    paddingHorizontal: 4,
-  },
-  webIcon: {
-    width: 32, height: 32,
-    borderRadius: 8,
-    backgroundColor: 'rgba(200,154,40,0.10)',
-    alignItems: 'center', justifyContent: 'center',
-    flexShrink: 0,
-  },
-  webLabel: {
-    fontFamily: Fonts.uiMedium,
-    fontSize: 13,
-    color: Colors.text2,
-  },
-  webSub: {
-    fontFamily: Fonts.uiLight,
-    fontSize: 11,
-    color: Colors.text4,
-    marginTop: 1,
-  },
-  webResultName: {
-    fontFamily: Fonts.uiMedium,
-    fontSize: 13,
-    color: Colors.text1,
-  },
-  webResultUrl: {
-    fontFamily: Fonts.uiLight,
-    fontSize: 11,
-    color: Colors.text4,
-    marginTop: 1,
-  },
-  webAddBtn: {
-    borderWidth: 1.5,
-    borderColor: Colors.rose3,
-    borderRadius: 7,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    flexShrink: 0,
-  },
-  webAddBtnText: {
-    fontFamily: Fonts.uiMedium,
-    fontSize: 12,
-    color: Colors.rose3,
-  },
-
-  // Boş durum
-  emptyWrap: {
-    alignItems: 'center',
-    paddingVertical: 24,
-    paddingHorizontal: 16,
-  },
+  emptyWrap: { alignItems: 'center', paddingVertical: 24, paddingHorizontal: 16 },
+  emptyHint: { fontFamily: Fonts.uiMedium, fontSize: 14, color: Colors.text3, marginBottom: 4 },
+  emptyEx: { fontFamily: Fonts.uiLight, fontSize: 12, color: Colors.text5 },
   emptyText: {
-    fontFamily: Fonts.uiLight,
-    fontSize: 13,
-    color: Colors.text5,
-    textAlign: 'center',
-    lineHeight: 20,
+    fontFamily: Fonts.uiLight, fontSize: 13, color: Colors.text5,
+    textAlign: 'center', lineHeight: 20,
   },
 
-  // URL kontrol
-  urlCheckRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingVertical: 14,
-  },
-  urlCheckText: {
-    fontFamily: Fonts.uiLight,
-    fontSize: 13,
-    color: Colors.text4,
-  },
+  urlCheckRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 14 },
+  urlCheckText: { fontFamily: Fonts.uiLight, fontSize: 13, color: Colors.text4 },
 
-  // URL bulundu kartı
   urlFoundCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    backgroundColor: Colors.surface2,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Colors.borderBurgund,
-    padding: 12,
-    marginVertical: 4,
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    backgroundColor: Colors.surface2, borderRadius: 14,
+    borderWidth: 1, borderColor: Colors.borderBurgund,
+    padding: 12, marginVertical: 4,
   },
   urlLogo: {
     width: 44, height: 44, borderRadius: 10,
@@ -876,41 +711,19 @@ const s = StyleSheet.create({
   },
   urlLogoImg: { width: '100%', height: '100%' },
   urlLogoLetter: { fontFamily: Fonts.displayBold, fontSize: 18, color: Colors.rose3 },
-  urlFoundName: {
-    fontFamily: Fonts.uiMedium,
-    fontSize: 14,
-    color: Colors.text1,
-    letterSpacing: -0.1,
-  },
+  urlFoundName: { fontFamily: Fonts.uiMedium, fontSize: 14, color: Colors.text1, letterSpacing: -0.1 },
   urlMeta: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 3 },
-  urlFoundDomain: {
-    fontFamily: Fonts.uiLight,
-    fontSize: 11,
-    color: Colors.text4,
-  },
+  urlFoundDomain: { fontFamily: Fonts.uiLight, fontSize: 11, color: Colors.text4 },
   platformBadge: {
-    backgroundColor: Colors.surface3,
-    borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2,
+    backgroundColor: Colors.surface3, borderRadius: 6,
+    paddingHorizontal: 6, paddingVertical: 2,
     borderWidth: 0.5, borderColor: Colors.border2,
   },
-  platformBadgeVerified: {
-    backgroundColor: Colors.successGlow,
-    borderColor: `${Colors.success}40`,
-  },
-  platformBadgeText: {
-    fontFamily: Fonts.uiMedium,
-    fontSize: 10,
-    color: Colors.success,
-  },
+  platformBadgeVerified: { backgroundColor: Colors.successGlow, borderColor: `${Colors.success}40` },
+  platformBadgeText: { fontFamily: Fonts.uiMedium, fontSize: 10, color: Colors.success },
   urlAddBtn: {
-    backgroundColor: Colors.rose3,
-    borderRadius: 9,
-    paddingHorizontal: 14, paddingVertical: 8,
-    flexShrink: 0,
+    backgroundColor: Colors.rose3, borderRadius: 9,
+    paddingHorizontal: 14, paddingVertical: 8, flexShrink: 0,
   },
-  urlAddBtnText: {
-    fontFamily: Fonts.uiMedium,
-    fontSize: 13,
-    color: '#FFF9EE',
-  },
+  urlAddBtnText: { fontFamily: Fonts.uiMedium, fontSize: 13, color: '#FFF9EE' },
 });

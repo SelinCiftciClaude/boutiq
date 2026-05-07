@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { unfurlUrl, type UnfurledProduct } from './linkUnfurler';
+import { sendLocalNotification } from './notifications';
 
 // ── Tipler ───────────────────────────────────────────────────────────────────
 
@@ -216,7 +217,7 @@ export async function addFavorite(input: AddFavoriteInput): Promise<Favorite> {
       current_stock_count: product.stockCount,
       merchant_name: product.merchantName,
       note: input.note,
-      watch_price_drop: input.watchPriceDrop ?? false,
+      watch_price_drop: input.watchPriceDrop ?? true,
       watch_stock_change: input.watchStockChange ?? false,
       target_price: input.targetPrice,
       parser_used: product.parserUsed ?? 'unknown',
@@ -291,6 +292,27 @@ export async function refreshFavoritePrice(id: string): Promise<Favorite> {
     price: p.price,
     stock_status: p.stockStatus,
   });
+
+  // Fiyat düşüşü bildirimi: takip açıksa, kaydetme fiyatından %3+ düşüş varsa tetikle
+  if (
+    fav.watch_price_drop &&
+    p.price != null && p.price > 0 &&
+    fav.price_at_save != null && fav.price_at_save > 0
+  ) {
+    const prevPrice: number = fav.current_price ?? fav.price_at_save;
+    const dropFromSave = (fav.price_at_save - p.price) / fav.price_at_save * 100;
+    const isFurtherDrop = p.price < prevPrice;
+    const isUnderSavePrice = p.price < fav.price_at_save;
+    const meetsTarget = fav.target_price != null && p.price <= fav.target_price;
+
+    if ((isFurtherDrop && isUnderSavePrice && dropFromSave >= 3) || meetsTarget) {
+      await sendLocalNotification(
+        'Fiyat düştü',
+        `${fav.product_name} — ₺${p.price.toLocaleString('tr')} (kaydettiğinden %${dropFromSave.toFixed(0)} ucuz)`,
+        { favoriteId: id, sourceUrl: fav.source_url },
+      ).catch(() => { /* bildirim izni yoksa sessizce geç */ });
+    }
+  }
 
   return favFromDb(updated);
 }
