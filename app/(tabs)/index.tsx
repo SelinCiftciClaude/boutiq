@@ -121,6 +121,103 @@ const ur = StyleSheet.create({
   addBtnText: { fontFamily: Fonts.uiMedium, fontSize: 13, color: '#FFF9EE' },
 });
 
+// ── Tente çizimi ─────────────────────────────────────────────────────────────
+// Klasik butik tentesi: altın çubuk + bordo/krem şeritler + tırtıklı saçak
+
+function TentIllustration() {
+  const STRIPES  = ['#6B1520', '#FFF9EE', '#6B1520', '#FFF9EE', '#6B1520', '#FFF9EE', '#6B1520'];
+  const SCALLOPS = ['#6B1520', '#FFF9EE', '#6B1520', '#FFF9EE', '#6B1520', '#FFF9EE', '#6B1520'];
+
+  return (
+    <View style={ti.root}>
+      {/* Altın askı çubuğu */}
+      <View style={ti.rod} />
+
+      {/* İplikler (çubuğu tavana bağlar) */}
+      <View style={ti.strings}>
+        <View style={ti.string} />
+        <View style={ti.string} />
+        <View style={ti.string} />
+      </View>
+
+      {/* Tente gövdesi — bordo + krem şeritler */}
+      <View style={ti.body}>
+        {STRIPES.map((color, i) => (
+          <View key={i} style={[ti.stripe, { backgroundColor: color }]} />
+        ))}
+      </View>
+
+      {/* Tırtıklı saçak */}
+      <View style={ti.fringe}>
+        {SCALLOPS.map((color, i) => (
+          <View
+            key={i}
+            style={[
+              ti.scallop,
+              { backgroundColor: color },
+              // Dış dişlerin uçlarını oval göster
+              i % 2 === 0 && ti.scallopDown,
+            ]}
+          />
+        ))}
+      </View>
+    </View>
+  );
+}
+
+const ti = StyleSheet.create({
+  root: { width: 50, alignItems: 'center' },
+  rod: {
+    width: 54, height: 4,
+    backgroundColor: Colors.gold3,
+    borderRadius: 2,
+    marginBottom: 1,
+    shadowColor: Colors.gold1,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.4,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  strings: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: 40, height: 5,
+  },
+  string: {
+    width: 1,
+    height: '100%',
+    backgroundColor: Colors.gold3,
+    opacity: 0.7,
+  },
+  body: {
+    flexDirection: 'row',
+    width: 50, height: 22,
+    borderBottomLeftRadius: 2,
+    borderBottomRightRadius: 2,
+    overflow: 'hidden',
+    // Hafif çatı eğimi: üst köşeler biraz kırpılır
+    borderTopLeftRadius: 3,
+    borderTopRightRadius: 3,
+  },
+  stripe: { flex: 1, height: '100%' },
+  fringe: {
+    flexDirection: 'row',
+    width: 50,
+    height: 10,
+    marginTop: -1,
+  },
+  scallop: {
+    flex: 1,
+    height: 10,
+    borderBottomLeftRadius: 4,
+    borderBottomRightRadius: 4,
+  },
+  scallopDown: {
+    height: 10,
+    marginTop: 0,
+  },
+});
+
 // ── URL Arama Bölümü ──────────────────────────────────────────────────────────
 
 function UrlSearchSection({ onAdded }: { onAdded: () => void }) {
@@ -187,6 +284,12 @@ function UrlSearchSection({ onAdded }: { onAdded: () => void }) {
 
   return (
     <View style={us.wrap}>
+      {/* Başlık: Butik Ekle + tente çizimi */}
+      <View style={us.titleRow}>
+        <TentIllustration />
+        <Text style={us.sectionTitle}>Butik Ekle</Text>
+      </View>
+
       {/* Input */}
       <View style={us.inputRow}>
         {checking
@@ -238,6 +341,18 @@ function UrlSearchSection({ onAdded }: { onAdded: () => void }) {
 
 const us = StyleSheet.create({
   wrap: { paddingHorizontal: 16, marginBottom: 16 },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 12,
+  },
+  sectionTitle: {
+    fontFamily: Fonts.displayBold,
+    fontSize: 20,
+    color: Colors.text1,
+    letterSpacing: -0.3,
+  },
   inputRow: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
     backgroundColor: Colors.surface2,
