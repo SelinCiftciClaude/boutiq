@@ -86,7 +86,7 @@ const SEED_BRANDS = [
   { id: 's12', name: 'Atelier Rebul',        website: 'atelierrebul.com.tr'    },
   { id: 's13', name: 'Gulsha',               website: 'gulsha.com'             },
   { id: 's14', name: 'Rosece',               website: 'rosece.com'             },
-  { id: 's15', name: 'Bensu Buyruk',         website: 'bensubuyrukbutik.com'   },
+  { id: 's15', name: 'Bensu Buyruk',         website: 'bensubuyruk.com'        },
   { id: 's16', name: 'Zara',                 website: 'zara.com'               },
   { id: 's17', name: 'Mango',                website: 'mango.com'              },
   { id: 's18', name: 'H&M',                  website: 'hm.com'                 },
