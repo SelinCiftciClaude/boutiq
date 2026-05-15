@@ -153,10 +153,10 @@ const sr = StyleSheet.create({
     borderColor: Colors.gold3, borderBottomLeftRadius: 16, borderBottomRightRadius: 16, padding: 14,
   },
   panelLabel: { fontSize: 11, fontWeight: '700', color: Colors.text4, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 10 },
-  catScroll: { gap: 8, marginBottom: 14 },
+  catScroll: { gap: 8, marginBottom: 14, alignItems: 'center' },
   chip: {
     flexDirection: 'row', alignItems: 'center', gap: 5,
-    paddingHorizontal: 12, paddingVertical: 7, borderRadius: 50,
+    paddingHorizontal: 12, height: 36, borderRadius: 18,
     backgroundColor: Colors.surface3, borderWidth: 1, borderColor: Colors.border2, overflow: 'hidden',
   },
   chipActive: { borderColor: Colors.gold3 },
@@ -497,12 +497,12 @@ const styles = StyleSheet.create({
   statLabel: { fontSize: 11, fontWeight: '600', color: Colors.text4, textTransform: 'uppercase', letterSpacing: 0.5 },
 
   // Kategori
-  categoryScroll: { paddingHorizontal: 20, gap: 8, marginBottom: 16 },
-  filterChip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 50, backgroundColor: Colors.surface2, borderWidth: 1, borderColor: Colors.border2, overflow: 'hidden' },
+  categoryScroll: { paddingHorizontal: 20, gap: 8, marginBottom: 16, alignItems: 'center' },
+  filterChip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, height: 36, borderRadius: 18, backgroundColor: Colors.surface2, borderWidth: 1, borderColor: Colors.border2, overflow: 'hidden' },
   filterChipActive: { borderColor: Colors.gold3 },
   filterLabel: { fontSize: 13, fontWeight: '600', color: Colors.text3 },
   filterLabelActive: { color: Colors.bg, fontWeight: '700' },
-  filterCount: { backgroundColor: Colors.surface4, borderRadius: 8, paddingHorizontal: 6, paddingVertical: 2 },
+  filterCount: { backgroundColor: Colors.surface4, borderRadius: 8, paddingHorizontal: 6, height: 18, justifyContent: 'center' },
   filterCountActive: { backgroundColor: 'rgba(7,7,15,0.30)' },
   filterCountText: { fontSize: 10, fontWeight: '700', color: Colors.text4 },
   filterCountTextActive: { color: Colors.bg },
