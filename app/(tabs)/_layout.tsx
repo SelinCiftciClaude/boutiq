@@ -19,14 +19,13 @@ import { useShipmentSummary } from '@/hooks/useShipments';
 const { width } = Dimensions.get('window');
 
 const TABS = [
-  { name: 'index',     label: 'BUTİKLERİM', icon: 'storefront-outline',    iconFilled: 'storefront' },
-  { name: 'saved',     label: 'FAVORİLER', icon: 'heart-outline',          iconFilled: 'heart' },
-  { name: 'watchlist', label: 'TAKİP',     icon: 'notifications-outline',  iconFilled: 'notifications' },
-  { name: 'tracking',  label: 'KARGOLARIM', icon: 'cube-outline',           iconFilled: 'cube' },
-  { name: 'profile',   label: 'PROFİL',    icon: 'person-outline',          iconFilled: 'person' },
+  { name: 'index',    label: 'BUTİKLERİM', icon: 'storefront-outline', iconFilled: 'storefront' },
+  { name: 'saved',    label: 'FAVORİLER',  icon: 'heart-outline',       iconFilled: 'heart' },
+  { name: 'tracking', label: 'KARGOLARIM', icon: 'cube-outline',        iconFilled: 'cube' },
+  { name: 'profile',  label: 'PROFİL',     icon: 'person-outline',      iconFilled: 'person' },
 ];
 
-const LABELS = ['BUTİKLERİM', 'FAVORİLER', 'TAKİP', 'KARGOLARIM', 'PROFİL'];
+const LABELS = ['BUTİKLERİM', 'FAVORİLER', 'KARGOLARIM', 'PROFİL'];
 
 const BAR_H   = 62;
 const BAR_MX  = 20;
@@ -231,7 +230,7 @@ export default function TabLayout() {
     >
       <Tabs.Screen name="index" />
       <Tabs.Screen name="saved" />
-      <Tabs.Screen name="watchlist" />
+      <Tabs.Screen name="watchlist" options={{ href: null }} />
       <Tabs.Screen name="tracking" />
       <Tabs.Screen name="profile" />
     </Tabs>
