@@ -20,13 +20,14 @@ const { width } = Dimensions.get('window');
 
 interface BrandCardProps {
   brand: Brand;
-  variant?: 'horizontal' | 'grid' | 'featured';
+  variant?: 'horizontal' | 'grid' | 'featured' | 'compact';
+  cardWidth?: number; // grid/compact için dışarıdan geçilir
   onPress?: (brand: Brand) => void;
   onAdd?: (brand: Brand) => void;
   isSaved?: boolean;
 }
 
-export function BrandCard({ brand, variant = 'horizontal', onPress, onAdd, isSaved }: BrandCardProps) {
+export function BrandCard({ brand, variant = 'horizontal', cardWidth, onPress, onAdd, isSaved }: BrandCardProps) {
   const handlePress = () => {
     Haptics.selectionAsync();
     if (onPress) onPress(brand);
@@ -103,8 +104,11 @@ export function BrandCard({ brand, variant = 'horizontal', onPress, onAdd, isSav
   }
 
   if (variant === 'grid') {
+    const gw = cardWidth ?? (width - 48) / 2;
+    const gh = Math.round(gw * 1.3);
     return (
-      <TouchableOpacity onPress={handlePress} activeOpacity={0.88} style={styles.grid}>
+      <TouchableOpacity onPress={handlePress} activeOpacity={0.88}
+        style={[styles.grid, { width: gw, height: gh }]}>
         <Image source={{ uri: brand.coverImage }} style={styles.gridCover} resizeMode="cover" />
         <LinearGradient
           colors={['rgba(7,7,12,0)', 'rgba(7,7,12,0.92)']}
@@ -135,6 +139,27 @@ export function BrandCard({ brand, variant = 'horizontal', onPress, onAdd, isSav
           <Image source={{ uri: brand.logo }} style={styles.gridLogo} />
           <Text style={styles.gridName} numberOfLines={1}>{brand.name}</Text>
           <Text style={styles.gridCategory}>{brand.category.toUpperCase()}</Text>
+        </View>
+      </TouchableOpacity>
+    );
+  }
+
+  // Compact — 3 kolon küçük kart
+  if (variant === 'compact') {
+    const cw = cardWidth ?? (width - 52) / 3;
+    const ch = cw * 1.25;
+    return (
+      <TouchableOpacity onPress={handlePress} activeOpacity={0.88}
+        style={[styles.compact, { width: cw, height: ch }]}>
+        <Image source={{ uri: brand.coverImage }} style={styles.compactCover} resizeMode="cover" />
+        <LinearGradient
+          colors={['rgba(7,7,12,0)', 'rgba(7,7,12,0.95)']}
+          locations={[0.3, 1]}
+          style={StyleSheet.absoluteFill}
+        />
+        <View style={styles.compactContent}>
+          <Image source={{ uri: brand.logo }} style={styles.compactLogo} />
+          <Text style={styles.compactName} numberOfLines={2}>{brand.name}</Text>
         </View>
       </TouchableOpacity>
     );
@@ -419,5 +444,41 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.uiLight,
     fontSize: 12,
     color: Colors.text3,
+  },
+
+  // Compact (3 kolon)
+  compact: {
+    borderRadius: 12,
+    overflow: 'hidden',
+    borderWidth: 0.5,
+    borderColor: Colors.border1,
+  },
+  compactCover: {
+    width: '100%',
+    height: '100%',
+  },
+  compactContent: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 7,
+    alignItems: 'center',
+    gap: 3,
+  },
+  compactLogo: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
+    backgroundColor: Colors.surface3,
+  },
+  compactName: {
+    fontFamily: Fonts.uiMedium,
+    fontSize: 9,
+    color: '#fff',
+    textAlign: 'center',
+    lineHeight: 12,
   },
 });

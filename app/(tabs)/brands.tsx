@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  TextInput, ActivityIndicator, Image, Keyboard, Alert,
+  TextInput, ActivityIndicator, Image, Keyboard, Alert, Dimensions,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -17,6 +17,17 @@ import { useBrands } from '@/hooks/useBrands';
 import { useSavedBrands } from '@/hooks/useSavedBrands';
 import { supabase } from '@/services/supabase';
 import { useQueryClient } from '@tanstack/react-query';
+
+const SCREEN_W = Dimensions.get('window').width;
+
+// Görünüm modları
+type ViewMode = 'large' | 'medium' | 'small' | 'list';
+const VIEW_MODES: { id: ViewMode; icon: string; label: string }[] = [
+  { id: 'large',  icon: 'stop-outline',  label: 'Büyük'  },
+  { id: 'medium', icon: 'grid-outline',  label: 'Orta'   },
+  { id: 'small',  icon: 'apps-outline',  label: 'Küçük'  },
+  { id: 'list',   icon: 'list-outline',  label: 'Liste'  },
+];
 
 // ─── Debounce hook ────────────────────────────────────────────────────────
 function useDebounce<T>(value: T, delay: number): T {
@@ -170,6 +181,70 @@ const sr = StyleSheet.create({
   addBtnText: { fontSize: 14, fontWeight: '800', color: Colors.bg },
 });
 
+// ─── Görünüm moduna göre brand grid ──────────────────────────────────────
+function BrandGrid({ brands, viewMode }: { brands: Brand[]; viewMode: ViewMode }) {
+  const gap = 8;
+
+  if (viewMode === 'list') {
+    return (
+      <View style={{ gap: 8 }}>
+        {brands.map(b => (
+          <BrandCard key={b.id} brand={b} variant="horizontal"
+            onPress={br => router.push(`/brand/${br.id}` as any)} />
+        ))}
+      </View>
+    );
+  }
+
+  if (viewMode === 'large') {
+    return (
+      <View style={{ gap: 10 }}>
+        {brands.map(b => (
+          <BrandCard key={b.id} brand={b} variant="featured"
+            onPress={br => router.push(`/brand/${br.id}` as any)} />
+        ))}
+      </View>
+    );
+  }
+
+  if (viewMode === 'medium') {
+    const cols = 2;
+    const cw = (SCREEN_W - 32 - gap * (cols - 1)) / cols;
+    const rows: Brand[][] = [];
+    for (let i = 0; i < brands.length; i += cols) rows.push(brands.slice(i, i + cols));
+    return (
+      <View style={{ gap }}>
+        {rows.map((row, ri) => (
+          <View key={ri} style={{ flexDirection: 'row', gap }}>
+            {row.map(b => (
+              <BrandCard key={b.id} brand={b} variant="grid" cardWidth={cw}
+                onPress={br => router.push(`/brand/${br.id}` as any)} />
+            ))}
+          </View>
+        ))}
+      </View>
+    );
+  }
+
+  // small — 3 kolon
+  const cols = 3;
+  const cw = (SCREEN_W - 32 - gap * (cols - 1)) / cols;
+  const rows: Brand[][] = [];
+  for (let i = 0; i < brands.length; i += cols) rows.push(brands.slice(i, i + cols));
+  return (
+    <View style={{ gap }}>
+      {rows.map((row, ri) => (
+        <View key={ri} style={{ flexDirection: 'row', gap }}>
+          {row.map(b => (
+            <BrandCard key={b.id} brand={b} variant="compact" cardWidth={cw}
+              onPress={br => router.push(`/brand/${br.id}` as any)} />
+          ))}
+        </View>
+      ))}
+    </View>
+  );
+}
+
 // ─── Ana Ekran ────────────────────────────────────────────────────────────
 export default function BrandsScreen() {
   const insets = useSafeAreaInsets();
@@ -179,6 +254,7 @@ export default function BrandsScreen() {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [collectionSearch, setCollectionSearch] = useState('');
   const [showCollectionSearch, setShowCollectionSearch] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>('list');
 
   // URL arama state
   const [query, setQuery] = useState('');
@@ -322,15 +398,38 @@ export default function BrandsScreen() {
       <View style={[styles.inner, { paddingTop: insets.top }]}>
         <View style={styles.bgGlow} />
 
-        {/* Header — sadece başlık + koleksiyon arama */}
+        {/* Header */}
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Butiklerim</Text>
-          <TouchableOpacity
-            onPress={() => { setShowCollectionSearch(v => !v); setCollectionSearch(''); }}
-            style={styles.searchIconBtn}
-          >
-            <Ionicons name={showCollectionSearch ? 'close' : 'search'} size={20} color={Colors.text2} />
-          </TouchableOpacity>
+          <View style={styles.headerRight}>
+            {/* Görünüm toggle */}
+            <View style={styles.viewToggle}>
+              {VIEW_MODES.map(m => {
+                const active = viewMode === m.id;
+                return (
+                  <TouchableOpacity
+                    key={m.id}
+                    style={[styles.viewBtn, active && styles.viewBtnActive]}
+                    onPress={() => { Haptics.selectionAsync(); setViewMode(m.id); }}
+                    hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
+                  >
+                    <Ionicons
+                      name={m.icon as any}
+                      size={15}
+                      color={active ? Colors.rose3 : Colors.text4}
+                    />
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+            {/* Arama */}
+            <TouchableOpacity
+              onPress={() => { setShowCollectionSearch(v => !v); setCollectionSearch(''); }}
+              style={styles.searchIconBtn}
+            >
+              <Ionicons name={showCollectionSearch ? 'close' : 'search'} size={20} color={Colors.text2} />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Koleksiyon içi arama */}
@@ -429,10 +528,7 @@ export default function BrandsScreen() {
                 <Ionicons name="heart" size={14} color="#F43F5E" />
                 <Text style={styles.sectionTitle}>Favoriler</Text>
               </View>
-              {favorites.map(brand => (
-                <BrandCard key={brand.id} brand={brand} variant="horizontal"
-                  onPress={b => router.push(`/brand/${b.id}` as any)} />
-              ))}
+              <BrandGrid brands={favorites} viewMode={viewMode} />
             </View>
           )}
           {others.length > 0 && (
@@ -443,10 +539,7 @@ export default function BrandsScreen() {
                   <Text style={styles.sectionTitle}>Diğer Butikler</Text>
                 </View>
               )}
-              {others.map(brand => (
-                <BrandCard key={brand.id} brand={brand} variant="horizontal"
-                  onPress={b => router.push(`/brand/${b.id}` as any)} />
-              ))}
+              <BrandGrid brands={others} viewMode={viewMode} />
             </View>
           )}
           {filtered.length === 0 && !collectionSearch && (
@@ -471,6 +564,21 @@ const styles = StyleSheet.create({
   // Header
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 12, paddingBottom: 8 },
   headerTitle: { fontFamily: Fonts.editorial, fontSize: 34, color: Colors.text1, letterSpacing: 0 },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  // Görünüm toggle grubu
+  viewToggle: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: Colors.surface2, borderRadius: 10,
+    borderWidth: 1, borderColor: Colors.border2,
+    overflow: 'hidden',
+  },
+  viewBtn: {
+    width: 30, height: 30,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  viewBtnActive: {
+    backgroundColor: Colors.roseGlow,
+  },
   searchIconBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: Colors.surface2, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: Colors.border2 },
 
   // Koleksiyon arama
