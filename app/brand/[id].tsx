@@ -20,6 +20,28 @@ import { ProductCard } from '@/components/ProductCard';
 import { useReviews } from '@/hooks/useReviews';
 import * as Clipboard from 'expo-clipboard';
 
+// Logo dairesi: gerçek logo yüklenirse gösterir, yüklenemezse bordo gradient + baş harf
+function BrandLogoAvatar({ logo, name }: { logo: string; name: string }) {
+  const [error, setError] = useState(false);
+  const initial = (name || '?').charAt(0).toUpperCase();
+
+  if (!logo || error) {
+    return (
+      <LinearGradient colors={[Colors.rose4, Colors.rose3]} style={styles.logo}>
+        <Text style={styles.logoInitial}>{initial}</Text>
+      </LinearGradient>
+    );
+  }
+  return (
+    <Image
+      source={{ uri: logo }}
+      style={styles.logo}
+      resizeMode="contain"
+      onError={() => setError(true)}
+    />
+  );
+}
+
 export default function BrandDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets     = useSafeAreaInsets();
@@ -100,8 +122,17 @@ export default function BrandDetailScreen() {
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Kapak fotoğrafı */}
         <View style={styles.coverContainer}>
-          <Image source={{ uri: brand.coverImage }} style={styles.cover} resizeMode="cover" />
-          <LinearGradient colors={['rgba(0,0,0,0.5)', 'transparent', 'rgba(0,0,0,0.7)']} style={StyleSheet.absoluteFill} />
+          {/* Cover: gerçek görsel varsa göster, yoksa gradient */}
+          {brand.coverImage ? (
+            <Image source={{ uri: brand.coverImage }} style={styles.cover} resizeMode="cover" />
+          ) : (
+            <LinearGradient
+              colors={[Colors.rose5, Colors.rose3, Colors.rose4]}
+              start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+              style={styles.cover}
+            />
+          )}
+          <LinearGradient colors={['rgba(0,0,0,0.4)', 'transparent', 'rgba(0,0,0,0.75)']} style={StyleSheet.absoluteFill} />
 
           {/* Geri butonu */}
           <TouchableOpacity
@@ -114,7 +145,8 @@ export default function BrandDetailScreen() {
 
           {/* Butik bilgisi kapak üzerinde */}
           <View style={styles.coverInfo}>
-            <Image source={{ uri: brand.logo }} style={styles.logo} />
+            {/* Logo: gerçek görsel varsa göster, yoksa baş harf */}
+            <BrandLogoAvatar logo={brand.logo} name={brand.name} />
             <View style={styles.coverText}>
               <View style={styles.nameRow}>
                 <Text style={styles.brandName}>{brand.name}</Text>
@@ -398,7 +430,8 @@ const styles = StyleSheet.create({
     position: 'absolute', bottom: 20, left: 20, right: 20,
     flexDirection: 'row', alignItems: 'center', gap: 14,
   },
-  logo: { width: 64, height: 64, borderRadius: 32, borderWidth: 3, borderColor: '#fff', backgroundColor: Colors.surface3 },
+  logo: { width: 64, height: 64, borderRadius: 32, borderWidth: 3, borderColor: '#fff', backgroundColor: Colors.surface3, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  logoInitial: { fontFamily: Fonts.display, fontSize: 26, color: '#fff' },
   coverText: { flex: 1 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   brandName: { fontSize: 22, fontWeight: '800', color: '#fff', letterSpacing: -0.5 },
