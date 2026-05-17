@@ -173,11 +173,26 @@ export default function AccountSettingsScreen() {
         <SectionLabel text="HESAP İŞLEMLERİ" />
         <View style={s.group}>
           <RowItem
-            icon="trash-outline"
-            label="Hesabı Sil"
-            value="Tüm verileri kalıcı olarak sil"
+            icon="log-out-outline"
+            label="Çıkış Yap"
+            value="Oturumu kapat"
             danger
-            onPress={handleDeleteAccount}
+            onPress={() => {
+              Alert.alert(
+                'Çıkış Yap',
+                "Butika'dan çıkış yapmak istediğine emin misin?",
+                [
+                  { text: 'İptal', style: 'cancel' },
+                  {
+                    text: 'Çıkış Yap',
+                    style: 'destructive',
+                    onPress: async () => {
+                      await signOut();
+                    },
+                  },
+                ],
+              );
+            }}
           />
         </View>
 
