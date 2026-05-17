@@ -32,6 +32,7 @@ import { InterestsProvider, useInterests } from '@/context/InterestsContext';
 import { SaveFromShareModal } from './save-from-share';
 import { getAndSavePushToken } from '@/services/notifications';
 import { extractUrlFromSharedContent } from '@/services/shareUrlUtils';
+import { ShareIntentProvider, useShareIntentContext } from 'expo-share-intent';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -56,6 +57,16 @@ function RouteGate() {
   const qc = useQueryClient();
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const autoLoginAttempted = useState(false);
+
+  // ── iOS Share Extension + Android SEND intent ──────────────────────────────
+  const { hasShareIntent, shareIntent, resetShareIntent } = useShareIntentContext();
+  useEffect(() => {
+    if (!hasShareIntent) return;
+    const url = extractUrlFromSharedContent(shareIntent.text, shareIntent.webUrl);
+    if (url) setShareUrl(url);
+    resetShareIntent();
+  }, [hasShareIntent]);
+  // ────────────────────────────────────────────────────────────────────────────
 
   // Kullanıcı çıkış yaptığında cache'i tamamen temizle.
   const prevSessionRef = useState<string | null>(null);
@@ -158,14 +169,17 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={styles.root}>
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <InterestsProvider>
-            <StatusBar style="dark" backgroundColor={Colors.bg} />
-            <RouteGate />
-          </InterestsProvider>
-        </AuthProvider>
-      </QueryClientProvider>
+      {/* ShareIntentProvider en dışta — iOS Share Extension + Android SEND intent için */}
+      <ShareIntentProvider>
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <InterestsProvider>
+              <StatusBar style="dark" backgroundColor={Colors.bg} />
+              <RouteGate />
+            </InterestsProvider>
+          </AuthProvider>
+        </QueryClientProvider>
+      </ShareIntentProvider>
     </GestureHandlerRootView>
   );
 }
