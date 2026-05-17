@@ -31,6 +31,7 @@ import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { InterestsProvider, useInterests } from '@/context/InterestsContext';
 import { SaveFromShareModal } from './save-from-share';
 import { getAndSavePushToken } from '@/services/notifications';
+import { extractUrlFromSharedContent } from '@/services/shareUrlUtils';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -82,8 +83,14 @@ function RouteGate() {
     const handleUrl = (event: { url: string }) => {
       try {
         const parsed = Linking.parse(event.url);
-        if (parsed.path === 'save' && parsed.queryParams?.url) {
-          setShareUrl(decodeURIComponent(parsed.queryParams.url as string));
+        if (parsed.path === 'save') {
+          // boutiq://save?url=https://...
+          const raw = parsed.queryParams?.url as string | undefined;
+          if (raw) {
+            const decoded = decodeURIComponent(raw);
+            const extracted = extractUrlFromSharedContent(decoded, decoded);
+            if (extracted) setShareUrl(extracted);
+          }
         } else if (parsed.path?.startsWith('collection/')) {
           const userId = parsed.path.replace('collection/', '');
           if (userId) router.push(('/collection/' + userId) as any);

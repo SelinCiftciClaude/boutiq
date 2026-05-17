@@ -712,13 +712,18 @@ export default function OnboardingScreen() {
               </View>
             )}
 
-            {/* Manuel ekle butonu (tahmin yoksa veya elle girmek isteyenler için) */}
-            {debouncedManualUrl.length < 2 && (
-              <TouchableOpacity style={[styles.modalBtn, !manualUrl.trim() && styles.modalBtnDisabled]} onPress={() => handleAddManual()} disabled={!manualUrl.trim()} activeOpacity={0.85}>
-                {!!manualUrl.trim() && <LinearGradient colors={[Colors.rose2, Colors.rose3]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={StyleSheet.absoluteFill} />}
-                <Text style={[styles.modalBtnText, !manualUrl.trim() && styles.modalBtnTextDisabled]}>Ekle</Text>
-              </TouchableOpacity>
-            )}
+            {/* Ekle butonu — her zaman görünür */}
+            <TouchableOpacity
+              style={[styles.modalBtn, !manualUrl.trim() && styles.modalBtnDisabled]}
+              onPress={() => handleAddManual()}
+              disabled={!manualUrl.trim()}
+              activeOpacity={0.85}
+            >
+              {!!manualUrl.trim() && (
+                <LinearGradient colors={[Colors.rose2, Colors.rose3]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={StyleSheet.absoluteFill} />
+              )}
+              <Text style={[styles.modalBtnText, !manualUrl.trim() && styles.modalBtnTextDisabled]}>Ekle</Text>
+            </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>
       </Modal>

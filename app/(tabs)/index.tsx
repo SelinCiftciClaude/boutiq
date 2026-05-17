@@ -179,12 +179,15 @@ function UrlSearchSection({ onAdded }: { onAdded: () => void }) {
   const qc          = useQueryClient();
   const inputRef    = useRef<TextInput>(null);
   const dbTimer     = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cbTimer     = useRef<ReturnType<typeof setTimeout> | null>(null);
   const urlTimer    = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [text,       setText]       = useState('');
   const [focused,    setFocused]    = useState(false);
   const [dbResults,  setDbResults]  = useState<Suggestion[]>([]);
   const [dbLoading,  setDbLoading]  = useState(false);
+  const [cbResults,  setCbResults]  = useState<Suggestion[]>([]);
+  const [cbLoading,  setCbLoading]  = useState(false);
   const [urlResult,  setUrlResult]  = useState<Suggestion | null>(null);
   const [urlLoading, setUrlLoading] = useState(false);
   const [addingId,   setAddingId]   = useState<string | null>(null);
@@ -224,6 +227,31 @@ function UrlSearchSection({ onAdded }: { onAdded: () => void }) {
     }, 150);
   }, [text]);
 
+  // Clearbit internet araması — 400ms debounce (isim modunda)
+  useEffect(() => {
+    if (cbTimer.current) clearTimeout(cbTimer.current);
+    const q = text.trim();
+    if (!q || q.length < 2 || isUrlLike(q)) { setCbResults([]); setCbLoading(false); return; }
+    setCbLoading(true);
+    cbTimer.current = setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `https://autocomplete.clearbit.com/v1/companies/suggest?query=${encodeURIComponent(q)}`
+        );
+        const data: Array<{ name: string; domain: string; logo: string }> = await res.json();
+        setCbResults(
+          (data ?? []).slice(0, 6).map(s => ({
+            id:      `cb-${s.domain}`,
+            name:    s.name,
+            website: s.domain,
+            logoUrl: s.logo || `https://www.google.com/s2/favicons?domain=${s.domain}&sz=128`,
+          }))
+        );
+      } catch { setCbResults([]); }
+      setCbLoading(false);
+    }, 400);
+  }, [text]);
+
   // URL kontrolü — 600ms debounce (sadece domain girilmişse ve DB boşsa)
   useEffect(() => {
     if (urlTimer.current) clearTimeout(urlTimer.current);
@@ -249,13 +277,23 @@ function UrlSearchSection({ onAdded }: { onAdded: () => void }) {
     }, 600);
   }, [text, dbResults.length]);
 
-  // DB veya local: hangisi doluysa onu göster
-  const suggestions = useMemo((): Suggestion[] =>
-    dbResults.length > 0 ? dbResults : localSuggestions,
-  [dbResults, localSuggestions]);
+  // Tüm kaynakları birleştir: DB > Local > Clearbit (domain tekrarı yok)
+  const suggestions = useMemo((): Suggestion[] => {
+    const seen = new Set<string>();
+    const out: Suggestion[] = [];
+    const push = (item: Suggestion) => {
+      const key = item.website.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0];
+      if (!seen.has(key)) { seen.add(key); out.push(item); }
+    };
+    (dbResults.length > 0 ? dbResults : localSuggestions).forEach(push);
+    cbResults.forEach(push);
+    return out.slice(0, 8);
+  }, [dbResults, localSuggestions, cbResults]);
 
+  const isAnyLoading = dbLoading || cbLoading || urlLoading;
+  const noResults    = !isAnyLoading && suggestions.length === 0 && !urlResult && text.trim().length >= 2;
   const showDropdown = focused && text.trim().length >= 1 &&
-    (suggestions.length > 0 || !!urlResult || urlLoading || dbLoading);
+    (suggestions.length > 0 || !!urlResult || isAnyLoading || noResults);
 
   // Ekleme
   const handleSelect = useCallback(async (item: Suggestion) => {
@@ -268,7 +306,7 @@ function UrlSearchSection({ onAdded }: { onAdded: () => void }) {
         await addSavedBrand(session.user.id, item.id);
       } else {
         const { data, error } = await supabase.rpc('add_manual_brand', {
-          p_name: item.name, p_website: item.website, p_category: 'Giyim',
+          p_name: item.name, p_website: item.website, p_category: 'giyim',
         });
         if (error || !data) throw error ?? new Error('RPC failed');
         brandId = data;
@@ -284,14 +322,14 @@ function UrlSearchSection({ onAdded }: { onAdded: () => void }) {
       setAddedId(item.id);
       onAdded();
       setTimeout(() => {
-        setText(''); setDbResults([]); setUrlResult(null);
+        setText(''); setDbResults([]); setCbResults([]); setUrlResult(null);
         setAddingId(null); setAddedId(null); setFocused(false);
       }, 1200);
     } catch { setAddingId(null); }
   }, [session, addingId, qc, onAdded]);
 
   const clearInput = useCallback(() => {
-    setText(''); setDbResults([]); setUrlResult(null); setAddedId(null);
+    setText(''); setDbResults([]); setCbResults([]); setUrlResult(null); setAddedId(null);
     inputRef.current?.focus();
   }, []);
 
@@ -309,7 +347,7 @@ function UrlSearchSection({ onAdded }: { onAdded: () => void }) {
         focused  && us.inputFocused,
         showDropdown && us.inputOpen,
       ]}>
-        {(dbLoading || urlLoading)
+        {isAnyLoading
           ? <ActivityIndicator size="small" color={Colors.gold3} style={{ width: 18 }} />
           : <Ionicons name="search-outline" size={18}
               color={focused ? Colors.rose3 : Colors.text4} />
@@ -345,10 +383,10 @@ function UrlSearchSection({ onAdded }: { onAdded: () => void }) {
               adding={addingId === item.id}
             />
           ))}
-          {urlLoading && (
+          {isAnyLoading && suggestions.length === 0 && (
             <View style={us.loadRow}>
               <ActivityIndicator size="small" color={Colors.gold3} />
-              <Text style={us.loadText}>{text} kontrol ediliyor...</Text>
+              <Text style={us.loadText}>"{text}" aranıyor...</Text>
             </View>
           )}
           {urlResult && !urlLoading && (
@@ -357,6 +395,15 @@ function UrlSearchSection({ onAdded }: { onAdded: () => void }) {
               onPress={() => handleSelect(urlResult)}
               adding={addingId === urlResult.id}
             />
+          )}
+          {noResults && (
+            <View style={us.noResultRow}>
+              <Ionicons name="search-outline" size={15} color={Colors.text5} />
+              <Text style={us.noResultText}>
+                Bulunamadı · site adresi dene:{' '}
+                <Text style={us.noResultHint}>örn. marka.com</Text>
+              </Text>
+            </View>
           )}
           {addedId && (
             <View style={us.addedRow}>
@@ -407,6 +454,12 @@ const us = StyleSheet.create({
     backgroundColor: Colors.successGlow,
   },
   addedText: { fontFamily: Fonts.uiLight, fontSize: 13, color: Colors.success },
+  noResultRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    paddingVertical: 13, paddingHorizontal: 14,
+  },
+  noResultText: { fontFamily: Fonts.uiLight, fontSize: 13, color: Colors.text4, flex: 1 },
+  noResultHint: { fontFamily: Fonts.uiMedium, color: Colors.gold2 },
 });
 
 // ── Ana Ekran ─────────────────────────────────────────────────────────────────

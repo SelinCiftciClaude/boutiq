@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  TextInput, ActivityIndicator, Image, Keyboard, Alert, Dimensions,
+  TextInput, ActivityIndicator, Image, Keyboard, Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -18,7 +18,6 @@ import { useSavedBrands } from '@/hooks/useSavedBrands';
 import { supabase } from '@/services/supabase';
 import { useQueryClient } from '@tanstack/react-query';
 
-const SCREEN_W = Dimensions.get('window').width;
 
 // Görünüm modları
 type ViewMode = 'large' | 'medium' | 'small' | 'list';
@@ -209,7 +208,6 @@ function BrandGrid({ brands, viewMode }: { brands: Brand[]; viewMode: ViewMode }
 
   if (viewMode === 'medium') {
     const cols = 2;
-    const cw = (SCREEN_W - 32 - gap * (cols - 1)) / cols;
     const rows: Brand[][] = [];
     for (let i = 0; i < brands.length; i += cols) rows.push(brands.slice(i, i + cols));
     return (
@@ -217,8 +215,10 @@ function BrandGrid({ brands, viewMode }: { brands: Brand[]; viewMode: ViewMode }
         {rows.map((row, ri) => (
           <View key={ri} style={{ flexDirection: 'row', gap }}>
             {row.map(b => (
-              <BrandCard key={b.id} brand={b} variant="grid" cardWidth={cw}
-                onPress={br => router.push(`/brand/${br.id}` as any)} />
+              <View key={b.id} style={{ flex: 1 }}>
+                <BrandCard brand={b} variant="grid"
+                  onPress={br => router.push(`/brand/${br.id}` as any)} />
+              </View>
             ))}
           </View>
         ))}
@@ -228,7 +228,6 @@ function BrandGrid({ brands, viewMode }: { brands: Brand[]; viewMode: ViewMode }
 
   // small — 3 kolon
   const cols = 3;
-  const cw = (SCREEN_W - 32 - gap * (cols - 1)) / cols;
   const rows: Brand[][] = [];
   for (let i = 0; i < brands.length; i += cols) rows.push(brands.slice(i, i + cols));
   return (
@@ -236,8 +235,10 @@ function BrandGrid({ brands, viewMode }: { brands: Brand[]; viewMode: ViewMode }
       {rows.map((row, ri) => (
         <View key={ri} style={{ flexDirection: 'row', gap }}>
           {row.map(b => (
-            <BrandCard key={b.id} brand={b} variant="compact" cardWidth={cw}
-              onPress={br => router.push(`/brand/${br.id}` as any)} />
+            <View key={b.id} style={{ flex: 1 }}>
+              <BrandCard brand={b} variant="compact"
+                onPress={br => router.push(`/brand/${br.id}` as any)} />
+            </View>
           ))}
         </View>
       ))}
@@ -266,7 +267,8 @@ export default function BrandsScreen() {
 
   const annotated = brands.map(b => ({ ...b, isFavorite: savedBrands.isSaved(b.id) }));
   const filtered = annotated.filter(b => {
-    const matchCat = selectedCategory === 'all' || b.category === selectedCategory;
+    const matchCat = selectedCategory === 'all' ||
+      (b.category ?? '').toLowerCase() === selectedCategory.toLowerCase();
     const matchSearch = !collectionSearch || b.name.toLowerCase().includes(collectionSearch.toLowerCase());
     return matchCat && matchSearch;
   });
@@ -398,130 +400,135 @@ export default function BrandsScreen() {
       <View style={[styles.inner, { paddingTop: insets.top }]}>
         <View style={styles.bgGlow} />
 
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Butiklerim</Text>
-          <View style={styles.headerRight}>
-            {/* Görünüm toggle */}
-            <View style={styles.viewToggle}>
-              {VIEW_MODES.map(m => {
-                const active = viewMode === m.id;
-                return (
-                  <TouchableOpacity
-                    key={m.id}
-                    style={[styles.viewBtn, active && styles.viewBtnActive]}
-                    onPress={() => { Haptics.selectionAsync(); setViewMode(m.id); }}
-                    hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
-                  >
-                    <Ionicons
-                      name={m.icon as any}
-                      size={15}
-                      color={active ? Colors.rose3 : Colors.text4}
-                    />
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-            {/* Arama */}
-            <TouchableOpacity
-              onPress={() => { setShowCollectionSearch(v => !v); setCollectionSearch(''); }}
-              style={styles.searchIconBtn}
-            >
-              <Ionicons name={showCollectionSearch ? 'close' : 'search'} size={20} color={Colors.text2} />
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Koleksiyon içi arama */}
-        {showCollectionSearch && (
-          <View style={styles.collectionSearch}>
-            <Ionicons name="search" size={15} color={Colors.text4} />
-            <TextInput
-              style={styles.collectionInput}
-              placeholder="Koleksiyonda ara..."
-              placeholderTextColor={Colors.text5}
-              value={collectionSearch}
-              onChangeText={setCollectionSearch}
-              autoFocus
-              selectionColor={Colors.gold3}
-            />
-          </View>
-        )}
-
-        {/* ── URL/Marka arama çubuğu ── */}
-        <View style={styles.urlBarWrap}>
-          <View style={styles.urlBar}>
-            <Ionicons name="globe-outline" size={18} color={query.length > 0 ? Colors.gold3 : Colors.text4} />
-            <TextInput
-              style={styles.urlInput}
-              placeholder="Butik veya site adı yaz... (ör. lessandromance)"
-              placeholderTextColor={Colors.text5}
-              value={query}
-              onChangeText={setQuery}
-              autoCapitalize="none"
-              autoCorrect={false}
-              selectionColor={Colors.gold3}
-              returnKeyType="search"
-            />
-            {query.length > 0 && (
-              <TouchableOpacity onPress={() => { setQuery(''); setSuggestions([]); }}>
-                <Ionicons name="close-circle" size={17} color={Colors.text4} />
-              </TouchableOpacity>
-            )}
-          </View>
-
-          {/* Sonuçlar */}
-          {searchLoading && (
-            <View style={styles.loadingRow}>
-              <ActivityIndicator color={Colors.gold3} size="small" />
-              <Text style={styles.loadingText}>Aranıyor...</Text>
-            </View>
-          )}
-          {!searchLoading && query.length >= 2 && suggestions.length === 0 && (
-            <Text style={styles.noResult}>Sonuç bulunamadı, farklı bir isim dene.</Text>
-          )}
-          {suggestions.map(item => (
-            <SuggestionRow
-              key={item.id}
-              item={item}
-              savedBrandIds={savedBrandIds}
-              onAdd={handleAdd}
-            />
-          ))}
-        </View>
-
-        {/* Stats — sadece Toplam */}
-        <View style={styles.statsRow}>
-          <View style={styles.stat}>
-            <Text style={styles.statNum}>{brands.length}</Text>
-            <Text style={styles.statLabel}>Toplam Butik</Text>
-          </View>
-        </View>
-
-        {/* Kategori filtresi */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryScroll}>
-          {CATEGORIES.map(cat => {
-            const active = selectedCategory === cat.id;
-            const count = cat.id === 'all' ? brands.length : brands.filter(b => b.category === cat.id).length;
-            if (cat.id !== 'all' && count === 0) return null;
-            return (
+        {/* ── SABİT ÜST BLOK: parent'ı flex:1 değil, sadece içeriği kadar yüksek ── */}
+        <View>
+          {/* Header */}
+          <View style={styles.header}>
+            <Text style={styles.headerTitle}>Butiklerim</Text>
+            <View style={styles.headerRight}>
+              <View style={styles.viewToggle}>
+                {VIEW_MODES.map(m => {
+                  const active = viewMode === m.id;
+                  return (
+                    <TouchableOpacity
+                      key={m.id}
+                      style={[styles.viewBtn, active && styles.viewBtnActive]}
+                      onPress={() => { Haptics.selectionAsync(); setViewMode(m.id); }}
+                      hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
+                    >
+                      <Ionicons
+                        name={m.icon as any}
+                        size={15}
+                        color={active ? Colors.rose3 : Colors.text4}
+                      />
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
               <TouchableOpacity
-                key={cat.id}
-                onPress={() => { Haptics.selectionAsync(); setSelectedCategory(cat.id); }}
-                style={[styles.filterChip, active && styles.filterChipActive]}
+                onPress={() => { setShowCollectionSearch(v => !v); setCollectionSearch(''); }}
+                style={styles.searchIconBtn}
               >
-                {active && <LinearGradient colors={[Colors.gold2, Colors.gold4]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={StyleSheet.absoluteFill} />}
-                <Text style={[styles.filterLabel, active && styles.filterLabelActive]}>{cat.icon} {cat.label}</Text>
-                <View style={[styles.filterCount, active && styles.filterCountActive]}>
-                  <Text style={[styles.filterCountText, active && styles.filterCountTextActive]}>{count}</Text>
-                </View>
+                <Ionicons name={showCollectionSearch ? 'close' : 'search'} size={20} color={Colors.text2} />
               </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
+            </View>
+          </View>
+
+          {/* Koleksiyon içi arama */}
+          {showCollectionSearch && (
+            <View style={styles.collectionSearch}>
+              <Ionicons name="search" size={15} color={Colors.text4} />
+              <TextInput
+                style={styles.collectionInput}
+                placeholder="Koleksiyonda ara..."
+                placeholderTextColor={Colors.text5}
+                value={collectionSearch}
+                onChangeText={setCollectionSearch}
+                autoFocus
+                selectionColor={Colors.gold3}
+              />
+            </View>
+          )}
+
+          {/* URL/Marka arama çubuğu */}
+          <View style={styles.urlBarWrap}>
+            <View style={styles.urlBar}>
+              <Ionicons name="globe-outline" size={18} color={query.length > 0 ? Colors.gold3 : Colors.text4} />
+              <TextInput
+                style={styles.urlInput}
+                placeholder="Butik veya site adı yaz... (ör. lessandromance)"
+                placeholderTextColor={Colors.text5}
+                value={query}
+                onChangeText={setQuery}
+                autoCapitalize="none"
+                autoCorrect={false}
+                selectionColor={Colors.gold3}
+                returnKeyType="search"
+              />
+              {query.length > 0 && (
+                <TouchableOpacity onPress={() => { setQuery(''); setSuggestions([]); }}>
+                  <Ionicons name="close-circle" size={17} color={Colors.text4} />
+                </TouchableOpacity>
+              )}
+            </View>
+            {searchLoading && (
+              <View style={styles.loadingRow}>
+                <ActivityIndicator color={Colors.gold3} size="small" />
+                <Text style={styles.loadingText}>Aranıyor...</Text>
+              </View>
+            )}
+            {!searchLoading && query.length >= 2 && suggestions.length === 0 && (
+              <Text style={styles.noResult}>Sonuç bulunamadı, farklı bir isim dene.</Text>
+            )}
+            {suggestions.map(item => (
+              <SuggestionRow
+                key={item.id}
+                item={item}
+                savedBrandIds={savedBrandIds}
+                onAdd={handleAdd}
+              />
+            ))}
+          </View>
+
+          {/* Stats */}
+          <View style={styles.statsRow}>
+            <View style={styles.stat}>
+              <Text style={styles.statNum}>{brands.length}</Text>
+              <Text style={styles.statLabel}>Toplam Butik</Text>
+            </View>
+          </View>
+
+          {/* Kategori filtresi — parent artık flex:1 değil */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.categoryScrollView}
+            contentContainerStyle={styles.categoryScroll}
+          >
+            {CATEGORIES.map(cat => {
+              const active = selectedCategory === cat.id;
+              const count = cat.id === 'all' ? brands.length : brands.filter(b => (b.category ?? '').toLowerCase() === cat.id.toLowerCase()).length;
+              if (cat.id !== 'all' && count === 0) return null;
+              return (
+                <TouchableOpacity
+                  key={cat.id}
+                  onPress={() => { Haptics.selectionAsync(); setSelectedCategory(cat.id); }}
+                  style={[styles.filterChip, active && styles.filterChipActive]}
+                >
+                  {active && <LinearGradient colors={[Colors.gold2, Colors.gold4]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={StyleSheet.absoluteFill} />}
+                  <Text style={[styles.filterLabel, active && styles.filterLabelActive]}>{cat.icon} {cat.label}</Text>
+                  <View style={[styles.filterCount, active && styles.filterCountActive]}>
+                    <Text style={[styles.filterCountText, active && styles.filterCountTextActive]}>{count}</Text>
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </View>
+        {/* ── SABİT BLOK SONU ── */}
 
         {/* Butik listesi */}
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        <ScrollView style={styles.brandListScroll} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
           {favorites.length > 0 && (
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
@@ -559,7 +566,7 @@ export default function BrandsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   inner: { flex: 1 },
-  bgGlow: { position: 'absolute', top: 50, left: -150, width: 350, height: 350, borderRadius: 175, backgroundColor: Colors.goldGlow, opacity: 0.3 },
+  bgGlow: { position: 'absolute', top: 40, left: 0, right: 0, height: 220, backgroundColor: Colors.goldGlow, opacity: 0.18 },
 
   // Header
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 12, paddingBottom: 8 },
@@ -604,8 +611,9 @@ const styles = StyleSheet.create({
   statNum: { fontSize: 24, fontWeight: '800', color: Colors.text1, letterSpacing: -0.5 },
   statLabel: { fontSize: 11, fontWeight: '600', color: Colors.text4, textTransform: 'uppercase', letterSpacing: 0.5 },
 
-  // Kategori
-  categoryScroll: { paddingHorizontal: 20, gap: 8, marginBottom: 16, alignItems: 'center' },
+  // Kategori — yükseklik explicit verilmeli; yoksa flex kolonda 0 rapor eder
+  categoryScrollView: { height: 44, marginBottom: 10 },
+  categoryScroll: { paddingHorizontal: 16, gap: 8, paddingVertical: 4 },
   filterChip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, height: 36, borderRadius: 18, backgroundColor: Colors.surface2, borderWidth: 1, borderColor: Colors.border2, overflow: 'hidden' },
   filterChipActive: { borderColor: Colors.gold3 },
   filterLabel: { fontSize: 13, fontWeight: '600', color: Colors.text3 },
@@ -616,6 +624,7 @@ const styles = StyleSheet.create({
   filterCountTextActive: { color: Colors.bg },
 
   // Liste
+  brandListScroll: { flex: 1 },
   scrollContent: { paddingHorizontal: 16, gap: 10 },
   section: { gap: 10, marginBottom: 10 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 4, marginBottom: 4 },

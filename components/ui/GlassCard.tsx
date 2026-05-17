@@ -38,8 +38,8 @@ export function GlassCard({
 
 const styles = StyleSheet.create({
   container: {
-    borderRadius: 20,
-    borderWidth: 1,
+    borderRadius: 16,
+    borderWidth: 0.5,   // daha hafif kenarlık
     overflow: 'hidden',
     backgroundColor: Colors.glass2,
   },

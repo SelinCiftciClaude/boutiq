@@ -212,6 +212,55 @@ export async function refreshShipment(shipmentId: string): Promise<Shipment> {
   }
 }
 
+// Arşivlenmiş kargolar — tarihe göre gruplu
+export interface ArchiveMonth {
+  label: string;  // "Nisan 2026"
+  yearMonth: string; // "2026-04"
+  shipments: Shipment[];
+  totalAmount: number;
+}
+
+export async function getArchivedShipments(): Promise<ArchiveMonth[]> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data, error } = await supabase
+    .from('shipments')
+    .select('*')
+    .eq('user_id', user.id)
+    .eq('is_archived', true)
+    .eq('status', 'delivered')
+    .order('updated_at', { ascending: false });
+
+  if (error) return [];
+
+  const shipments = (data ?? []).map(fromDb);
+
+  // Ay-yıl bazında grupla
+  const monthMap = new Map<string, Shipment[]>();
+  for (const s of shipments) {
+    const date = new Date(s.updatedAt ?? s.createdAt);
+    const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    const list = monthMap.get(key) ?? [];
+    list.push(s);
+    monthMap.set(key, list);
+  }
+
+  const TR_MONTHS = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+
+  return Array.from(monthMap.entries())
+    .sort((a, b) => b[0].localeCompare(a[0]))
+    .map(([ym, items]) => {
+      const [year, month] = ym.split('-').map(Number);
+      return {
+        label: `${TR_MONTHS[month - 1]} ${year}`,
+        yearMonth: ym,
+        shipments: items,
+        totalAmount: items.reduce((sum, s) => sum + (s.totalAmount ?? 0), 0),
+      };
+    });
+}
+
 export async function archiveShipment(shipmentId: string): Promise<void> {
   const { error } = await supabase
     .from('shipments')

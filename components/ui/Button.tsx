@@ -7,7 +7,6 @@ import {
   ActivityIndicator,
   View,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Colors } from '../../constants/Colors';
 import { Fonts } from '../../constants/Typography';
 
@@ -34,9 +33,9 @@ export function Button({
 }: ButtonProps) {
   const isDisabled = disabled || loading;
 
-  const heights: Record<string, number> = { sm: 38, md: 48, lg: 54, xl: 58 };
-  const fontSizes: Record<string, number> = { sm: 11, md: 12, lg: 12, xl: 13 };
-  const radii: Record<string, number>    = { sm: 8,  md: 10, lg: 12, xl: 14 };
+  const heights: Record<string, number>   = { sm: 38, md: 48, lg: 54, xl: 58 };
+  const fontSizes: Record<string, number> = { sm: 10, md: 11, lg: 11, xl: 12 };
+  const radii: Record<string, number>     = { sm: 6,  md: 8,  lg: 10, xl: 12 };
 
   const h  = heights[size];
   const fs = fontSizes[size];
@@ -47,22 +46,24 @@ export function Button({
       <TouchableOpacity
         onPress={onPress}
         disabled={isDisabled}
-        activeOpacity={0.85}
-        style={[{ height: h, borderRadius: r, overflow: 'hidden', opacity: isDisabled ? 0.45 : 1 }, style]}
+        activeOpacity={0.82}
+        style={[
+          {
+            height: h,
+            borderRadius: r,
+            backgroundColor: Colors.rose3,   // antrasit solid
+            opacity: isDisabled ? 0.40 : 1,
+          },
+          style,
+        ]}
       >
-        <LinearGradient
-          colors={[Colors.rose2, Colors.rose3, Colors.rose4]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={StyleSheet.absoluteFill}
-        />
         <View style={styles.inner}>
           {loading ? (
-            <ActivityIndicator size="small" color={Colors.bg} />
+            <ActivityIndicator size="small" color={Colors.surface1} />
           ) : (
             <>
               {icon}
-              <Text style={[styles.label, { fontSize: fs, letterSpacing: size === 'xl' ? 2.5 : 2 }]}>
+              <Text style={[styles.label, { fontSize: fs, letterSpacing: size === 'xl' ? 2.0 : 1.5 }]}>
                 {label.toUpperCase()}
               </Text>
             </>
@@ -77,26 +78,26 @@ export function Button({
       <TouchableOpacity
         onPress={onPress}
         disabled={isDisabled}
-        activeOpacity={0.8}
+        activeOpacity={0.78}
         style={[
           {
             height: h,
             borderRadius: r,
-            borderWidth: 0.5,
-            borderColor: Colors.borderGold,
-            backgroundColor: Colors.glassGold,
-            opacity: isDisabled ? 0.45 : 1,
+            borderWidth: 1,
+            borderColor: Colors.border3,
+            backgroundColor: Colors.surface1,
+            opacity: isDisabled ? 0.40 : 1,
           },
           style,
         ]}
       >
         <View style={styles.inner}>
           {loading ? (
-            <ActivityIndicator size="small" color={Colors.gold3} />
+            <ActivityIndicator size="small" color={Colors.text2} />
           ) : (
             <>
               {icon}
-              <Text style={[styles.labelSecondary, { fontSize: fs, letterSpacing: 2 }]}>
+              <Text style={[styles.labelSecondary, { fontSize: fs, letterSpacing: 1.5 }]}>
                 {label.toUpperCase()}
               </Text>
             </>
@@ -111,7 +112,7 @@ export function Button({
       <TouchableOpacity
         onPress={onPress}
         disabled={isDisabled}
-        activeOpacity={0.7}
+        activeOpacity={0.65}
         style={[{ height: h, opacity: isDisabled ? 0.4 : 1, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6 }, style]}
       >
         {icon}
@@ -120,25 +121,26 @@ export function Button({
     );
   }
 
+  // danger
   return (
     <TouchableOpacity
       onPress={onPress}
       disabled={isDisabled}
-      activeOpacity={0.8}
+      activeOpacity={0.78}
       style={[
         {
           height: h,
           borderRadius: r,
           borderWidth: 0.5,
-          borderColor: Colors.error + '55',
-          backgroundColor: Colors.error + '14',
-          opacity: isDisabled ? 0.45 : 1,
+          borderColor: 'rgba(158,48,48,0.30)',
+          backgroundColor: 'rgba(158,48,48,0.07)',
+          opacity: isDisabled ? 0.40 : 1,
         },
         style,
       ]}
     >
       <View style={styles.inner}>
-        <Text style={[styles.labelDanger, { fontSize: fs, letterSpacing: 2 }]}>
+        <Text style={[styles.labelDanger, { fontSize: fs, letterSpacing: 1.5 }]}>
           {label.toUpperCase()}
         </Text>
       </View>
@@ -156,17 +158,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   label: {
-    fontFamily: Fonts.ui,
-    color: Colors.bg,
+    fontFamily: Fonts.uiMedium,
+    color: Colors.surface1,   // krem beyaz üzerine
   },
   labelSecondary: {
     fontFamily: Fonts.uiMedium,
-    color: Colors.rose3,
+    color: Colors.text2,
   },
   labelGhost: {
     fontFamily: Fonts.uiMedium,
-    color: Colors.text2,
-    letterSpacing: 0.3,
+    color: Colors.text3,
+    letterSpacing: 0.2,
   },
   labelDanger: {
     fontFamily: Fonts.uiMedium,

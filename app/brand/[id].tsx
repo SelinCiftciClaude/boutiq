@@ -195,9 +195,9 @@ export default function BrandDetailScreen() {
               {isSaved
                 ? <LinearGradient colors={[Colors.rose2, Colors.rose4]} style={StyleSheet.absoluteFill} />
                 : null}
-              <Ionicons name={isSaved ? 'heart' : 'heart-outline'} size={18} color={isSaved ? '#fff' : Colors.text2} />
+              <Ionicons name={isSaved ? 'checkmark-circle' : 'heart-outline'} size={18} color={isSaved ? '#fff' : Colors.text2} />
               <Text style={[styles.saveBtnText, isSaved && styles.saveBtnTextActive]}>
-                {isSaved ? 'Kaydedildi' : 'Koleksiyona Ekle'}
+                {isSaved ? 'Kayıttan Çıkar' : 'Koleksiyona Ekle'}
               </Text>
             </TouchableOpacity>
 

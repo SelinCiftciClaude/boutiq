@@ -24,17 +24,17 @@ export function Badge({ label, variant = 'neutral', size = 'sm', style }: BadgeP
 
 const styles = StyleSheet.create({
   base: {
-    borderRadius: 4,
+    borderRadius: 3,
     alignSelf: 'flex-start',
   },
   text: {
     fontFamily: Fonts.uiMedium,
     fontSize: 9,
-    letterSpacing: 1.2,
+    letterSpacing: 1.0,
   },
   textMd: {
     fontSize: 11,
-    letterSpacing: 0.8,
+    letterSpacing: 0.7,
   },
 });
 
@@ -45,18 +45,18 @@ const sizeStyles = {
 
 const variantStyles: Record<BadgeVariant, ViewStyle> = {
   gold:    { backgroundColor: Colors.glassGold, borderWidth: 0.5, borderColor: Colors.borderGold },
-  purple:  { backgroundColor: 'rgba(110,72,216,0.15)', borderWidth: 0.5, borderColor: 'rgba(110,72,216,0.35)' },
-  success: { backgroundColor: 'rgba(54,138,108,0.15)', borderWidth: 0.5, borderColor: 'rgba(54,138,108,0.35)' },
-  error:   { backgroundColor: 'rgba(188,60,60,0.15)', borderWidth: 0.5, borderColor: 'rgba(188,60,60,0.35)' },
+  purple:  { backgroundColor: Colors.surface3,  borderWidth: 0.5, borderColor: Colors.border2 },
+  success: { backgroundColor: Colors.successGlow, borderWidth: 0.5, borderColor: 'rgba(45,122,90,0.25)' },
+  error:   { backgroundColor: 'rgba(158,48,48,0.08)', borderWidth: 0.5, borderColor: 'rgba(158,48,48,0.22)' },
   neutral: { backgroundColor: Colors.surface3, borderWidth: 0.5, borderColor: Colors.border2 },
-  sale:    { backgroundColor: Colors.glassRose, borderWidth: 0.5, borderColor: Colors.borderRose },
+  sale:    { backgroundColor: Colors.surface3, borderWidth: 0.5, borderColor: Colors.border3 },
 };
 
 const textStyles: Record<BadgeVariant, object> = {
-  gold:    { color: Colors.gold4 },
-  purple:  { color: Colors.purple3 },
+  gold:    { color: Colors.gold2 },
+  purple:  { color: Colors.text3 },
   success: { color: Colors.success },
   error:   { color: Colors.error },
-  neutral: { color: Colors.text3 },
-  sale:    { color: Colors.rose4 },
+  neutral: { color: Colors.text4 },
+  sale:    { color: Colors.text3 },
 };

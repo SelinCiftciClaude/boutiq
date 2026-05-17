@@ -5,7 +5,6 @@ import {
   Image,
   TouchableOpacity,
   StyleSheet,
-  Dimensions,
   Linking,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -16,12 +15,10 @@ import { Fonts } from '../constants/Typography';
 import { Brand } from '../types';
 import { Badge } from './ui/Badge';
 
-const { width } = Dimensions.get('window');
-
 interface BrandCardProps {
   brand: Brand;
   variant?: 'horizontal' | 'grid' | 'featured' | 'compact';
-  cardWidth?: number; // grid/compact için dışarıdan geçilir
+  cardWidth?: number; // artık kullanılmıyor, geriye dönük uyumluluk için
   onPress?: (brand: Brand) => void;
   onAdd?: (brand: Brand) => void;
   isSaved?: boolean;
@@ -104,11 +101,9 @@ export function BrandCard({ brand, variant = 'horizontal', cardWidth, onPress, o
   }
 
   if (variant === 'grid') {
-    const gw = cardWidth ?? (width - 48) / 2;
-    const gh = Math.round(gw * 1.3);
     return (
       <TouchableOpacity onPress={handlePress} activeOpacity={0.88}
-        style={[styles.grid, { width: gw, height: gh }]}>
+        style={styles.grid}>
         <Image source={{ uri: brand.coverImage }} style={styles.gridCover} resizeMode="cover" />
         <LinearGradient
           colors={['rgba(7,7,12,0)', 'rgba(7,7,12,0.92)']}
@@ -146,11 +141,9 @@ export function BrandCard({ brand, variant = 'horizontal', cardWidth, onPress, o
 
   // Compact — 3 kolon küçük kart
   if (variant === 'compact') {
-    const cw = cardWidth ?? (width - 52) / 3;
-    const ch = cw * 1.25;
     return (
       <TouchableOpacity onPress={handlePress} activeOpacity={0.88}
-        style={[styles.compact, { width: cw, height: ch }]}>
+        style={styles.compact}>
         <Image source={{ uri: brand.coverImage }} style={styles.compactCover} resizeMode="cover" />
         <LinearGradient
           colors={['rgba(7,7,12,0)', 'rgba(7,7,12,0.95)']}
@@ -197,7 +190,7 @@ export function BrandCard({ brand, variant = 'horizontal', cardWidth, onPress, o
 const styles = StyleSheet.create({
   // ── Featured
   featured: {
-    width: width - 32,
+    alignSelf: 'stretch',
     height: 300,
     borderRadius: 18,
     overflow: 'hidden',
@@ -320,10 +313,9 @@ const styles = StyleSheet.create({
     color: Colors.gold3,
   },
 
-  // ── Grid
+  // ── Grid  (parent'ın flex:1 wrapper'ı genişliği belirler)
   grid: {
-    width: (width - 48) / 2,
-    height: 195,
+    aspectRatio: 0.77,   // 1/1.3 — portrait kart oranı
     borderRadius: 14,
     overflow: 'hidden',
     borderWidth: 0.5,
@@ -407,22 +399,26 @@ const styles = StyleSheet.create({
   },
   hInfo: {
     flex: 1,
+    minWidth: 0,
     gap: 4,
   },
   hRight: {
     alignItems: 'flex-end',
+    flexShrink: 0,
     gap: 4,
   },
   nameRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
+    minWidth: 0,
   },
   name: {
     fontFamily: Fonts.uiMedium,
     fontSize: 15,
     color: Colors.text1,
     letterSpacing: -0.2,
+    flexShrink: 1,
   },
   handle: {
     fontFamily: Fonts.uiLight,
@@ -446,8 +442,9 @@ const styles = StyleSheet.create({
     color: Colors.text3,
   },
 
-  // Compact (3 kolon)
+  // Compact (3 kolon — parent'ın flex:1 wrapper'ı genişliği belirler)
   compact: {
+    aspectRatio: 0.8,    // 1/1.25 — biraz daha dikdörtgen
     borderRadius: 12,
     overflow: 'hidden',
     borderWidth: 0.5,

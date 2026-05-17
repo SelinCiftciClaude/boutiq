@@ -1,107 +1,105 @@
-// ── BUTİKA Renk Sistemi — "Tente" tasarım dili ──────────────────────────────
-// Logodaki tenteden çıkarılan 3 ana renk:
-//   Burgund   #6B1520  → dikkat, CTA, aktif, logo
-//   Sıcak Krem #F5E8C0 → zemin, davetkar, sıcak
-//   Periwinkle #8FA8C8  → sakin, bilgi, ikincil
+// ── BUTIKA Renk Sistemi — "Stone & Linen" tasarım dili ──────────────────────
+// Editoryal, sakin, minimal premium his.
+// Zemin: kırık beyaz/taş. Metin: antrasit. Vurgu: neredeyse yok.
 
 export const Colors = {
-  // ── Arka plan — sıcak krem, tente kumaşı
-  bg:       '#FAF6E8',
-  surface1: '#FFF9EE',
-  surface2: '#FFF4DA',
-  surface3: '#FAECC4',
-  surface4: '#F0E0A8',
+  // ── Arka plan — taş/kırık beyaz
+  bg:       '#F4F1EC',
+  surface1: '#FAF8F4',
+  surface2: '#F5F2ED',
+  surface3: '#EDEBE5',
+  surface4: '#E5E2DB',
 
-  // ── Burgund — ana accent (logo rengi, CTA)
-  rose1: '#3A0810',
-  rose2: '#521015',
-  rose3: '#6B1520',  // birincil burgund
-  rose4: '#8C2535',
-  rose5: '#B05060',
-  roseGlow:       'rgba(107,21,32,0.10)',
-  roseGlowStrong: 'rgba(107,21,32,0.22)',
+  // ── Ana aksiyon rengi — antrasit (eski burgund yerine)
+  rose1: '#0F0F0F',
+  rose2: '#1A1A1A',
+  rose3: '#1C1C1C',   // CTA, aktif, birincil eylem
+  rose4: '#2E2E2E',
+  rose5: '#4A4A4A',
+  roseGlow:       'rgba(28,28,28,0.06)',
+  roseGlowStrong: 'rgba(28,28,28,0.14)',
 
-  // ── Sıcak Altın / Hardal — tente sarı şeridi
-  gold1: '#7A5A10',
-  gold2: '#A87A18',
-  gold3: '#C89A28',  // ana altın
-  gold4: '#E0B840',
-  gold5: '#F5D870',
-  goldGlow:       'rgba(200,154,40,0.15)',
-  goldGlowStrong: 'rgba(200,154,40,0.30)',
+  // ── Warm greige — ikincil vurgu (eski altın yerine)
+  gold1: '#5C5248',
+  gold2: '#7A6F63',
+  gold3: '#8A8068',   // warm greige ana ton
+  gold4: '#A89E90',
+  gold5: '#C8C0B4',
+  goldGlow:       'rgba(138,128,104,0.10)',
+  goldGlowStrong: 'rgba(138,128,104,0.20)',
 
-  // ── Periwinkle Mavi — tente mavi şeridi (sakin alanlar)
-  teal1: '#4A6080',
-  teal2: '#6A88A8',
-  teal3: '#8FA8C8',  // ana periwinkle
-  teal4: '#B0C8E0',
-  teal5: '#D4E4F0',
-  tealGlow: 'rgba(143,168,200,0.18)',
+  // ── Nötr gri — bilgi, ikincil (eski periwinkle yerine)
+  teal1: '#5A5A5A',
+  teal2: '#787878',
+  teal3: '#9A9A9A',
+  teal4: '#BABABA',
+  teal5: '#DEDEDE',
+  tealGlow: 'rgba(90,90,90,0.08)',
 
-  // ── Purple (minimal)
-  purple1: '#3A2060',
-  purple2: '#5A3890',
-  purple3: '#7A58B8',
-  purple4: '#A088D8',
-  purpleGlow: 'rgba(90,56,144,0.10)',
+  // ── Purple (minimal, nötrleştirildi)
+  purple1: '#2A2A2A',
+  purple2: '#3A3A3A',
+  purple3: '#5A5A5A',
+  purple4: '#7A7A7A',
+  purpleGlow: 'rgba(58,58,58,0.06)',
 
-  // ── Metin — koyu bordo (siyah yerine)
-  text1: '#2C0810',   // koyu bordo — siyah yerine
-  text2: '#4A1820',
-  text3: '#7A4050',
-  text4: '#A87888',
-  text5: '#CEB0B8',
+  // ── Metin — temiz antrasit skalası
+  text1: '#1A1A1A',   // birincil metin
+  text2: '#3D3D3D',   // ikincil metin
+  text3: '#6B6B6B',   // üçüncül metin
+  text4: '#9E9E9E',   // yardımcı metin
+  text5: '#C7C7C7',   // en soluk metin
 
-  // ── Kenarlıklar
-  border1: 'rgba(28,14,8,0.07)',
-  border2: 'rgba(28,14,8,0.12)',
-  border3: 'rgba(28,14,8,0.18)',
-  borderBurgund: 'rgba(107,21,32,0.30)',
-  borderRose:    'rgba(107,21,32,0.30)',
-  borderGold:    'rgba(200,154,40,0.35)',
-  borderBlue:    'rgba(143,168,200,0.40)',
+  // ── Kenarlıklar — çok hafif
+  border1: 'rgba(26,26,26,0.06)',
+  border2: 'rgba(26,26,26,0.10)',
+  border3: 'rgba(26,26,26,0.16)',
+  borderBurgund: 'rgba(26,26,26,0.18)',
+  borderRose:    'rgba(26,26,26,0.18)',
+  borderGold:    'rgba(138,128,104,0.22)',
+  borderBlue:    'rgba(90,90,90,0.18)',
 
-  // ── Status
-  success:     '#1A6A40',
-  successGlow: 'rgba(26,106,64,0.12)',
-  warning:     '#B07A10',
-  error:       '#8C1520',
-  info:        '#4A6888',
+  // ── Status (ayırt edici ama sakin)
+  success:     '#2D7A5A',
+  successGlow: 'rgba(45,122,90,0.10)',
+  warning:     '#8A6A30',
+  error:       '#9E3030',
+  info:        '#5A6A7A',
 
-  // ── Overlays (açık zemin)
-  overlay1: 'rgba(250,246,232,0.60)',
-  overlay2: 'rgba(250,246,232,0.82)',
-  overlay3: 'rgba(250,246,232,0.96)',
+  // ── Overlays
+  overlay1: 'rgba(244,241,236,0.60)',
+  overlay2: 'rgba(244,241,236,0.82)',
+  overlay3: 'rgba(244,241,236,0.96)',
 
   // ── Glass
-  glass1: 'rgba(255,249,238,0.65)',
-  glass2: 'rgba(255,249,238,0.82)',
-  glass3: 'rgba(255,249,238,0.96)',
-  glassGold:    'rgba(200,154,40,0.10)',
-  glassRose:    'rgba(107,21,32,0.08)',
-  glassBlue:    'rgba(143,168,200,0.15)',
+  glass1: 'rgba(250,248,244,0.65)',
+  glass2: 'rgba(250,248,244,0.82)',
+  glass3: 'rgba(250,248,244,0.96)',
+  glassGold:    'rgba(138,128,104,0.08)',
+  glassRose:    'rgba(28,28,28,0.05)',
+  glassBlue:    'rgba(90,90,90,0.08)',
 
-  // ── Stripe (tente şerit dokusu için)
-  stripeWarm: '#F0E0A0',   // sıcak şerit
-  stripeCool: '#C8D8E8',   // mavi şerit
+  // ── Stripe (doku için)
+  stripeWarm: '#E8E4DC',
+  stripeCool: '#DEDEDE',
 
   // ── Gradients
   gradients: {
-    rose:         ['#521015', '#8C2535'] as const,
-    roseDark:     ['#3A0810', '#6B1520'] as const,
-    gold:         ['#A87A18', '#E0B840'] as const,
-    goldDark:     ['#7A5A10', '#C89A28'] as const,
-    blue:         ['#6A88A8', '#B0C8E0'] as const,
-    light:        ['#FAF6E8', '#FFF9EE'] as const,
-    lightReverse: ['#FFF9EE', '#FAF6E8'] as const,
-    surface:      ['#FFF9EE', '#FFF4DA'] as const,
-    hero:         ['#FAF6E8', '#FFF4DA', '#FAF0D0'] as const,
-    card:         ['rgba(255,249,238,0.97)', 'rgba(250,246,232,0.99)'] as const,
-    stripe:       ['#F5E8C0', '#C8D8E8'] as const,  // tente şeridi
-    roseToTrans:  ['#6B1520', 'rgba(107,21,32,0)'] as const,
-    transToRose:  ['rgba(107,21,32,0)', '#6B1520'] as const,
-    teal:         ['#6A88A8', '#8FA8C8'] as const,
-    heroFull:     ['#FFF4DA', '#FAF6E8', '#FFF9EE'] as const,
+    rose:         ['#1A1A1A', '#2E2E2E'] as const,
+    roseDark:     ['#0F0F0F', '#1C1C1C'] as const,
+    gold:         ['#7A6F63', '#A89E90'] as const,
+    goldDark:     ['#5C5248', '#8A8068'] as const,
+    blue:         ['#787878', '#BABABA'] as const,
+    light:        ['#F4F1EC', '#FAF8F4'] as const,
+    lightReverse: ['#FAF8F4', '#F4F1EC'] as const,
+    surface:      ['#FAF8F4', '#F5F2ED'] as const,
+    hero:         ['#F4F1EC', '#FAF8F4', '#F0EDE8'] as const,
+    card:         ['rgba(250,248,244,0.97)', 'rgba(244,241,236,0.99)'] as const,
+    stripe:       ['#E8E4DC', '#DEDEDE'] as const,
+    roseToTrans:  ['#1C1C1C', 'rgba(28,28,28,0)'] as const,
+    transToRose:  ['rgba(28,28,28,0)', '#1C1C1C'] as const,
+    teal:         ['#787878', '#9A9A9A'] as const,
+    heroFull:     ['#F5F2ED', '#F4F1EC', '#FAF8F4'] as const,
   },
 };
 

@@ -14,8 +14,10 @@ import { AddManualShipmentSheet } from '@/components/AddManualShipmentSheet';
 import {
   useShipments,
   useShipmentSummary,
+  useArchivedShipments,
 } from '@/hooks/useShipments';
-import type { Shipment } from '@/services/shipmentService';
+import type { Shipment, ArchiveMonth } from '@/services/shipmentService';
+import { Image } from 'react-native';
 
 type Filter = 'all' | 'preparing' | 'in_transit' | 'delivered';
 
@@ -72,6 +74,7 @@ export default function TrackingScreen() {
 
   const { data: shipments = [], isLoading, refetch } = useShipments(filter);
   const { data: summary } = useShipmentSummary();
+  const { data: archive = [] } = useArchivedShipments();
 
   const filtered = searchQ
     ? shipments.filter(s =>
@@ -210,6 +213,11 @@ export default function TrackingScreen() {
             <DeliveredSection shipments={delivered} />
           )}
 
+          {/* Geçmiş alışverişler arşivi */}
+          {archive.length > 0 && filter === 'all' && !searchQ && (
+            <ArchiveSection months={archive} />
+          )}
+
           {/* Manuel ekle */}
           <TouchableOpacity style={styles.addBtn} onPress={() => setShowAdd(true)} activeOpacity={0.85}>
             <LinearGradient
@@ -218,7 +226,7 @@ export default function TrackingScreen() {
               style={StyleSheet.absoluteFill}
             />
             <Ionicons name="add-circle-outline" size={18} color="#fff" />
-            <Text style={styles.addBtnText}>Manuel sipariş ekle</Text>
+            <Text style={styles.addBtnText}>Manuel kargo bilgisi ekle</Text>
           </TouchableOpacity>
 
           <View style={{ height: 100 }} />
@@ -280,6 +288,114 @@ function DeliveredSection({ shipments }: { shipments: Shipment[] }) {
   );
 }
 
+// ── Arşiv bölümü ─────────────────────────────────────────────────────────────
+
+function ArchiveSection({ months }: { months: ArchiveMonth[] }) {
+  return (
+    <View style={arc.wrap}>
+      {/* Başlık */}
+      <View style={arc.header}>
+        <Ionicons name="archive-outline" size={15} color={Colors.text4} />
+        <Text style={arc.title}>GEÇMİŞ ALIŞVERİŞLER</Text>
+      </View>
+      {months.map(m => (
+        <ArchiveMonthCard key={m.yearMonth} month={m} />
+      ))}
+    </View>
+  );
+}
+
+function ArchiveMonthCard({ month }: { month: ArchiveMonth }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <View style={arc.card}>
+      {/* Ay başlığı */}
+      <TouchableOpacity
+        style={arc.monthRow}
+        onPress={() => { Haptics.selectionAsync(); setOpen(o => !o); }}
+        activeOpacity={0.75}
+      >
+        <View style={arc.monthLeft}>
+          <View style={arc.monthDot} />
+          <Text style={arc.monthLabel}>{month.label} alışverişlerin</Text>
+          <View style={arc.countBadge}>
+            <Text style={arc.countText}>{month.shipments.length}</Text>
+          </View>
+        </View>
+        <View style={arc.monthRight}>
+          <Text style={arc.monthTotal}>₺{month.totalAmount.toLocaleString('tr-TR')}</Text>
+          <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={14} color={Colors.text4} />
+        </View>
+      </TouchableOpacity>
+
+      {/* İçerik */}
+      {open && (
+        <View style={arc.items}>
+          {month.shipments.map(s => {
+            const product = s.products?.[0];
+            return (
+              <View key={s.id} style={arc.item}>
+                {product?.image ? (
+                  <Image source={{ uri: product.image }} style={arc.itemImg} resizeMode="cover" />
+                ) : (
+                  <View style={[arc.itemImg, arc.itemImgPlaceholder]}>
+                    <Ionicons name="cube-outline" size={14} color={Colors.text4} />
+                  </View>
+                )}
+                <View style={arc.itemInfo}>
+                  <Text style={arc.itemBrand} numberOfLines={1}>{s.brandName}</Text>
+                  <Text style={arc.itemName} numberOfLines={1}>{product?.name ?? '—'}</Text>
+                </View>
+                <Text style={arc.itemPrice}>₺{(s.totalAmount ?? 0).toLocaleString('tr-TR')}</Text>
+              </View>
+            );
+          })}
+        </View>
+      )}
+    </View>
+  );
+}
+
+const arc = StyleSheet.create({
+  wrap: { marginTop: 8, marginBottom: 4 },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10 },
+  title: { fontFamily: Fonts.uiMedium, fontSize: 10, letterSpacing: 1.5, color: Colors.text4 },
+  card: {
+    backgroundColor: Colors.surface2,
+    borderRadius: 14,
+    borderWidth: 0.5,
+    borderColor: Colors.border2,
+    marginBottom: 8,
+    overflow: 'hidden',
+  },
+  monthRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 14, paddingVertical: 12,
+  },
+  monthLeft: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 },
+  monthDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: Colors.rose3, opacity: 0.5 },
+  monthLabel: { fontFamily: Fonts.uiMedium, fontSize: 13, color: Colors.text1 },
+  countBadge: {
+    backgroundColor: Colors.roseGlow, borderRadius: 8, paddingHorizontal: 7, paddingVertical: 2,
+    borderWidth: 0.5, borderColor: Colors.borderBurgund,
+  },
+  countText: { fontFamily: Fonts.ui, fontSize: 11, color: Colors.rose3 },
+  monthRight: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  monthTotal: { fontFamily: Fonts.uiMedium, fontSize: 12, color: Colors.text3 },
+  items: {
+    borderTopWidth: 0.5, borderTopColor: Colors.border1,
+    paddingHorizontal: 14, paddingTop: 10, paddingBottom: 12, gap: 10,
+  },
+  item: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  itemImg: { width: 44, height: 44, borderRadius: 8, backgroundColor: Colors.surface3 },
+  itemImgPlaceholder: { alignItems: 'center', justifyContent: 'center' },
+  itemInfo: { flex: 1, gap: 2 },
+  itemBrand: { fontFamily: Fonts.uiMedium, fontSize: 11, color: Colors.rose3 },
+  itemName: { fontFamily: Fonts.uiLight, fontSize: 12, color: Colors.text1 },
+  itemPrice: { fontFamily: Fonts.uiMedium, fontSize: 12, color: Colors.text2 },
+});
+
 function EmptyState({ onAdd, hasFilter }: { onAdd: () => void; hasFilter: boolean }) {
   return (
     <View style={styles.empty}>
@@ -300,7 +416,7 @@ function EmptyState({ onAdd, hasFilter }: { onAdd: () => void; hasFilter: boolea
             style={StyleSheet.absoluteFill}
           />
           <Ionicons name="add-circle-outline" size={16} color="#fff" />
-          <Text style={styles.emptyBtnText}>Manuel sipariş ekle</Text>
+          <Text style={styles.emptyBtnText}>Manuel kargo bilgisi ekle</Text>
         </TouchableOpacity>
       )}
     </View>

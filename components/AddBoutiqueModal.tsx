@@ -388,7 +388,7 @@ export function AddBoutiqueModal({ visible, onClose, onAdd }: Props) {
 
     try {
       const { data: brandId, error } = await supabase.rpc('add_manual_brand', {
-        p_name: item.name, p_website: item.website, p_category: item.category,
+        p_name: item.name, p_website: item.website, p_category: item.category.toLowerCase(),
       });
       if (error || !brandId) throw error ?? new Error('Ekleme başarısız');
 

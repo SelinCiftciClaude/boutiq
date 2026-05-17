@@ -7,7 +7,9 @@ import {
   refreshShipment,
   archiveShipment,
   deleteShipment,
+  getArchivedShipments,
   type ManualShipmentInput,
+  type ArchiveMonth,
 } from '@/services/shipmentService';
 import * as Haptics from 'expo-haptics';
 
@@ -75,6 +77,14 @@ export function useArchiveShipment() {
       qc.invalidateQueries({ queryKey: ['shipments'] });
       qc.invalidateQueries({ queryKey: ['shipmentSummary'] });
     },
+  });
+}
+
+export function useArchivedShipments() {
+  return useQuery<ArchiveMonth[]>({
+    queryKey: ['shipments', 'archive'],
+    queryFn: getArchivedShipments,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
